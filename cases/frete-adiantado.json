@@ -316,12 +316,12 @@
       "body": "Se você não consegue listar campo a campo por que o terceiro recebe cada coisa, você está enviando demais. Escreva a lista antes da integração; revisite a cada trimestre."
     },
     {
-      "title": "Lógica de negócio abusável não aparece em nenhum scanner",
+      "title": "Falhas de lógica de negócio não aparecem em nenhum scanner",
       "body": "Duplo canhoto, cancelamento sem reversão, retro-limite. Nenhum SAST/DAST pega esses. Só um mapa de fluxo lido por quem pensa como adversário — sempre antes do primeiro commit."
     },
     {
       "title": "Vulnerabilidade operativa é fraude esperando trigger",
-      "body": "Planilha compartilhada, aprovação por chat, runbook que assume Slack no ar. Tudo isso é abuso fácil e caro. Trate a operação como código: versione, log imutável, maker-checker."
+      "body": "Planilha compartilhada, aprovação por chat, runbook que assume Slack no ar. Tudo isso vira caso de abuso fácil e caro. Trate a operação como código: versione, log imutável, maker-checker."
     }
   ]
 }

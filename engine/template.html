@@ -272,7 +272,7 @@ section.block:first-of-type { border-top: none; }
 /* How it works */
 .steps {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 24px;
   counter-reset: step;
 }
@@ -1231,7 +1231,7 @@ footer .foot-brand {
             <div>
               <h1 class="display">Onde a <span class="hero-word">segurança</span> começa.</h1>
               <p class="hero-lede">
-                Adler é uma plataforma open source para treinar times inteiros &mdash; de produto e engenharia a tesouraria, antifraude e compliance &mdash; a lerem um fluxo com o olhar de quem vai abusá-lo. Você vê o contexto, marca o que suspeita, e só então revelamos os riscos reais: técnicos, de lógica de negócio, operativos, regulatórios &mdash; com o caso de abuso, o impacto e a mitigação.
+                Adler é um utilitário open source de treinamento, pensado para ensinar os casos de abuso de um fluxo sob diferentes perspectivas &mdash; para os times de ideação e desenvolvimento de produtos, processos e fluxos. Cada caso é um fluxo de negócio real: você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais &mdash; técnicos, de lógica de negócio, operacionais e regulatórios &mdash;, cada um com o caso de abuso, o impacto e a mitigação.
               </p>
               <div class="hero-cta">
                 <button class="primary" data-goto-case="frete-adiantado">Começar pelo primeiro caso</button>
@@ -1343,6 +1343,10 @@ footer .foot-brand {
               <h4>Revelação</h4>
               <p>O que era, a categoria de risco, o caso de abuso concreto, o impacto, a mitigação.</p>
             </div>
+            <div class="step">
+              <h4>Placar</h4>
+              <p>O que você pegou, o que passou batido e os padrões para levar ao próximo caso.</p>
+            </div>
           </div>
         </section>
 
@@ -1358,7 +1362,7 @@ footer .foot-brand {
         </section>
       </div>
       <footer class="site-foot wrap">
-        <div><span class="foot-brand">Adler</span> · plataforma open source de treino em security &amp; privacy by design</div>
+        <div><span class="foot-brand">Adler</span> · utilitário open source de treinamento em análise de casos de abuso</div>
         <div>Um projeto <em>Baker Street</em>. Feito por Irregulares.</div>
       </footer>
     </section>
@@ -1449,7 +1453,7 @@ footer .foot-brand {
             <div>
               <span class="eyebrow">Estágio três</span>
               <h3 class="display" style="margin-top: 6px;">O que você lê?</h3>
-              <p>Marque tudo que parecer um risco &mdash; de segurança, privacidade, integridade, abuso. Alguns itens são armadilhas plausíveis: parte do treino é saber por que uma preocupação é ou não é o problema aqui.</p>
+              <p>Marque tudo que parecer um risco &mdash; de segurança, privacidade, fraude ou lógica de negócio. Alguns itens são armadilhas plausíveis: parte do treino é saber por que uma preocupação é ou não é o problema aqui.</p>
             </div>
             <div class="stage-count">03</div>
           </div>
@@ -1525,7 +1529,7 @@ footer .foot-brand {
         <div style="padding-block: 48px 24px;">
           <span class="eyebrow">Open case library</span>
           <h2 class="display" style="margin-top: 10px;">Contribua com um caso.</h2>
-          <p style="color: var(--ink-soft); max-width: 60ch; margin: 14px 0 0;">Um caso é um objeto JSON. Toda a lógica da plataforma lê essa estrutura &mdash; não há código específico por caso. Se você conhece um cenário de negócio interessante, você já sabe escrever um.</p>
+          <p style="color: var(--ink-soft); max-width: 60ch; margin: 14px 0 0;">Um caso é um objeto JSON. Todo o motor lê essa estrutura &mdash; não há código específico por caso. Se você conhece um cenário de negócio interessante, você já sabe escrever um.</p>
         </div>
 
         <div class="contrib-grid">
@@ -1547,7 +1551,7 @@ footer .foot-brand {
               </div>
               <div class="field-def">
                 <code>domain</code><span class="type-tag">enum</span>
-                <p>Setor do caso — fintech, marketplace, saúde, govtech, adtech. Ajuda a categorizar; não muda a lógica.</p>
+                <p>Setor do caso — fintech, marketplace, healthtech, edtech, govtech. Ajuda a categorizar; não muda a lógica.</p>
               </div>
               <div class="field-def">
                 <code>context.narrative</code><span class="type-tag">string[]</span>
@@ -1577,7 +1581,7 @@ footer .foot-brand {
 
             <div style="margin-top: 32px; padding: 20px; border: 1px dashed var(--line); border-radius: 4px;">
               <span class="eyebrow">Como enviar</span>
-              <p style="margin: 8px 0 0; font-size: 14.5px; color: var(--ink-soft);">Enquanto o repositório público não está no ar, envie o JSON como arquivo ou gist. A ideia é abrir um repo em <code>github.com/2T0nnks/baker-street</code> com PRs revisados por lente. Cada caso aprovado ganha uma versão bilíngue (PT / EN) e o autor entra como <em>Irregular</em>.</p>
+              <p style="margin: 8px 0 0; font-size: 14.5px; color: var(--ink-soft);">Abra um pull request em <a href="https://github.com/2T0nnks/baker-street" rel="noopener">github.com/2T0nnks/baker-street</a> com o seu JSON em <code>cases/</code>. O CI valida o schema automaticamente e a revisão editorial olha realismo, distratores e mitigações. O passo a passo está em <code>docs/CONTRIBUTING.md</code>. Quem tem um caso aprovado entra como <em>Irregular</em>.</p>
             </div>
           </div>
         </div>
@@ -1594,7 +1598,7 @@ footer .foot-brand {
         <div class="about-body">
           <div>
             <span class="eyebrow">O nome</span>
-            <p style="margin-top: 12px;">Homenagem a <em>Irene Adler</em>, a única a superar Sherlock Holmes &mdash; porque leu ele antes que ele lesse ela. É esse o olhar que Adler treina: antecipar quem vai abusar do produto antes de haver produto.</p>
+            <p style="margin-top: 12px;">Homenagem a <em>Irene Adler</em>, a única a superar Sherlock Holmes &mdash; porque o leu antes que ele a lesse. É esse o olhar que Adler treina: identificar os casos de abuso de um produto antes de ele existir.</p>
             <p>Repositório: <code>baker-street</code>. Contribuidores: <em>Irregulares</em>.</p>
           </div>
           <div>
@@ -1603,8 +1607,8 @@ footer .foot-brand {
             <p>É especialmente útil para <em>onboarding cruzado</em>: quando times diferentes discutem o mesmo caso &mdash; produto, engenharia, tesouraria, antifraude, compliance &mdash; ficam claros os pontos cegos de cada área.</p>
 
             <span class="eyebrow" style="display: block; margin-top: 24px;">Como usar em treinamentos</span>
-            <p style="margin-top: 12px;">Rode um caso por sessão de 60&ndash;90 minutos. Use o <em>modo grupo</em> disponível em cada caso: cada pessoa lê e marca sua leitura sozinha, e só ao revelar todos comparam. As divergências entre áreas são o material mais rico da discussão &mdash; e a matriz de comparação mostra por categoria (técnico, lógica, operativo, regulatório) quem viu o quê.</p>
-            <p>Para <em>threat modeling</em>, cada risco na revelação já vem com o par <em>abuse case × mitigation</em>. É a estrutura usada em RFCs de fluxos transacionais.</p>
+            <p style="margin-top: 12px;">Rode um caso por sessão de 60&ndash;90 minutos. Cada pessoa percorre o caso no próprio navegador e marca sua leitura sozinha, sem conversar. Depois, abram a revelação juntos e comparem quem marcou o quê, categoria por categoria (técnico, lógica, operativo, regulatório). As divergências entre áreas são o material mais rico da discussão: cada uma enxerga casos de abuso diferentes no mesmo fluxo.</p>
+            <p>Cada risco revelado já vem no formato de <em>threat model</em>: casos de abuso &times; mitigação &mdash; a mesma estrutura usada em RFCs de fluxos transacionais.</p>
           </div>
         </div>
       </div>
