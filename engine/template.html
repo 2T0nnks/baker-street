@@ -1,0 +1,2763 @@
+<title>Adler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- CASES:INJECT -->
+
+
+<style>
+:root {
+  --paper: #EFEBE1;
+  --paper-2: #E7E2D5;
+  --ink: #1A1613;
+  --ink-soft: #3A342C;
+  --muted: #736858;
+  --line: #D3C9B8;
+  --line-soft: #E1D9C9;
+  --trail: #4C5C34;
+  --trail-soft: #8FA168;
+  --rust: #B04A22;
+  --rust-soft: #D9714A;
+  --ochre: #A87C1E;
+  --ochre-soft: #D1A34E;
+  --moss: #6A7E4A;
+  --card: #F5F1E7;
+  --tag: rgba(76, 92, 52, 0.10);
+  --shadow: 0 1px 0 rgba(26,22,19,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141310;
+    --paper-2: #1B1915;
+    --ink: #E7E1D3;
+    --ink-soft: #C4BDA8;
+    --muted: #9A8F7E;
+    --line: #2C2820;
+    --line-soft: #221F19;
+    --trail: #8FA168;
+    --trail-soft: #B7C495;
+    --rust: #D9714A;
+    --rust-soft: #E28E6A;
+    --ochre: #D1A34E;
+    --ochre-soft: #E0BC77;
+    --moss: #A0B482;
+    --card: #1F1C17;
+    --tag: rgba(143, 161, 104, 0.14);
+    --shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #141310;
+  --paper-2: #1B1915;
+  --ink: #E7E1D3;
+  --ink-soft: #C4BDA8;
+  --muted: #9A8F7E;
+  --line: #2C2820;
+  --line-soft: #221F19;
+  --trail: #8FA168;
+  --trail-soft: #B7C495;
+  --rust: #D9714A;
+  --rust-soft: #E28E6A;
+  --ochre: #D1A34E;
+  --ochre-soft: #E0BC77;
+  --moss: #A0B482;
+  --card: #1F1C17;
+  --tag: rgba(143, 161, 104, 0.14);
+  --shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.55;
+  font-feature-settings: "ss01" 1, "cv11" 1;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 28px;
+}
+@media (max-width: 640px) {
+  .wrap { padding-inline: 18px; }
+  body { font-size: 15px; }
+}
+
+/* Type */
+.display {
+  font-family: "Fraunces", ui-serif, Georgia, serif;
+  font-variation-settings: "opsz" 96, "SOFT" 20;
+  font-weight: 420;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  text-wrap: balance;
+  color: var(--ink);
+}
+h1.display { font-size: clamp(44px, 8vw, 92px); margin: 0; }
+h2.display { font-size: clamp(28px, 4.2vw, 44px); margin: 0; font-variation-settings: "opsz" 72, "SOFT" 30; font-weight: 440; }
+h3.display { font-size: clamp(22px, 2.8vw, 30px); margin: 0; font-variation-settings: "opsz" 48, "SOFT" 40; font-weight: 460; }
+
+.mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.num { font-variant-numeric: tabular-nums; }
+
+a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--trail); color: var(--trail); }
+
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+button:hover { border-color: var(--trail); color: var(--trail); }
+button:focus-visible { outline: 2px solid var(--trail); outline-offset: 2px; }
+button.primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+button.primary:hover { background: var(--trail); border-color: var(--trail); color: var(--paper); }
+button.ghost { border-color: transparent; padding: 8px 12px; }
+button.ghost:hover { background: var(--tag); color: var(--ink); }
+button[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* Nav */
+.nav {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: color-mix(in oklab, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-in {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-block: 14px;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.brand:hover { color: var(--ink); }
+.brand-name {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 48, "SOFT" 40;
+  font-weight: 520;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+.brand-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--trail);
+  display: inline-block;
+  transform: translateY(-3px);
+}
+.nav-tabs { display: flex; gap: 4px; margin-left: auto; }
+.nav-tab {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+.nav-tab:hover { color: var(--ink); background: var(--tag); border: none; }
+.nav-tab.on { color: var(--ink); background: var(--tag); }
+.theme-btn {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  .nav-tab { padding: 6px 10px; font-size: 13px; }
+  .theme-btn { display: none; }
+}
+
+/* Views */
+.view { display: none; }
+.view.on { display: block; }
+
+/* Landing hero */
+.hero {
+  padding-block: 72px 56px;
+  position: relative;
+}
+.hero-eyebrow-row {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 28px;
+}
+.hero-eyebrow-row .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: end;
+}
+@media (max-width: 820px) {
+  .hero { padding-block: 48px 36px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 28px; align-items: start; }
+}
+.hero-lede {
+  font-size: clamp(17px, 1.8vw, 20px);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 44ch;
+  margin: 24px 0 0;
+  text-wrap: pretty;
+}
+.hero-word {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-variation-settings: "opsz" 96, "SOFT" 60;
+  font-weight: 380;
+  color: var(--trail);
+}
+
+/* Scent trail illustration */
+.trail-illo {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  max-width: 320px;
+  max-height: 260px;
+  align-self: end;
+  justify-self: end;
+}
+@media (max-width: 820px) {
+  .trail-illo { justify-self: start; max-width: 220px; }
+}
+
+.hero-cta {
+  display: flex; gap: 12px; margin-top: 36px;
+  flex-wrap: wrap;
+}
+
+/* Section framing */
+section.block { padding-block: 56px; border-top: 1px solid var(--line); }
+section.block:first-of-type { border-top: none; }
+.block-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 24px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.block-head-l { display: flex; flex-direction: column; gap: 6px; }
+
+/* How it works */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  counter-reset: step;
+}
+@media (max-width: 820px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+.step {
+  border-top: 1px solid var(--ink);
+  padding-top: 14px;
+  counter-increment: step;
+}
+.step::before {
+  content: "0" counter(step);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  display: block;
+  margin-bottom: 8px;
+}
+.step h4 {
+  margin: 0 0 6px;
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 32, "SOFT" 50;
+  font-weight: 480;
+  font-size: 20px;
+  line-height: 1.15;
+}
+.step p { margin: 0; color: var(--ink-soft); font-size: 14.5px; line-height: 1.5; }
+
+/* Case cards */
+.cases {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.case-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 22px 22px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+  min-height: 260px;
+}
+.case-card:not(.soon) { cursor: pointer; }
+.case-card:not(.soon):hover { border-color: var(--trail); transform: translateY(-1px); }
+.case-card .corner-clip {
+  position: absolute; top: 0; right: 0;
+  width: 22px; height: 22px;
+  background: var(--paper);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(0);
+}
+.case-card .cc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--tag);
+  color: var(--trail);
+  border: 1px solid transparent;
+}
+.chip.rust { background: color-mix(in oklab, var(--rust) 14%, transparent); color: var(--rust); }
+.chip.ochre { background: color-mix(in oklab, var(--ochre) 16%, transparent); color: var(--ochre); }
+.chip.line { background: transparent; border-color: var(--line); color: var(--muted); }
+.case-card h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 48, "SOFT" 40;
+  font-weight: 460;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.case-card p { margin: 0; color: var(--ink-soft); font-size: 14.5px; flex: 1; }
+.cc-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.case-card.soon { opacity: 0.7; }
+.case-card.soon .chip { color: var(--muted); background: transparent; border-color: var(--line); }
+
+/* Case player */
+.case-header {
+  padding-block: 40px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: end;
+}
+@media (max-width: 720px) { .case-header { grid-template-columns: 1fr; } }
+.case-title-block h2 { margin-top: 8px; }
+.case-meta {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.progress-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-block: 8px 28px;
+}
+.progress-cell {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.progress-cell .pc-num { color: var(--muted); font-size: 10px; opacity: 0.8; }
+.progress-cell .pc-label { color: var(--ink-soft); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; }
+.progress-cell.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.progress-cell.on .pc-num,
+.progress-cell.on .pc-label { color: var(--paper); }
+.progress-cell.done { border-color: var(--trail); }
+.progress-cell.done .pc-label { color: var(--trail); }
+@media (max-width: 640px) {
+  .progress-cell { padding: 8px 8px; }
+  .progress-cell .pc-label { font-size: 10px; }
+}
+
+.stage { padding-bottom: 60px; display: none; }
+.stage.on { display: block; }
+
+.stage-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px;
+  gap: 24px;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+  margin-bottom: 28px;
+}
+.stage-head p { margin: 8px 0 0; color: var(--ink-soft); max-width: 62ch; }
+.stage-count {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 20;
+  font-weight: 300;
+  font-size: 72px;
+  line-height: 0.9;
+  color: var(--trail);
+  text-align: right;
+  letter-spacing: -0.03em;
+}
+@media (max-width: 640px) {
+  .stage-head { grid-template-columns: 1fr; }
+  .stage-count { text-align: left; font-size: 56px; }
+}
+
+/* Context stage */
+.ctx-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 40px;
+}
+@media (max-width: 820px) { .ctx-grid { grid-template-columns: 1fr; gap: 24px; } }
+.ctx-body p {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink);
+  margin: 0 0 16px;
+  max-width: 62ch;
+}
+.ctx-body .lede {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 24, "SOFT" 50;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+.ctx-side {
+  border-top: 1px solid var(--ink);
+  padding-top: 16px;
+}
+.ctx-side h5 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+.ctx-side dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+}
+.ctx-side dt {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.ctx-side dd { margin: 0; font-size: 14.5px; }
+.ctx-side + .ctx-side { margin-top: 24px; }
+
+/* Flow diagram — HTML grid of nodes with SVG arrow overlay */
+.flow-wrap {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 4px;
+  padding: 32px 22px 26px;
+  overflow: hidden;
+}
+.flow-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(46px, auto);
+  column-gap: 44px;
+  row-gap: 64px;
+}
+.flow-arrows {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+.flow-node {
+  padding: 10px 12px;
+  border: 1.4px solid var(--ink);
+  border-radius: 3px;
+  background: var(--card);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  position: relative;
+  z-index: 1;
+  line-height: 1.25;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 720px) {
+  .flow-wrap { padding: 24px 14px 20px; }
+  .flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 28px;
+    row-gap: 52px;
+  }
+  .flow-node {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    font-size: 12px;
+    padding: 8px 10px;
+    min-height: 38px;
+  }
+}
+.flow-legend {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.flow-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.flow-legend i {
+  display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+}
+
+/* Analysis stage — checklist */
+.lens-tabs {
+  display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.lens-tab {
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.lens-tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.lens-tab:hover:not(.on) { color: var(--ink); }
+
+.check-list {
+  display: grid;
+  gap: 10px;
+}
+.check-item {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  align-items: start;
+}
+.check-item:hover { border-color: var(--ink-soft); }
+.check-item.on { border-color: var(--trail); background: color-mix(in oklab, var(--trail) 6%, var(--card)); }
+.check-item input {
+  appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--muted);
+  border-radius: 3px;
+  margin: 3px 0 0;
+  display: grid; place-items: center;
+  cursor: pointer;
+  background: transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+.check-item input:checked {
+  background: var(--trail); border-color: var(--trail);
+}
+.check-item input:checked::after {
+  content: "";
+  width: 10px; height: 5px;
+  border-left: 2px solid var(--paper);
+  border-bottom: 2px solid var(--paper);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+.check-item .ci-t {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.check-item .ci-s {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.analysis-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.analysis-actions .count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Reveal stage */
+.reveal-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+@media (max-width: 720px) { .reveal-summary { grid-template-columns: repeat(2, 1fr); } }
+.rs-cell {
+  border-top: 1px solid var(--ink);
+  padding-top: 12px;
+}
+.rs-cell.trail { border-top-color: var(--trail); }
+.rs-cell.rust { border-top-color: var(--rust); }
+.rs-cell.ochre { border-top-color: var(--ochre); }
+.rs-num {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 20;
+  font-weight: 320;
+  font-size: 54px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.rs-lab {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.risk-card {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 4px;
+  padding: 22px 24px;
+  margin-bottom: 14px;
+}
+.risk-card.hit { border-left: 3px solid var(--trail); padding-left: 22px; }
+.risk-card.missed { border-left: 3px solid var(--rust); padding-left: 22px; }
+
+.rc-head {
+  display: flex; align-items: baseline; gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.rc-head h4 {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 48, "SOFT" 40;
+  font-weight: 460;
+  font-size: 22px;
+  line-height: 1.15;
+  margin: 0;
+  flex: 1;
+  letter-spacing: -0.005em;
+}
+.rc-status {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+.rc-status.hit { color: var(--trail); }
+.rc-status.missed { color: var(--rust); }
+.rc-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+.rc-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
+  margin-top: 18px;
+}
+@media (max-width: 720px) { .rc-body { grid-template-columns: 1fr; gap: 18px; } }
+.rc-sec h6 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+.rc-sec p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.rc-sec ul { margin: 0; padding-left: 18px; font-size: 14.5px; line-height: 1.55; }
+.rc-sec ul li { margin-bottom: 4px; }
+.rc-sec code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  background: color-mix(in oklab, var(--ochre) 10%, transparent);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--ink);
+}
+
+.false-positives-block {
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.fp-list { display: grid; gap: 8px; margin-top: 12px; }
+.fp-item {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+}
+.fp-item .fp-t {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.fp-item .fp-s {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.fp-item .fp-mark {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  padding-top: 2px;
+}
+
+/* Scoreboard */
+.score-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 32px;
+  margin-bottom: 32px;
+}
+@media (max-width: 640px) { .score-hero { grid-template-columns: 1fr; } }
+.score-figures {
+  display: flex; gap: 32px; align-items: baseline;
+}
+.score-num {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 10;
+  font-weight: 280;
+  font-size: clamp(80px, 15vw, 140px);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: var(--trail);
+}
+.score-den {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 48;
+  font-size: 32px;
+  color: var(--muted);
+  font-weight: 300;
+}
+.score-verdict {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 24, "SOFT" 50;
+  font-size: 22px;
+  line-height: 1.3;
+  max-width: 32ch;
+  color: var(--ink);
+  font-weight: 420;
+}
+.take-list { display: grid; gap: 16px; }
+.take {
+  padding: 18px 20px;
+  border-left: 3px solid var(--trail);
+  background: var(--card);
+  border-radius: 0 4px 4px 0;
+}
+.take h5 {
+  margin: 0 0 4px;
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 32, "SOFT" 40;
+  font-weight: 460;
+  font-size: 18px;
+}
+.take p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* Contribute view */
+.contrib-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 48px;
+  margin-top: 24px;
+}
+@media (max-width: 820px) { .contrib-grid { grid-template-columns: 1fr; gap: 24px; } }
+.schema-block {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.schema-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-2);
+}
+.schema-head .sh-t {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.schema-body {
+  padding: 18px 20px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-x: auto;
+  white-space: pre;
+  max-height: 620px;
+}
+.schema-body .k { color: var(--rust); }
+.schema-body .s { color: var(--trail); }
+.schema-body .n { color: var(--ochre); }
+.schema-body .c { color: var(--muted); font-style: italic; }
+
+.field-defs { display: grid; gap: 14px; }
+.field-def {
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 12px;
+}
+.field-def:last-child { border-bottom: none; }
+.field-def code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: var(--rust);
+  font-weight: 500;
+}
+.field-def p { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.field-def .type-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-left: 8px;
+}
+
+.about-lede {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 32, "SOFT" 50;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.35;
+  font-weight: 420;
+  max-width: 32ch;
+  text-wrap: balance;
+}
+.about-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 48px;
+  margin-top: 32px;
+}
+@media (max-width: 820px) { .about-body { grid-template-columns: 1fr; gap: 24px; } }
+.about-body p {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--ink);
+  max-width: 62ch;
+  margin: 0 0 14px;
+}
+.about-body p em {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  color: var(--trail);
+}
+
+footer.site-foot {
+  border-top: 1px solid var(--line);
+  padding-block: 32px 40px;
+  color: var(--muted);
+  font-size: 13px;
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+  margin-top: 40px;
+}
+footer .foot-brand {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.nav-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 28px; }
+
+/* Utility */
+.divider { height: 1px; background: var(--line); margin-block: 24px; }
+[hidden] { display: none !important; }
+
+/* ============ Group mode ============ */
+.group-banner {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 12px 16px 12px 18px;
+  background: var(--card);
+  border: 1px solid var(--trail);
+  border-left-width: 3px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.gb-left { display: flex; flex-direction: column; gap: 1px; }
+.gb-code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  letter-spacing: 0.10em;
+  color: var(--trail);
+  font-weight: 500;
+}
+.gb-mid { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 200px; align-items: center; }
+.gb-participant {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--tag);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.gb-participant.me { border: 1px dashed var(--trail); background: transparent; }
+.gb-participant.submitted {
+  background: color-mix(in oklab, var(--trail) 18%, var(--card));
+  color: var(--trail);
+}
+.gb-participant .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.gb-participant.submitted .dot { background: var(--trail); }
+.gb-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .group-banner { flex-direction: column; align-items: flex-start; }
+}
+
+/* Dialog / modal */
+.dialog-overlay {
+  position: fixed; inset: 0;
+  background: color-mix(in oklab, var(--ink) 55%, transparent);
+  display: grid; place-items: center;
+  z-index: 60;
+  padding: 20px;
+}
+.dialog-body {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 32px 28px 24px;
+  border-radius: 6px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+}
+.dialog-body h3.display { font-size: 24px !important; margin-bottom: 6px !important; }
+.dialog-body p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.5; margin: 0 0 20px; }
+.dialog-forms { display: grid; gap: 20px; margin-top: 8px; }
+.dialog-form { display: flex; flex-direction: column; gap: 8px; padding-top: 18px; border-top: 1px dashed var(--line); }
+.dialog-form:first-child { border-top: none; padding-top: 0; }
+.dialog-form label { display: block; }
+.dialog-form input {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14.5px;
+  width: 100%;
+}
+.dialog-form input:focus { outline: 2px solid var(--trail); outline-offset: 1px; border-color: var(--trail); }
+.dialog-close { margin-top: 20px; }
+
+/* Compare matrix */
+.matrix-wrap {
+  overflow-x: auto;
+  margin-bottom: 32px;
+  padding: 18px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.compare-matrix { width: 100%; border-collapse: collapse; font-size: 13px; }
+.compare-matrix th, .compare-matrix td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: center;
+  vertical-align: middle;
+}
+.compare-matrix th {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  min-width: 28px;
+  max-width: 32px;
+  padding: 8px 4px 12px;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--line);
+}
+.compare-matrix th .th-label { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); text-align: left; max-height: 130px; overflow: hidden; text-overflow: ellipsis; }
+.compare-matrix th.name-th { writing-mode: horizontal-tb; text-align: left; padding-left: 4px; min-width: 140px; }
+.compare-matrix th.name-th .th-label { writing-mode: horizontal-tb; transform: none; }
+.compare-matrix th.total-th { writing-mode: horizontal-tb; text-align: right; min-width: 60px; }
+.compare-matrix th.total-th .th-label { writing-mode: horizontal-tb; transform: none; }
+.compare-matrix td.name-cell {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink);
+  padding-left: 4px;
+}
+.compare-matrix td.total-cell {
+  text-align: right;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  padding-right: 4px;
+}
+.compare-matrix th.col-real { color: var(--trail); }
+.compare-matrix td.col-real { background: color-mix(in oklab, var(--trail) 7%, transparent); }
+.compare-matrix .cell-hit { color: var(--trail); font-weight: 600; font-size: 15px; }
+.compare-matrix .cell-fp { color: var(--ochre); font-weight: 500; font-size: 14px; }
+.compare-matrix .cell-miss { color: var(--rust); opacity: 0.55; }
+.compare-matrix .cell-empty { color: var(--line); }
+.compare-matrix .footer-row td {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  border-bottom: none;
+  padding-top: 10px;
+}
+.compare-matrix .footer-row td.name-cell { color: var(--ink-soft); font-family: inherit; font-size: 12.5px; }
+
+.matrix-legend {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.matrix-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.matrix-legend b { font-weight: 600; }
+
+.group-mode-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.group-mode-btn:hover { color: var(--trail); border-color: var(--trail); }
+.group-mode-btn .gm-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted);
+}
+.group-mode-btn.on { color: var(--trail); border-color: var(--trail); background: var(--tag); }
+.group-mode-btn.on .gm-dot { background: var(--trail); }
+
+.share-inline {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 14px;
+  background: var(--paper-2);
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  margin-top: 14px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-inline .si-url { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+.hero-cta button.secondary-alt {
+  border: 1px solid var(--trail);
+  color: var(--trail);
+}
+.hero-cta button.secondary-alt:hover {
+  background: var(--tag);
+}
+
+/* ============ Hero illustration animations ============ */
+/* SVG elements with a transform attribute (like translate for nodes) cannot
+   take CSS transform in a portable way, so animation here is opacity + stroke-dashoffset only. */
+.trail-illo .illo-editorial { opacity: 0; animation: illoFade 0.6s ease-out 0.15s forwards; }
+.trail-illo .illo-node { opacity: 0; animation: illoFade 0.55s ease-out forwards; }
+.trail-illo .illo-node.n1 { animation-delay: 0.30s; }
+.trail-illo .illo-node.n2 { animation-delay: 0.55s; }
+.trail-illo .illo-node.n3 { animation-delay: 0.80s; }
+.trail-illo .illo-node.n4 { animation-delay: 1.05s; }
+
+.trail-illo .illo-edge {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: illoDraw 0.55s ease-out forwards;
+}
+.trail-illo .illo-edge.e1 { animation-delay: 0.60s; }
+.trail-illo .illo-edge.e2 { animation-delay: 0.90s; }
+.trail-illo .illo-edge.e3 { animation-delay: 1.20s; }
+
+.trail-illo .illo-mark {
+  stroke-dasharray: 460;
+  stroke-dashoffset: 460;
+  animation: illoDraw 1.0s cubic-bezier(0.4, 0.0, 0.2, 1) 1.55s forwards;
+}
+.trail-illo .illo-mark-wobble {
+  stroke-dasharray: 150;
+  stroke-dashoffset: 150;
+  opacity: 0;
+  animation: illoDrawWobble 0.55s ease-out 2.35s forwards;
+}
+.trail-illo .illo-mark-wrap {
+  animation: markPulse 4.8s ease-in-out 3.5s infinite;
+}
+.trail-illo .illo-annot-arrow {
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  opacity: 0;
+  animation: illoDrawAnnot 0.55s ease-out 2.55s forwards;
+}
+.trail-illo .illo-annot-text {
+  opacity: 0;
+  animation: illoFadeText 0.45s ease-out 2.85s forwards;
+}
+
+@keyframes illoFade { to { opacity: 1; } }
+@keyframes illoFadeText { to { opacity: 0.92; } }
+@keyframes illoDraw { to { stroke-dashoffset: 0; } }
+@keyframes illoDrawWobble { to { stroke-dashoffset: 0; opacity: 0.5; } }
+@keyframes illoDrawAnnot { to { stroke-dashoffset: 0; opacity: 0.78; } }
+@keyframes markPulse {
+  0%, 100% { opacity: 0.92; }
+  50% { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .trail-illo .illo-editorial,
+  .trail-illo .illo-node,
+  .trail-illo .illo-annot-text { opacity: 1 !important; }
+  .trail-illo .illo-annot-text { opacity: 0.92 !important; }
+  .trail-illo .illo-edge,
+  .trail-illo .illo-mark { stroke-dashoffset: 0 !important; }
+  .trail-illo .illo-mark-wobble { stroke-dashoffset: 0 !important; opacity: 0.5 !important; }
+  .trail-illo .illo-annot-arrow { stroke-dashoffset: 0 !important; opacity: 0.78 !important; }
+}
+</style>
+
+<div class="site">
+  <header class="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="#" data-nav="landing">
+        <span class="brand-name">Adler</span>
+        <span class="brand-dot" aria-hidden="true"></span>
+      </a>
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab on" data-nav="landing">Início</button>
+        <button class="nav-tab" data-nav="cases">Casos</button>
+        <button class="nav-tab" data-nav="contribute">Contribuir</button>
+        <button class="nav-tab" data-nav="about">Sobre</button>
+      </nav>
+      <button class="theme-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+        <span id="themeLabel">Claro</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ LANDING ============ -->
+    <section class="view on" id="view-landing">
+      <div class="wrap">
+        <div class="hero">
+          <div class="hero-eyebrow-row">
+            <span class="eyebrow">Open source · v0.1</span>
+            <span class="rule"></span>
+            <span class="eyebrow">Security &amp; Privacy by Design</span>
+          </div>
+          <div class="hero-grid">
+            <div>
+              <h1 class="display">Onde a <span class="hero-word">segurança</span> começa.</h1>
+              <p class="hero-lede">
+                Adler é uma plataforma open source para treinar times inteiros &mdash; de produto e engenharia a tesouraria, antifraude e compliance &mdash; a lerem um fluxo com o olhar de quem vai abusá-lo. Você vê o contexto, marca o que suspeita, e só então revelamos os riscos reais: técnicos, de lógica de negócio, operativos, regulatórios &mdash; com o caso de abuso, o impacto e a mitigação.
+              </p>
+              <div class="hero-cta">
+                <button class="primary" data-goto-case="frete-adiantado">Começar pelo primeiro caso</button>
+                <button data-nav="cases">Ver casos disponíveis</button>
+              </div>
+            </div>
+            <svg class="trail-illo" viewBox="0 0 400 320" aria-hidden="true">
+              <defs>
+                <pattern id="grain" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r="0.5" fill="var(--line)" opacity="0.4"/>
+                </pattern>
+                <marker id="arrowNeutral" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 Z" fill="var(--muted)"/>
+                </marker>
+                <marker id="arrowRust" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 Z" fill="var(--rust)"/>
+                </marker>
+                <filter id="nodeShadow" x="-25%" y="-25%" width="150%" height="150%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="1.2"/>
+                  <feOffset dx="0" dy="1.4" result="shadow"/>
+                  <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                <filter id="inkBleed" x="-8%" y="-8%" width="116%" height="116%">
+                  <feGaussianBlur stdDeviation="0.5"/>
+                </filter>
+              </defs>
+              <rect width="400" height="320" fill="url(#grain)" opacity="0.5"/>
+
+              <!-- Editorial marker -->
+              <g class="illo-editorial">
+                <line x1="30" y1="42" x2="60" y2="42" stroke="var(--muted)" stroke-width="1" opacity="0.4"/>
+                <text x="30" y="34" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--muted)" letter-spacing="1.4">CASE 001 · FLUXO</text>
+              </g>
+
+              <!-- Flow edges (drawn under nodes) -->
+              <g fill="none">
+                <path class="illo-edge e1" d="M 102 236 L 150 178" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#arrowNeutral)"/>
+                <path class="illo-edge e2" d="M 210 160 L 285 92" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#arrowNeutral)"/>
+                <path class="illo-edge e3" d="M 222 182 L 280 196" stroke="var(--muted)" stroke-width="1.3" marker-end="url(#arrowNeutral)"/>
+              </g>
+
+              <!-- Nodes -->
+              <g font-family="IBM Plex Sans, sans-serif" font-size="13" font-weight="500" filter="url(#nodeShadow)">
+                <g class="illo-node n1" transform="translate(30, 220)">
+                  <rect width="72" height="32" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"/>
+                  <text x="36" y="21" text-anchor="middle" fill="var(--ink)">app</text>
+                </g>
+                <g class="illo-node n2" transform="translate(150, 160)">
+                  <rect width="72" height="32" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"/>
+                  <text x="36" y="21" text-anchor="middle" fill="var(--ink)">api</text>
+                </g>
+                <g class="illo-node n3" transform="translate(280, 60)">
+                  <rect width="72" height="32" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"/>
+                  <text x="36" y="21" text-anchor="middle" fill="var(--ink)">db</text>
+                </g>
+                <g class="illo-node n4 marked" transform="translate(280, 180)">
+                  <rect width="72" height="32" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"/>
+                  <text x="36" y="21" text-anchor="middle" fill="var(--ink)">hook</text>
+                </g>
+              </g>
+
+              <!-- Hand-drawn red circle around "api" -->
+              <g class="illo-mark-wrap" stroke="var(--rust)" fill="none" stroke-linecap="round" filter="url(#inkBleed)">
+                <path class="illo-mark" d="M 128 178
+                         C 130 160, 158 152, 186 154
+                         C 216 156, 240 164, 242 180
+                         C 244 196, 216 202, 186 202
+                         C 156 202, 124 196, 122 184
+                         C 121 180, 124 178, 128 178 Z"
+                      stroke-width="2"/>
+                <path class="illo-mark-wobble" d="M 136 170 C 162 160, 216 160, 236 168"
+                      stroke-width="1"/>
+              </g>
+
+              <!-- Handwritten annotation "?" pointing at the circle -->
+              <path class="illo-annot-arrow" d="M 88 262 Q 110 232 138 205"
+                    stroke="var(--rust)" stroke-width="1.3" fill="none"
+                    marker-end="url(#arrowRust)"/>
+              <text class="illo-annot-text" x="46" y="298" font-family="Fraunces, serif" font-style="italic" font-size="56" font-weight="500" fill="var(--rust)">?</text>
+            </svg>
+          </div>
+        </div>
+
+        <section class="block">
+          <div class="block-head">
+            <div class="block-head-l">
+              <span class="eyebrow">Como funciona</span>
+              <h2 class="display">Um caso, cinco estágios.</h2>
+            </div>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <h4>Contexto</h4>
+              <p>Um negócio real com atores, dados e fluxos. Nada de "corp fictícia com um endpoint".</p>
+            </div>
+            <div class="step">
+              <h4>Fluxo</h4>
+              <p>Um diagrama do fluxo transacional. Onde os dados nascem, atravessam, descansam.</p>
+            </div>
+            <div class="step">
+              <h4>Leitura</h4>
+              <p>Você marca tudo que suspeita — técnico, lógica, operativo, regulatório. Sem gabarito à mostra.</p>
+            </div>
+            <div class="step">
+              <h4>Revelação</h4>
+              <p>O que era, a categoria de risco, o caso de abuso concreto, o impacto, a mitigação.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="block-head">
+            <div class="block-head-l">
+              <span class="eyebrow">Casos disponíveis</span>
+              <h2 class="display">Comece por onde faz sentido.</h2>
+            </div>
+            <button data-nav="contribute" class="ghost">Contribuir com um caso →</button>
+          </div>
+          <div class="cases" id="casesGrid"></div>
+        </section>
+      </div>
+      <footer class="site-foot wrap">
+        <div><span class="foot-brand">Adler</span> · plataforma open source de treino em security &amp; privacy by design</div>
+        <div>Um projeto <em>Baker Street</em>. Feito por Irregulares.</div>
+      </footer>
+    </section>
+
+    <!-- ============ CASES GRID ============ -->
+    <section class="view" id="view-cases">
+      <div class="wrap">
+        <div style="padding-block: 48px 32px;">
+          <span class="eyebrow">Catálogo</span>
+          <h2 class="display" style="margin-top: 10px;">Casos disponíveis</h2>
+          <p style="color: var(--ink-soft); max-width: 60ch; margin: 14px 0 0;">Escolha um caso. Os estágios são independentes: você pode voltar, mudar de lente e refazer a análise a qualquer momento.</p>
+        </div>
+        <div class="cases" id="casesGrid2"></div>
+      </div>
+    </section>
+
+    <!-- ============ CASE PLAYER ============ -->
+    <section class="view" id="view-case">
+      <div class="wrap">
+        <div class="case-header">
+          <div class="case-title-block">
+            <div class="case-meta" id="caseMeta"></div>
+            <h2 class="display" id="caseTitle"></h2>
+          </div>
+          <button class="ghost" data-nav="landing">← Voltar</button>
+        </div>
+
+        <div class="progress-strip" id="progressStrip" role="tablist"></div>
+
+        <!-- Stage 1: Context -->
+        <div class="stage on" data-stage="0">
+          <div class="stage-head">
+            <div>
+              <span class="eyebrow">Estágio um</span>
+              <h3 class="display" style="margin-top: 6px;">Contexto</h3>
+              <p>Leia como se estivesse chegando ao squad amanhã. Não é hora de julgar &mdash; é hora de entender o que a empresa vende, para quem e como o dinheiro se move.</p>
+            </div>
+            <div class="stage-count">01</div>
+          </div>
+          <div class="ctx-grid">
+            <div class="ctx-body" id="ctxBody"></div>
+            <div>
+              <div class="ctx-side" id="ctxActors">
+                <h5>Atores</h5>
+                <dl id="ctxActorsList"></dl>
+              </div>
+              <div class="ctx-side" id="ctxData">
+                <h5>Dados sensíveis em jogo</h5>
+                <dl id="ctxDataList"></dl>
+              </div>
+              <div class="ctx-side" id="ctxScale">
+                <h5>Escala e ritmo</h5>
+                <dl id="ctxScaleList"></dl>
+              </div>
+            </div>
+          </div>
+          <div class="nav-actions">
+            <button class="primary" data-next>Avançar para o fluxo →</button>
+          </div>
+        </div>
+
+        <!-- Stage 2: Flow -->
+        <div class="stage" data-stage="1">
+          <div class="stage-head">
+            <div>
+              <span class="eyebrow">Estágio dois</span>
+              <h3 class="display" style="margin-top: 6px;">Fluxo transacional</h3>
+              <p>Onde os dados nascem, por onde passam, onde ficam parados. Fronteiras de confiança em destaque &mdash; é ali que os problemas geralmente moram.</p>
+            </div>
+            <div class="stage-count">02</div>
+          </div>
+          <div class="flow-wrap" id="flowWrap"></div>
+          <div class="flow-legend">
+            <span><i style="background: var(--trail);"></i> Sistema interno</span>
+            <span><i style="background: var(--ochre);"></i> Fronteira de confiança</span>
+            <span><i style="background: var(--rust);"></i> Terceiro / externo</span>
+            <span><i style="background: transparent; border: 1px dashed var(--muted);"></i> Fluxo assíncrono</span>
+          </div>
+          <div class="nav-actions">
+            <button data-prev>← Voltar</button>
+            <button class="primary" data-next>Ir para a leitura →</button>
+          </div>
+        </div>
+
+        <!-- Stage 3: Analysis -->
+        <div class="stage" data-stage="2">
+          <div class="stage-head">
+            <div>
+              <span class="eyebrow">Estágio três</span>
+              <h3 class="display" style="margin-top: 6px;">O que você lê?</h3>
+              <p>Marque tudo que parecer um risco &mdash; de segurança, privacidade, integridade, abuso. Alguns itens são armadilhas plausíveis: parte do treino é saber por que uma preocupação é ou não é o problema aqui.</p>
+            </div>
+            <div class="stage-count">03</div>
+          </div>
+          <div class="lens-tabs" id="catTabs"></div>
+          <div class="check-list" id="checkList"></div>
+          <div class="analysis-actions">
+            <button data-prev>← Voltar</button>
+            <button class="primary" id="revealBtn" data-next>Revelar leitura →</button>
+            <span class="count" id="checkCount">0 marcados</span>
+          </div>
+        </div>
+
+        <!-- Stage 4: Reveal -->
+        <div class="stage" data-stage="3">
+          <div class="stage-head">
+            <div>
+              <span class="eyebrow">Estágio quatro</span>
+              <h3 class="display" style="margin-top: 6px;">Revelação</h3>
+              <p>Os riscos reais &mdash; o que se vê no contexto, os casos de abuso concretos, o impacto e como se resolve. Cada risco carrega a lente que devia tê-lo pegado primeiro.</p>
+            </div>
+            <div class="stage-count">04</div>
+          </div>
+          <div class="reveal-summary" id="revealSummary"></div>
+          <div id="riskList"></div>
+          <div class="false-positives-block" id="fpBlock" hidden>
+            <span class="eyebrow">Armadilhas plausíveis</span>
+            <h4 class="display" style="margin-top: 8px; font-size: 22px;">Você marcou algumas que valem discutir</h4>
+            <div class="fp-list" id="fpList"></div>
+          </div>
+          <div class="nav-actions">
+            <button data-prev>← Voltar à leitura</button>
+            <button class="primary" data-next>Ver placar →</button>
+          </div>
+        </div>
+
+        <!-- Stage 5: Scoreboard -->
+        <div class="stage" data-stage="4">
+          <div class="stage-head">
+            <div>
+              <span class="eyebrow">Estágio cinco</span>
+              <h3 class="display" style="margin-top: 6px;">Placar &amp; reflexão</h3>
+              <p>Cabe menos ao número e mais ao padrão: onde sua leitura pegou o movimento, onde passou batido, e o que levar para o próximo caso.</p>
+            </div>
+            <div class="stage-count">05</div>
+          </div>
+          <div class="score-hero">
+            <div>
+              <div class="score-figures">
+                <span class="score-num num" id="scoreNum">0</span>
+                <span class="score-den num" id="scoreDen">/ 0</span>
+              </div>
+              <div class="eyebrow" style="margin-top: 8px;">Riscos identificados corretamente</div>
+            </div>
+            <div class="score-verdict" id="scoreVerdict"></div>
+          </div>
+          <div>
+            <span class="eyebrow">Leva pra próxima</span>
+            <h4 class="display" style="margin-top: 8px; font-size: 24px; margin-bottom: 16px;">Padrões que se repetem</h4>
+            <div class="take-list" id="takeList"></div>
+          </div>
+          <div class="nav-actions">
+            <button data-prev>← Ver revelação</button>
+            <button data-nav="cases">Ver outros casos →</button>
+            <button class="ghost" id="resetCase">Recomeçar caso</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTRIBUTE ============ -->
+    <section class="view" id="view-contribute">
+      <div class="wrap">
+        <div style="padding-block: 48px 24px;">
+          <span class="eyebrow">Open case library</span>
+          <h2 class="display" style="margin-top: 10px;">Contribua com um caso.</h2>
+          <p style="color: var(--ink-soft); max-width: 60ch; margin: 14px 0 0;">Um caso é um objeto JSON. Toda a lógica da plataforma lê essa estrutura &mdash; não há código específico por caso. Se você conhece um cenário de negócio interessante, você já sabe escrever um.</p>
+        </div>
+
+        <div class="contrib-grid">
+          <div class="schema-block">
+            <div class="schema-head">
+              <span class="sh-t">case.template.json</span>
+              <button class="ghost" id="copyTemplate" style="font-size: 12px; padding: 4px 10px;">Copiar</button>
+            </div>
+            <pre class="schema-body" id="schemaPre"></pre>
+          </div>
+
+          <div>
+            <span class="eyebrow">Campos</span>
+            <h3 class="display" style="margin-top: 8px; margin-bottom: 20px; font-size: 26px;">O que cada parte carrega</h3>
+            <div class="field-defs">
+              <div class="field-def">
+                <code>slug</code><span class="type-tag">string</span>
+                <p>Identificador URL-safe. Aparece na navegação e no progresso salvo.</p>
+              </div>
+              <div class="field-def">
+                <code>domain</code><span class="type-tag">enum</span>
+                <p>Setor do caso — fintech, marketplace, saúde, govtech, adtech. Ajuda a categorizar; não muda a lógica.</p>
+              </div>
+              <div class="field-def">
+                <code>context.narrative</code><span class="type-tag">string[]</span>
+                <p>Parágrafos do briefing. O primeiro parágrafo é destacado como lede.</p>
+              </div>
+              <div class="field-def">
+                <code>context.actors / data / scale</code><span class="type-tag">pair[]</span>
+                <p>Listas de pares chave-valor para a barra lateral. Curtas, específicas, escritas com os termos que o negócio realmente usa.</p>
+              </div>
+              <div class="field-def">
+                <code>flow.nodes / edges</code><span class="type-tag">graph</span>
+                <p>Nós e arestas do diagrama. Cada nó tem <code>kind</code> (interno, fronteira, terceiro) que colore o quadro.</p>
+              </div>
+              <div class="field-def">
+                <code>candidates</code><span class="type-tag">item[]</span>
+                <p>Todas as opções que aparecem na leitura. Cada uma marca <code>category</code> (técnico, lógica, operativo, processo, regulatório, privacidade, fraude) e <code>truth</code> (real ou distrator).</p>
+              </div>
+              <div class="field-def">
+                <code>risks</code><span class="type-tag">item[]</span>
+                <p>Só os itens reais. Cada risco tem: título, <code>category</code>, <code>severity</code>, <code>signal</code> (pistas no contexto), <code>abuse</code> (casos de abuso), <code>impact</code>, <code>mitigation</code>.</p>
+              </div>
+              <div class="field-def">
+                <code>takeaways</code><span class="type-tag">item[]</span>
+                <p>Três a cinco padrões generalizáveis. Não é resumo &mdash; é o que a pessoa carrega para o próximo caso.</p>
+              </div>
+            </div>
+
+            <div style="margin-top: 32px; padding: 20px; border: 1px dashed var(--line); border-radius: 4px;">
+              <span class="eyebrow">Como enviar</span>
+              <p style="margin: 8px 0 0; font-size: 14.5px; color: var(--ink-soft);">Enquanto o repositório público não está no ar, envie o JSON como arquivo ou gist. A ideia é abrir um repo em <code>github.com/2T0nnks/baker-street</code> com PRs revisados por lente. Cada caso aprovado ganha uma versão bilíngue (PT / EN) e o autor entra como <em>Irregular</em>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="view" id="view-about">
+      <div class="wrap">
+        <div style="padding-block: 64px 32px;">
+          <span class="eyebrow">Sobre</span>
+          <p class="about-lede" style="margin-top: 20px;">Adler treina o olhar que só se afia contra um adversário.</p>
+        </div>
+        <div class="about-body">
+          <div>
+            <span class="eyebrow">O nome</span>
+            <p style="margin-top: 12px;">Homenagem a <em>Irene Adler</em>, a única a superar Sherlock Holmes &mdash; porque leu ele antes que ele lesse ela. É esse o olhar que Adler treina: antecipar quem vai abusar do produto antes de haver produto.</p>
+            <p>Repositório: <code>baker-street</code>. Contribuidores: <em>Irregulares</em>.</p>
+          </div>
+          <div>
+            <span class="eyebrow">Por que existe</span>
+            <p style="margin-top: 12px;">Frameworks descrevem princípios: minimização de dados, menor privilégio, defesa em profundidade. O que raramente treinam é o momento clínico &mdash; o funcionário júnior lendo uma RFC e percebendo que o campo <code>ownerId</code> nunca aparece no filtro do endpoint. Adler é para esse momento.</p>
+            <p>É especialmente útil para <em>onboarding cruzado</em>: quando times diferentes discutem o mesmo caso &mdash; produto, engenharia, tesouraria, antifraude, compliance &mdash; ficam claros os pontos cegos de cada área.</p>
+
+            <span class="eyebrow" style="display: block; margin-top: 24px;">Como usar em treinamentos</span>
+            <p style="margin-top: 12px;">Rode um caso por sessão de 60&ndash;90 minutos. Use o <em>modo grupo</em> disponível em cada caso: cada pessoa lê e marca sua leitura sozinha, e só ao revelar todos comparam. As divergências entre áreas são o material mais rico da discussão &mdash; e a matriz de comparação mostra por categoria (técnico, lógica, operativo, regulatório) quem viu o quê.</p>
+            <p>Para <em>threat modeling</em>, cada risco na revelação já vem com o par <em>abuse case × mitigation</em>. É a estrutura usada em RFCs de fluxos transacionais.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ============ DATA ============
+  // ============ DATA ============
+  // Cases are injected at build time as <script type="application/json" data-case="slug">
+  // blocks in the <head>. The loader reads them all and sorts: open first, then soon,
+  // then by title. Adding a new case = adding a new JSON file in cases/; no code changes.
+  function loadCases() {
+    const scripts = document.querySelectorAll('script[type="application/json"][data-case]');
+    const cases = [];
+    scripts.forEach(el => {
+      try {
+        const data = JSON.parse(el.textContent || "{}");
+        if (data && data.slug) cases.push(data);
+      } catch (e) {
+        // Silently skip malformed cases — the build validates before shipping,
+        // but this keeps the app resilient if something slips through.
+        console.warn("Adler: could not parse case", el.dataset.case, e);
+      }
+    });
+    const statusRank = { open: 0, soon: 1, draft: 2 };
+    return cases.sort((a, b) => {
+      const sa = statusRank[a.status] ?? 3;
+      const sb = statusRank[b.status] ?? 3;
+      if (sa !== sb) return sa - sb;
+      return (a.title || "").localeCompare(b.title || "");
+    });
+  }
+  const CASES = loadCases();
+
+  // ============ JSON schema for contribute view ============
+  const SCHEMA_TEMPLATE = {
+    "slug": "novo-caso",
+    "domain": "fintech",
+    "status": "open",
+    "title": "Título curto do caso",
+    "subtitle": "Uma frase que descreve o negócio",
+    "duration": "~45 min",
+    "difficulty": "Intermediário",
+    "tags": ["Setor", "Regulação", "Padrão"],
+    "context": {
+      "narrative": [
+        "Primeiro parágrafo — o negócio em uma imagem clara.",
+        "Segundo — o produto ou fluxo em foco.",
+        "Terceiro — o time e as fronteiras humanas.",
+        "Quarto — terceiros e integrações."
+      ],
+      "actors": [["Nome", "papel curto"]],
+      "data": [["Dado", "onde/quando"]],
+      "scale": [["Métrica", "contexto"]]
+    },
+    "flow": {
+      "nodes": [
+        { "id": "app", "label": "App", "kind": "internal", "x": 60, "y": 40 }
+      ],
+      "edges": [
+        { "from": "app", "to": "api", "label": "descrição", "boundary": false, "dashed": false }
+      ]
+    },
+    "candidates": [
+      {
+        "id": "identificador",
+        "truth": true,
+        "category": "técnico",
+        "title": "Como aparece na tela de leitura",
+        "sub": "Uma linha adicional de pista"
+      }
+    ],
+    "risks": [
+      {
+        "id": "identificador",
+        "category": "técnico",
+        "severity": "crítico",
+        "title": "Título do risco real",
+        "signal": "Pistas no contexto que apontavam para isso",
+        "abuse": ["Cenário concreto 1", "Cenário concreto 2"],
+        "impact": "O que quebra — negócio, regulatório, operativo, financeiro",
+        "mitigation": ["Ação 1", "Ação 2", "Ação 3"]
+      }
+    ],
+    "takeaways": [
+      { "title": "Padrão generalizável", "body": "Como aplicar em outros contextos" }
+    ]
+  };
+
+  // ============ STATE ============
+  const STORAGE_KEY = "adler_progress_v1";
+  const THEME_KEY = "adler_theme";
+
+  let state = {
+    view: "landing",
+    caseSlug: null,
+    stage: 0,
+    checks: {}   // { slug: Set<id> }
+  };
+
+  function loadPersist() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          for (const k of Object.keys(parsed.checks || {})) {
+            parsed.checks[k] = new Set(parsed.checks[k] || []);
+          }
+          Object.assign(state, parsed);
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+  function savePersist() {
+    try {
+      const serial = { ...state };
+      serial.checks = {};
+      for (const k of Object.keys(state.checks || {})) {
+        serial.checks[k] = Array.from(state.checks[k]);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serial));
+    } catch (e) { /* ignore */ }
+  }
+
+  // ============ THEME ============
+  function loadTheme() {
+    try {
+      const t = localStorage.getItem(THEME_KEY);
+      if (t === "light" || t === "dark") {
+        document.documentElement.setAttribute("data-theme", t);
+      }
+    } catch (e) { /* ignore */ }
+    updateThemeLabel();
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const mq = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const currentIsDark = cur === "dark" || (!cur && mq);
+    const next = currentIsDark ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    updateThemeLabel();
+  }
+  function updateThemeLabel() {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const mq = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = cur === "dark" || (!cur && mq);
+    const label = document.getElementById("themeLabel");
+    if (label) label.textContent = isDark ? "Escuro" : "Claro";
+  }
+
+  // ============ NAV ============
+  function setView(name) {
+    state.view = name;
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "view-" + name));
+    document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("on", t.dataset.nav === name || (name === "case" && t.dataset.nav === "cases")));
+    window.scrollTo({ top: 0, behavior: "instant" });
+    // Clear URL params when leaving case view (except case tab)
+    if (name !== "case") {
+      updateUrl(null, null);
+    }
+    savePersist();
+  }
+
+  // ============ RENDER: LANDING / CASES ============
+  function renderCaseCard(c) {
+    const el = document.createElement("div");
+    el.className = "case-card" + (c.status === "soon" ? " soon" : "");
+    if (c.status !== "soon") el.setAttribute("data-goto-case", c.slug);
+
+    const tags = (c.tags || []).map(t => `<span class="chip line">${t}</span>`).join("");
+    el.innerHTML = `
+      <span class="corner-clip"></span>
+      <div class="cc-tags">
+        ${c.status === "soon" ? '<span class="chip">Em breve</span>' : '<span class="chip">Disponível</span>'}
+        ${tags}
+      </div>
+      <h3>${c.title}</h3>
+      <p>${c.subtitle}</p>
+      <div class="cc-foot">
+        <span>${c.difficulty || ""}</span>
+        <span>${c.status === "soon" ? "" : (c.duration || "")}</span>
+      </div>
+    `;
+    if (c.status !== "soon") {
+      el.addEventListener("click", () => openCase(c.slug));
+    }
+    return el;
+  }
+  function renderCases() {
+    const g1 = document.getElementById("casesGrid");
+    const g2 = document.getElementById("casesGrid2");
+    if (g1) { g1.innerHTML = ""; CASES.forEach(c => g1.appendChild(renderCaseCard(c))); }
+    if (g2) { g2.innerHTML = ""; CASES.forEach(c => g2.appendChild(renderCaseCard(c))); }
+  }
+
+  // ============ CASE PLAYER ============
+  const STAGE_LABELS = ["Contexto", "Fluxo", "Leitura", "Revelação", "Placar"];
+
+  function openCase(slug) {
+    const c = CASES.find(x => x.slug === slug);
+    if (!c || c.status === "soon") return;
+    state.caseSlug = slug;
+    if (!state.checks[slug]) state.checks[slug] = new Set();
+    state.stage = 0;
+    renderCase(c);
+    setView("case");
+    updateUrl(slug, group.active ? group.code : null);
+  }
+
+  function renderCase(c) {
+    // Meta + title
+    document.getElementById("caseTitle").textContent = c.title;
+    const meta = document.getElementById("caseMeta");
+    meta.innerHTML = "";
+    (c.tags || []).forEach(t => {
+      const s = document.createElement("span");
+      s.className = "chip line";
+      s.textContent = t;
+      meta.appendChild(s);
+    });
+
+    // Progress strip
+    const ps = document.getElementById("progressStrip");
+    ps.innerHTML = "";
+    STAGE_LABELS.forEach((label, i) => {
+      const b = document.createElement("button");
+      b.className = "progress-cell" + (i === state.stage ? " on" : "");
+      b.innerHTML = `<span class="pc-num">0${i + 1}</span><span class="pc-label">${label}</span>`;
+      b.addEventListener("click", () => setStage(i));
+      ps.appendChild(b);
+    });
+
+    // Context
+    const ctxBody = document.getElementById("ctxBody");
+    ctxBody.innerHTML = "";
+    c.context.narrative.forEach((p, i) => {
+      const el = document.createElement("p");
+      if (i === 0) el.className = "lede";
+      el.innerHTML = p;
+      ctxBody.appendChild(el);
+    });
+    fillDL("ctxActorsList", c.context.actors);
+    fillDL("ctxDataList", c.context.data);
+    fillDL("ctxScaleList", c.context.scale);
+
+    // Flow
+    renderFlow(c.flow);
+
+    // Analysis (checklist)
+    renderCheckList(c);
+
+    // Reveal
+    renderReveal(c);
+
+    // Score
+    renderScore(c);
+
+    setStage(state.stage);
+  }
+  function fillDL(id, pairs) {
+    const dl = document.getElementById(id);
+    dl.innerHTML = "";
+    (pairs || []).forEach(([k, v]) => {
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd"); dd.innerHTML = v;
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+  }
+
+  function setStage(i) {
+    state.stage = i;
+    document.querySelectorAll(".stage").forEach(s => {
+      s.classList.toggle("on", parseInt(s.dataset.stage, 10) === i);
+    });
+    document.querySelectorAll(".progress-cell").forEach((b, idx) => {
+      b.classList.toggle("on", idx === i);
+      b.classList.toggle("done", idx < i);
+    });
+    // Stage 1 = Fluxo — redraw arrows since the flow-wrap only has real dimensions once visible
+    if (i === 1 && typeof scheduleFlowDraw === "function") scheduleFlowDraw();
+    renderGroupUiOnStage();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    savePersist();
+  }
+
+  // ---- Flow diagram (HTML grid + SVG overlay) ----
+  let _flowResizeObs = null;
+  let _flowRaf = null;
+
+  function renderFlow(flow) {
+    const wrap = document.getElementById("flowWrap");
+    if (!flow) { wrap.innerHTML = ""; wrap._flow = null; return; }
+    wrap._flow = flow;
+
+    const kindColor = {
+      internal: "var(--trail)",
+      boundary: "var(--ochre)",
+      external: "var(--rust)"
+    };
+    // Map original x/y coordinates from case data into grid col/row.
+    // Falls back to sequential placement for arbitrary values.
+    const xValues = Array.from(new Set(flow.nodes.map(n => n.x))).sort((a, b) => a - b);
+    const yValues = Array.from(new Set(flow.nodes.map(n => n.y))).sort((a, b) => a - b);
+    const colFor = x => xValues.indexOf(x) + 1;
+    const rowFor = y => yValues.indexOf(y) + 1;
+
+    let html = '<div class="flow-grid" id="flowGrid">';
+    html += '<svg class="flow-arrows" id="flowArrows" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>';
+    flow.nodes.forEach(n => {
+      const col = colFor(n.x);
+      const row = rowFor(n.y);
+      const color = kindColor[n.kind] || "var(--ink)";
+      html += `<div class="flow-node" data-id="${n.id}" style="grid-column:${col};grid-row:${row};border-color:${color}">${n.label}</div>`;
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+
+    // Set columns count to match the widest row
+    const gridEl = document.getElementById("flowGrid");
+    if (gridEl) {
+      gridEl.style.setProperty("--cols", xValues.length);
+      gridEl.style.gridTemplateColumns = `repeat(${xValues.length}, minmax(0, 1fr))`;
+    }
+
+    scheduleFlowDraw();
+
+    // Redraw on container resize
+    if (_flowResizeObs) _flowResizeObs.disconnect();
+    if (gridEl && window.ResizeObserver) {
+      _flowResizeObs = new ResizeObserver(() => scheduleFlowDraw());
+      _flowResizeObs.observe(gridEl);
+    }
+  }
+
+  function scheduleFlowDraw() {
+    if (_flowRaf) cancelAnimationFrame(_flowRaf);
+    _flowRaf = requestAnimationFrame(() => {
+      _flowRaf = null;
+      const wrap = document.getElementById("flowWrap");
+      if (!wrap || !wrap._flow) return;
+      if (wrap.offsetWidth <= 0 || wrap.offsetHeight <= 0) return; // stage hidden
+      drawFlowArrows(wrap._flow);
+    });
+  }
+
+  function drawFlowArrows(flow) {
+    const grid = document.getElementById("flowGrid");
+    const svg = document.getElementById("flowArrows");
+    if (!grid || !svg) return;
+    const gridRect = grid.getBoundingClientRect();
+    const W = grid.offsetWidth;
+    const H = grid.offsetHeight;
+    if (W === 0 || H === 0) return;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+
+    // Measure current node positions from the live layout
+    const nodes = {};
+    grid.querySelectorAll(".flow-node").forEach(el => {
+      const r = el.getBoundingClientRect();
+      nodes[el.dataset.id] = {
+        x: r.left - gridRect.left,
+        y: r.top - gridRect.top,
+        w: r.width,
+        h: r.height
+      };
+    });
+
+    let defsSvg = "";
+    let edgesSvg = "";
+    flow.edges.forEach((e, idx) => {
+      const a = nodes[e.from], b = nodes[e.to];
+      if (!a || !b) return;
+      const aCX = a.x + a.w / 2, aCY = a.y + a.h / 2;
+      const bCX = b.x + b.w / 2, bCY = b.y + b.h / 2;
+      const isVertical = Math.abs(aCX - bCX) < 24;
+      const isHorizontal = Math.abs(aCY - bCY) < 24;
+      let path;
+      let labelPos = "mid";
+
+      if (isVertical) {
+        if (b.y >= a.y + a.h) {
+          path = `M ${aCX} ${a.y + a.h} L ${bCX} ${b.y}`;
+        } else {
+          path = `M ${aCX} ${a.y} L ${bCX} ${b.y + b.h}`;
+        }
+        labelPos = "vertical";
+      } else if (isHorizontal) {
+        if (b.x >= a.x + a.w) {
+          path = `M ${a.x + a.w} ${aCY} L ${b.x} ${bCY}`;
+        } else {
+          path = `M ${a.x} ${aCY} L ${b.x + b.w} ${bCY}`;
+        }
+        labelPos = "horizontal";
+      } else {
+        if (b.y > a.y) {
+          const aBottom = a.y + a.h;
+          const midY = (aBottom + b.y) / 2;
+          path = `M ${aCX} ${aBottom} L ${aCX} ${midY} L ${bCX} ${midY} L ${bCX} ${b.y}`;
+        } else {
+          const bBottom = b.y + b.h;
+          const midY = (a.y + bBottom) / 2;
+          path = `M ${aCX} ${a.y} L ${aCX} ${midY} L ${bCX} ${midY} L ${bCX} ${bBottom}`;
+        }
+        labelPos = "diagonal";
+      }
+
+      const stroke = e.boundary ? "var(--ochre)" : "var(--muted)";
+      const dashArr = e.dashed ? "4 4" : "none";
+      defsSvg += `<marker id="arrow-${idx}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="${stroke}"/></marker>`;
+      edgesSvg += `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-dasharray="${dashArr}" marker-end="url(#arrow-${idx})"/>`;
+
+      if (e.label) {
+        let mx, my, anchor;
+        if (labelPos === "vertical") {
+          mx = aCX + 10;
+          my = (a.y + a.h/2 + b.y + b.h/2) / 2;
+          anchor = "start";
+        } else if (labelPos === "horizontal") {
+          // Above the node row so the label never overlaps neighbouring nodes
+          mx = (aCX + bCX) / 2;
+          my = a.y - 8;
+          anchor = "middle";
+        } else {
+          // diagonal — label near the horizontal midY leg
+          mx = (aCX + bCX) / 2;
+          if (b.y > a.y) {
+            my = (a.y + a.h + b.y) / 2 - 6;
+          } else {
+            my = (a.y + b.y + b.h) / 2 - 6;
+          }
+          anchor = "middle";
+        }
+        const w = e.label.length * 5.8 + 10;
+        const bx = anchor === "middle" ? mx - w / 2 : (anchor === "end" ? mx - w + 4 : mx - 4);
+        edgesSvg += `<rect x="${bx}" y="${my - 9}" width="${w}" height="13" fill="var(--card)" opacity="0.94" rx="1"/>`;
+        edgesSvg += `<text x="${mx}" y="${my}" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="${anchor}" letter-spacing="0.4">${e.label}</text>`;
+      }
+    });
+    svg.innerHTML = `<defs>${defsSvg}</defs>${edgesSvg}`;
+  }
+
+  // ---- Checklist ----
+  function renderCheckList(c) {
+    const tabsEl = document.getElementById("catTabs");
+    const list = document.getElementById("checkList");
+    // Derive categories present in this case's candidates
+    const cats = Array.from(new Set((c.candidates || []).map(x => x.category).filter(Boolean)));
+    const currentCat = state.cat || "all";
+    // Reset current cat if the case doesn't have it
+    if (currentCat !== "all" && cats.indexOf(currentCat) === -1) state.cat = "all";
+
+    // Render tabs
+    tabsEl.innerHTML = "";
+    if (cats.length > 1) {
+      const options = ["all", ...cats];
+      options.forEach(cat => {
+        const b = document.createElement("button");
+        b.className = "lens-tab" + ((state.cat || "all") === cat ? " on" : "");
+        b.dataset.cat = cat;
+        b.textContent = cat === "all" ? "Tudo" : (cat.charAt(0).toUpperCase() + cat.slice(1));
+        b.addEventListener("click", () => {
+          state.cat = cat;
+          renderCheckList(c);
+          savePersist();
+        });
+        tabsEl.appendChild(b);
+      });
+    }
+
+    // Render list
+    const activeCat = state.cat || "all";
+    list.innerHTML = "";
+    const filtered = (c.candidates || []).filter(x => activeCat === "all" || x.category === activeCat);
+    filtered.forEach(cand => {
+      const wrap = document.createElement("label");
+      wrap.className = "check-item";
+      const set = state.checks[c.slug];
+      const on = set && set.has(cand.id);
+      wrap.classList.toggle("on", !!on);
+      wrap.innerHTML = `
+        <input type="checkbox" ${on ? "checked" : ""} data-cand="${cand.id}">
+        <div>
+          <div class="ci-t">${cand.title}</div>
+          <div class="ci-s">${cand.sub}</div>
+        </div>
+      `;
+      wrap.querySelector("input").addEventListener("change", (ev) => {
+        const s = state.checks[c.slug];
+        if (ev.target.checked) s.add(cand.id); else s.delete(cand.id);
+        wrap.classList.toggle("on", ev.target.checked);
+        updateCheckCount(c);
+        savePersist();
+      });
+      list.appendChild(wrap);
+    });
+    updateCheckCount(c);
+  }
+  function updateCheckCount(c) {
+    const s = state.checks[c.slug] || new Set();
+    document.getElementById("checkCount").textContent = `${s.size} marcado${s.size === 1 ? "" : "s"}`;
+  }
+
+  // ---- Reveal ----
+  function renderReveal(c) {
+    const set = state.checks[c.slug] || new Set();
+    const risks = c.risks || [];
+    const hits = risks.filter(r => set.has(r.id)).length;
+    const missed = risks.length - hits;
+    const falsePos = Array.from(set).filter(id => !risks.find(r => r.id === id));
+
+    // Summary tiles
+    const summary = document.getElementById("revealSummary");
+    summary.innerHTML = `
+      <div class="rs-cell trail">
+        <div class="rs-num num">${hits}</div>
+        <div class="rs-lab">Identificados</div>
+      </div>
+      <div class="rs-cell rust">
+        <div class="rs-num num">${missed}</div>
+        <div class="rs-lab">Não vistos</div>
+      </div>
+      <div class="rs-cell ochre">
+        <div class="rs-num num">${falsePos.length}</div>
+        <div class="rs-lab">Falsos positivos</div>
+      </div>
+      <div class="rs-cell">
+        <div class="rs-num num">${risks.length}</div>
+        <div class="rs-lab">Riscos reais no caso</div>
+      </div>
+    `;
+
+    // Risk cards
+    const list = document.getElementById("riskList");
+    list.innerHTML = "";
+    risks.forEach(r => {
+      const hit = set.has(r.id);
+      const card = document.createElement("article");
+      card.className = "risk-card " + (hit ? "hit" : "missed");
+      const catLabel = r.category ? (r.category.charAt(0).toUpperCase() + r.category.slice(1)) : "—";
+      const sevClass = r.severity === "crítico" ? "rust" : (r.severity === "alto" ? "ochre" : "");
+      card.innerHTML = `
+        <div class="rc-head">
+          <h4>${r.title}</h4>
+          <span class="rc-status ${hit ? "hit" : "missed"}">${hit ? "Você pegou" : "Passou batido"}</span>
+        </div>
+        <div class="rc-tags">
+          <span class="chip ${sevClass}">${r.severity}</span>
+          <span class="chip line">${catLabel}</span>
+        </div>
+        <div class="rc-body">
+          <div class="rc-sec">
+            <h6>Pistas no contexto</h6>
+            <p>${r.signal}</p>
+          </div>
+          <div class="rc-sec">
+            <h6>Impacto</h6>
+            <p>${r.impact}</p>
+          </div>
+          <div class="rc-sec">
+            <h6>Casos de abuso</h6>
+            <ul>${(r.abuse || []).map(a => `<li>${a}</li>`).join("")}</ul>
+          </div>
+          <div class="rc-sec">
+            <h6>Mitigação</h6>
+            <ul>${(r.mitigation || []).map(m => `<li>${m}</li>`).join("")}</ul>
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    // False positives
+    const fpBlock = document.getElementById("fpBlock");
+    const fpList = document.getElementById("fpList");
+    if (falsePos.length === 0) { fpBlock.hidden = true; }
+    else {
+      fpBlock.hidden = false;
+      fpList.innerHTML = "";
+      falsePos.forEach(id => {
+        const cand = c.candidates.find(x => x.id === id);
+        if (!cand) return;
+        const el = document.createElement("div");
+        el.className = "fp-item";
+        el.innerHTML = `
+          <div class="fp-mark">Armadilha</div>
+          <div>
+            <div class="fp-t">${cand.title}</div>
+            <div class="fp-s">${cand.sub}</div>
+          </div>
+        `;
+        fpList.appendChild(el);
+      });
+    }
+  }
+
+  // ---- Score ----
+  function renderScore(c) {
+    const set = state.checks[c.slug] || new Set();
+    const risks = c.risks || [];
+    const hits = risks.filter(r => set.has(r.id)).length;
+    const total = risks.length;
+    document.getElementById("scoreNum").textContent = hits;
+    document.getElementById("scoreDen").textContent = "/ " + total;
+    const ratio = total ? hits / total : 0;
+    let verdict;
+    if (ratio >= 0.9) verdict = "Leitura afiada — quase Adler. O próximo caso vai forçar seus pontos cegos.";
+    else if (ratio >= 0.6) verdict = "Bom recorte. Volte à revelação e note o padrão dos que passaram: normalmente é uma categoria inteira (técnico, operativo, lógica).";
+    else if (ratio >= 0.3) verdict = "Boa base. Rode este caso com um colega de outra área antes de partir para o próximo.";
+    else verdict = "Bem-vindo ao treino. A revelação vai destravar o vocabulário para o próximo caso.";
+    document.getElementById("scoreVerdict").textContent = verdict;
+
+    const takeList = document.getElementById("takeList");
+    takeList.innerHTML = "";
+    (c.takeaways || []).forEach(t => {
+      const el = document.createElement("div");
+      el.className = "take";
+      el.innerHTML = `<h5>${t.title}</h5><p>${t.body}</p>`;
+      takeList.appendChild(el);
+    });
+  }
+
+  // ============ CONTRIBUTE: pretty-print schema ============
+  function renderSchema() {
+    const pre = document.getElementById("schemaPre");
+    if (!pre) return;
+    const json = JSON.stringify(SCHEMA_TEMPLATE, null, 2);
+    // Simple syntax highlighting
+    const escaped = json
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const highlighted = escaped.replace(
+      /("(?:\\.|[^"\\])*")(\s*:)?|(\btrue\b|\bfalse\b|\bnull\b)|(-?\d+\.?\d*)/g,
+      (m, str, colon, bool, num) => {
+        if (str) {
+          if (colon) return `<span class="k">${str}</span>${colon}`;
+          return `<span class="s">${str}</span>`;
+        }
+        if (bool) return `<span class="n">${m}</span>`;
+        if (num) return `<span class="n">${m}</span>`;
+        return m;
+      }
+    );
+    pre.innerHTML = highlighted;
+  }
+
+  function copyTemplate() {
+    const json = JSON.stringify(SCHEMA_TEMPLATE, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(() => {
+        flashCopy("Copiado ✓");
+      }).catch(() => {
+        legacyCopy(json);
+      });
+    } else {
+      legacyCopy(json);
+    }
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); flashCopy("Copiado ✓"); }
+    catch (e) { flashCopy("Falha, selecione manualmente"); }
+    ta.remove();
+  }
+  function flashCopy(text) {
+    const btn = document.getElementById("copyTemplate");
+    if (!btn) return;
+    const old = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = old; }, 1600);
+  }
+
+  // ============ URL ROUTING ============
+  function readUrlParams() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return { caso: params.get("caso"), sessao: params.get("sessao") };
+    } catch (e) { return { caso: null, sessao: null }; }
+  }
+  function updateUrl(caso, sessao) {
+    try {
+      const params = new URLSearchParams();
+      if (caso) params.set("caso", caso);
+      if (sessao) params.set("sessao", sessao);
+      const q = params.toString();
+      const url = q ? `?${q}` : window.location.pathname;
+      history.replaceState({}, "", url);
+    } catch (e) { /* ignore */ }
+  }
+
+  // ============ GROUP MODE ============
+  let db = null;
+  let dbInitPromise = null;
+  async function ensureDb() {
+    if (db) return db;
+    if (dbInitPromise) return dbInitPromise;
+    dbInitPromise = (async () => {
+      try {
+        if (window.claude && typeof window.claude.use === "function") {
+          db = await window.claude.use("db");
+        }
+      } catch (e) { db = null; }
+      return db;
+    })();
+    return dbInitPromise;
+  }
+
+  const group = {
+    active: false,
+    code: null,
+    name: null,
+    participantId: null,
+    revealed: false,
+    participants: [],
+    unsub: []
+  };
+
+  function generateSessionCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return "ADLR-" + s;
+  }
+  function getOrCreatePid(code) {
+    const key = `adler_pid_${code}`;
+    try {
+      let pid = localStorage.getItem(key);
+      if (!pid) { pid = "p" + Math.random().toString(36).slice(2, 10); localStorage.setItem(key, pid); }
+      return pid;
+    } catch (e) { return "p" + Math.random().toString(36).slice(2, 10); }
+  }
+  function getStoredName(code) {
+    try { return localStorage.getItem(`adler_name_${code}`) || null; }
+    catch (e) { return null; }
+  }
+  function storeName(code, name) {
+    try { localStorage.setItem(`adler_name_${code}`, name); } catch (e) { /* ignore */ }
+  }
+
+  async function createSession(caseSlug, name) {
+    const _db = await ensureDb();
+    if (!_db) throw new Error("db_unavailable");
+    const code = generateSessionCode();
+    await _db.doc(`sessions/${code}`).set({
+      caseSlug, hostName: name, createdAt: Date.now(), revealed: false
+    });
+    const pid = getOrCreatePid(code);
+    await _db.doc(`sessions/${code}/participants/${pid}`).set({
+      name, checks: [], submittedAt: null
+    });
+    return { code, participantId: pid };
+  }
+  async function joinSession(code, name) {
+    const _db = await ensureDb();
+    if (!_db) throw new Error("db_unavailable");
+    const snap = await _db.doc(`sessions/${code}`).get();
+    if (!snap || !snap.exists) throw new Error("not_found");
+    const data = snap.data();
+    const pid = getOrCreatePid(code);
+    await _db.doc(`sessions/${code}/participants/${pid}`).set({
+      name, checks: [], submittedAt: null
+    });
+    return { code, participantId: pid, caseSlug: data.caseSlug };
+  }
+
+  function unsubscribeGroup() {
+    group.unsub.forEach(fn => { try { fn(); } catch (e) {} });
+    group.unsub = [];
+  }
+  async function subscribeGroup(code) {
+    const _db = await ensureDb();
+    if (!_db) return;
+    unsubscribeGroup();
+    try {
+      const unsub1 = _db.doc(`sessions/${code}`).onSnapshot(snap => {
+        if (!snap || !snap.exists) return;
+        const data = snap.data() || {};
+        group.revealed = !!data.revealed;
+        renderGroupBanner();
+        renderGroupUiOnStage();
+      });
+      const unsub2 = _db.collection(`sessions/${code}/participants`).onSnapshot(snap => {
+        const docs = (snap && snap.docs) ? snap.docs : [];
+        group.participants = docs.map(d => ({ id: d.id, ...(d.data ? d.data() : d) }));
+        renderGroupBanner();
+        renderGroupUiOnStage();
+      });
+      group.unsub = [unsub1, unsub2];
+    } catch (e) { /* ignore */ }
+  }
+
+  async function submitMyChecks() {
+    const _db = await ensureDb();
+    if (!_db || !group.active) return;
+    const set = state.checks[state.caseSlug] || new Set();
+    try {
+      await _db.doc(`sessions/${group.code}/participants/${group.participantId}`).update({
+        name: group.name,
+        checks: Array.from(set),
+        submittedAt: Date.now()
+      });
+      flashSubmit();
+    } catch (e) { /* ignore */ }
+  }
+  function flashSubmit() {
+    const btn = document.getElementById("submitGroupBtn");
+    if (!btn) return;
+    const old = btn.textContent;
+    btn.textContent = "Enviado ✓";
+    setTimeout(() => { updateAnalysisButtons(); }, 1400);
+  }
+  async function revealGroup() {
+    const _db = await ensureDb();
+    if (!_db || !group.active) return;
+    try {
+      await _db.doc(`sessions/${group.code}`).update({ revealed: true });
+    } catch (e) { /* ignore */ }
+  }
+
+  function leaveGroup() {
+    unsubscribeGroup();
+    group.active = false;
+    group.code = null;
+    group.name = null;
+    group.participantId = null;
+    group.revealed = false;
+    group.participants = [];
+    const b = document.getElementById("groupBanner"); if (b) b.hidden = true;
+    const btn = document.getElementById("modeGroupBtn"); if (btn) btn.classList.remove("on");
+    const lbl = document.getElementById("modeGroupLabel"); if (lbl) lbl.textContent = "Modo grupo";
+    const gr = document.getElementById("groupReveal"); if (gr) gr.hidden = true;
+    const sb = document.getElementById("submitGroupBtn"); if (sb) sb.hidden = true;
+    const rgb = document.getElementById("revealGroupBtn"); if (rgb) rgb.hidden = true;
+    const rb = document.getElementById("revealBtn"); if (rb) rb.hidden = false;
+    if (state.caseSlug) updateUrl(state.caseSlug, null);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[ch]);
+  }
+
+  function renderGroupBanner() {
+    const banner = document.getElementById("groupBanner");
+    if (!banner) return;
+    if (!group.active) { banner.hidden = true; return; }
+    banner.hidden = false;
+    document.getElementById("gbCode").textContent = group.code || "";
+    const mid = document.getElementById("gbParticipants");
+    mid.innerHTML = "";
+    const submitted = group.participants.filter(p => p.submittedAt).length;
+    const total = group.participants.length;
+    group.participants.forEach(p => {
+      const el = document.createElement("span");
+      const isMe = p.id === group.participantId;
+      const isSubmitted = !!p.submittedAt;
+      el.className = "gb-participant" + (isMe ? " me" : "") + (isSubmitted ? " submitted" : "");
+      el.innerHTML = `<span class="dot"></span>${escapeHtml(p.name || "Sem nome")}${isMe ? " (você)" : ""}`;
+      mid.appendChild(el);
+    });
+    const statusPill = document.createElement("span");
+    statusPill.className = "gb-participant";
+    statusPill.style.background = "transparent";
+    statusPill.style.border = "1px solid var(--line)";
+    statusPill.textContent = `${submitted} de ${total} submeteram`;
+    mid.appendChild(statusPill);
+  }
+
+  function renderGroupUiOnStage() {
+    // Group mode is disabled — UI elements were removed. This is a no-op
+    // kept so setStage() can still call it safely.
+    return;
+  }
+
+  function updateAnalysisButtons() {
+    const submitBtn = document.getElementById("submitGroupBtn");
+    const revealBtn = document.getElementById("revealBtn");
+    const revealGroupBtn = document.getElementById("revealGroupBtn");
+    if (!submitBtn || !revealBtn || !revealGroupBtn) return;
+    if (group.active) {
+      revealBtn.hidden = true;
+      submitBtn.hidden = false;
+      const me = group.participants.find(p => p.id === group.participantId);
+      const iSubmitted = me && me.submittedAt;
+      submitBtn.textContent = iSubmitted ? "Atualizar minha leitura" : "Submeter minha leitura";
+      revealGroupBtn.hidden = false;
+      if (group.revealed) {
+        revealGroupBtn.textContent = "Ir para a revelação →";
+        revealGroupBtn.classList.add("primary");
+      } else {
+        revealGroupBtn.textContent = "Revelar para o grupo →";
+        revealGroupBtn.classList.remove("primary");
+      }
+    } else {
+      revealBtn.hidden = false;
+      submitBtn.hidden = true;
+      revealGroupBtn.hidden = true;
+    }
+  }
+
+  function renderCompareMatrix() {
+    const c = CASES.find(x => x.slug === state.caseSlug);
+    if (!c) return;
+    const table = document.getElementById("compareMatrix");
+    if (!table) return;
+    const cands = c.candidates || [];
+    const realIds = new Set((c.risks || []).map(r => r.id));
+    const parts = group.participants
+      .filter(p => p.submittedAt)
+      .slice()
+      .sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
+
+    let html = "<thead><tr>";
+    html += `<th class="name-th"><span class="th-label">Participante</span></th>`;
+    cands.forEach(cand => {
+      const isReal = realIds.has(cand.id);
+      const short = (cand.title || "").length > 34 ? (cand.title.slice(0, 32) + "…") : cand.title;
+      html += `<th class="${isReal ? "col-real" : ""}"><span class="th-label" title="${escapeHtml(cand.title)}">${escapeHtml(short)}</span></th>`;
+    });
+    html += `<th class="total-th"><span class="th-label">Pegou</span></th>`;
+    html += `<th class="total-th"><span class="th-label">Falso+</span></th>`;
+    html += "</tr></thead><tbody>";
+
+    parts.forEach(p => {
+      const checks = new Set(p.checks || []);
+      let hits = 0, fps = 0;
+      html += `<tr><td class="name-cell">${escapeHtml(p.name || "Sem nome")}${p.id === group.participantId ? " (você)" : ""}</td>`;
+      cands.forEach(cand => {
+        const isReal = realIds.has(cand.id);
+        const marked = checks.has(cand.id);
+        html += `<td class="${isReal ? "col-real" : ""}">`;
+        if (marked && isReal) { html += `<span class="cell-hit">●</span>`; hits++; }
+        else if (marked && !isReal) { html += `<span class="cell-fp">▲</span>`; fps++; }
+        else if (!marked && isReal) { html += `<span class="cell-miss">—</span>`; }
+        else { html += `<span class="cell-empty">·</span>`; }
+        html += `</td>`;
+      });
+      html += `<td class="total-cell">${hits} / ${realIds.size}</td>`;
+      html += `<td class="total-cell">${fps}</td>`;
+      html += "</tr>";
+    });
+
+    html += `<tr class="footer-row"><td class="name-cell">Pegou / grupo</td>`;
+    cands.forEach(cand => {
+      const hitsByGroup = parts.filter(p => (p.checks || []).indexOf(cand.id) !== -1).length;
+      html += `<td>${hitsByGroup}</td>`;
+    });
+    html += `<td></td><td></td></tr>`;
+    html += "</tbody>";
+    table.innerHTML = html;
+  }
+
+  // ============ DIALOG ============
+  function openGroupDialog(prefillCode) {
+    document.getElementById("groupDialog").hidden = false;
+    const err = document.getElementById("gdError");
+    if (err) err.hidden = true;
+    if (prefillCode) {
+      const codeInput = document.getElementById("gdJoinCode");
+      if (codeInput) codeInput.value = prefillCode;
+      const nameInput = document.getElementById("gdJoinName");
+      if (nameInput) setTimeout(() => nameInput.focus(), 30);
+    } else {
+      const nameInput = document.getElementById("gdNewName");
+      if (nameInput) setTimeout(() => nameInput.focus(), 30);
+    }
+  }
+  function closeGroupDialog() {
+    document.getElementById("groupDialog").hidden = true;
+  }
+  function showDialogError(msg) {
+    const el = document.getElementById("gdError");
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = false;
+  }
+  async function handleCreateSession() {
+    const name = document.getElementById("gdNewName").value.trim();
+    if (!name) { showDialogError("Coloque um nome para aparecer no grupo."); return; }
+    if (!state.caseSlug) { showDialogError("Abra um caso antes de criar sessão."); return; }
+    try {
+      const { code, participantId } = await createSession(state.caseSlug, name);
+      group.active = true;
+      group.code = code;
+      group.name = name;
+      group.participantId = participantId;
+      group.revealed = false;
+      storeName(code, name);
+      subscribeGroup(code);
+      closeGroupDialog();
+      updateUrl(state.caseSlug, code);
+      document.getElementById("modeGroupBtn").classList.add("on");
+      document.getElementById("modeGroupLabel").textContent = "No grupo";
+      renderGroupBanner();
+      updateAnalysisButtons();
+    } catch (e) {
+      if (e && e.message === "db_unavailable") {
+        showDialogError("Modo grupo indisponível neste visualizador. Use o modo individual.");
+      } else {
+        showDialogError("Não foi possível criar a sessão. Tente novamente.");
+      }
+    }
+  }
+  async function handleJoinSession() {
+    const code = document.getElementById("gdJoinCode").value.trim().toUpperCase();
+    const name = document.getElementById("gdJoinName").value.trim();
+    if (!code) { showDialogError("Coloque o código da sessão."); return; }
+    if (!name) { showDialogError("Coloque seu nome."); return; }
+    try {
+      const { participantId, caseSlug } = await joinSession(code, name);
+      group.active = true;
+      group.code = code;
+      group.name = name;
+      group.participantId = participantId;
+      group.revealed = false;
+      storeName(code, name);
+      if (caseSlug && caseSlug !== state.caseSlug) {
+        state.caseSlug = caseSlug;
+        const c = CASES.find(x => x.slug === caseSlug);
+        if (c) { renderCase(c); setView("case"); }
+      }
+      subscribeGroup(code);
+      closeGroupDialog();
+      updateUrl(caseSlug || state.caseSlug, code);
+      document.getElementById("modeGroupBtn").classList.add("on");
+      document.getElementById("modeGroupLabel").textContent = "No grupo";
+      renderGroupBanner();
+      updateAnalysisButtons();
+    } catch (e) {
+      if (e && e.message === "not_found") {
+        showDialogError("Sessão não encontrada. Verifique o código.");
+      } else if (e && e.message === "db_unavailable") {
+        showDialogError("Modo grupo indisponível neste visualizador.");
+      } else {
+        showDialogError("Não foi possível entrar. Tente novamente.");
+      }
+    }
+  }
+  function copyShareLink() {
+    if (!state.caseSlug || !group.code) return;
+    const url = window.location.origin + window.location.pathname + `?caso=${state.caseSlug}&sessao=${group.code}`;
+    const btn = document.getElementById("gbCopyLink");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        const old = btn.textContent;
+        btn.textContent = "Copiado ✓";
+        setTimeout(() => { btn.textContent = old; }, 1600);
+      }).catch(() => {});
+    }
+  }
+
+  // ============ WIRE UP ============
+  function wire() {
+    // Nav clicks
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-nav]");
+      if (t) {
+        e.preventDefault();
+        setView(t.dataset.nav);
+      }
+      const g = e.target.closest("[data-goto-case]");
+      if (g) {
+        e.preventDefault();
+        openCase(g.getAttribute("data-goto-case"));
+      }
+      if (e.target.matches("[data-next]")) {
+        setStage(Math.min(4, state.stage + 1));
+      }
+      if (e.target.matches("[data-prev]")) {
+        setStage(Math.max(0, state.stage - 1));
+      }
+    });
+    document.getElementById("themeBtn").addEventListener("click", toggleTheme);
+    document.getElementById("copyTemplate").addEventListener("click", copyTemplate);
+    document.getElementById("resetCase").addEventListener("click", () => {
+      if (!state.caseSlug) return;
+      state.checks[state.caseSlug] = new Set();
+      const c = CASES.find(x => x.slug === state.caseSlug);
+      renderCase(c);
+      setStage(0);
+      savePersist();
+    });
+
+    // Group mode was removed; wiring intentionally skipped.
+
+    // Popstate — user hits back/forward
+    window.addEventListener("popstate", () => {
+      const p = readUrlParams();
+      if (!p.caso) {
+        setView("landing");
+      } else if (p.caso !== state.caseSlug) {
+        openCase(p.caso);
+      }
+    });
+
+    // Reflect prefers-color-scheme changes to label
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateThemeLabel);
+    }
+  }
+
+  // ============ INIT ============
+  async function init() {
+    loadPersist();
+    loadTheme();
+    renderCases();
+    renderSchema();
+    wire();
+
+    const urlParams = readUrlParams();
+
+    // Restore prior case (localStorage), UNLESS URL points somewhere
+    if (!urlParams.caso && state.caseSlug) {
+      const c = CASES.find(x => x.slug === state.caseSlug);
+      if (c && c.status !== "soon") {
+        renderCase(c);
+      } else {
+        state.caseSlug = null;
+      }
+    }
+
+    // URL-driven navigation
+    if (urlParams.caso) {
+      const c = CASES.find(x => x.slug === urlParams.caso);
+      if (c && c.status !== "soon") {
+        state.caseSlug = urlParams.caso;
+        if (!state.checks[urlParams.caso]) state.checks[urlParams.caso] = new Set();
+        state.stage = 0;
+        renderCase(c);
+        setView("case");
+      } else {
+        setView(state.view || "landing");
+      }
+    } else {
+      setView(state.view || "landing");
+    }
+
+  }
+  init();
+})();
+</script>

@@ -1,0 +1,327 @@
+{
+  "slug": "frete-adiantado",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Frete Adiantado",
+  "subtitle": "Antecipação de recebíveis para caminhoneiros em um marketplace de fretes",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Fintech", "LGPD", "IAM", "Antifraude"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "A Ponto de Carga é um marketplace onde embarcadores publicam cargas e caminhoneiros autônomos aceitam o frete. O pagamento acontece 14 dias após a entrega confirmada.",
+      "O produto \"Frete Adiantado\" oferece antecipação: o motorista aceita o frete, faz a entrega, sobe canhoto assinado e nota fiscal — e em vez de esperar 14 dias, recebe em D+1 com desconto de 2,3%. A operação é pequena mas cresce 40% ao mês; hoje são cerca de 18 mil motoristas ativos e algo entre 2 e 3 mil antecipações por dia.",
+      "O time é enxuto: quatro devs, um SRE, um PM, um BISO em meio-período. A tesouraria fica em outro prédio — três pessoas rodam a operação diária de aprovação de antecipações e conciliação bancária pelo backoffice web.",
+      "O KYC (verificação de identidade e antecedentes) é terceirizado para um provedor especializado. A folha de pagamento aos motoristas usa uma sub-adquirente parceira, que dispara os PIX quando a antecipação é aprovada."
+    ],
+    "actors": [
+      ["Motorista", "usuário final, app mobile"],
+      ["Embarcador", "publica cargas, aprova entrega"],
+      ["Tesouraria", "aprova antecipação no backoffice"],
+      ["Antifraude", "revisa flags do provedor de KYC"],
+      ["KYC Provider", "terceiro: valida CNH, foto, antecedentes"],
+      ["Sub-adquirente", "terceiro: executa PIX ao motorista"]
+    ],
+    "data": [
+      ["CPF", "cadastro, KYC, antifraude"],
+      ["CNH", "verificação e reverificação anual"],
+      ["Selfie + doc", "prova de vida no cadastro"],
+      ["Chave PIX", "conta destino da antecipação"],
+      ["Comprovantes", "canhoto + NF por entrega"],
+      ["Localização", "app do motorista, contínua"]
+    ],
+    "scale": [
+      ["18k motoristas", "ativos hoje"],
+      ["2–3k / dia", "antecipações"],
+      ["40% / mês", "crescimento composto"],
+      ["4 devs + 1 SRE", "engenharia total"],
+      ["3 pessoas", "tesouraria"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "app", "label": "App do motorista", "kind": "internal", "x": 60, "y": 40 },
+      { "id": "api", "label": "API pública", "kind": "internal", "x": 240, "y": 40 },
+      { "id": "kyc", "label": "KYC Provider", "kind": "external", "x": 240, "y": 160 },
+      { "id": "db", "label": "Banco Postgres", "kind": "internal", "x": 440, "y": 40 },
+      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "x": 60, "y": 160 },
+      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "x": 640, "y": 40 },
+      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "x": 640, "y": 160 },
+      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "x": 440, "y": 260 }
+    ],
+    "edges": [
+      { "from": "app", "to": "api", "label": "cadastro / upload / aceite" },
+      { "from": "api", "to": "kyc", "label": "envia dados KYC", "boundary": true },
+      { "from": "api", "to": "db", "label": "" },
+      { "from": "api", "to": "docs", "label": "upload docs" },
+      { "from": "db", "to": "bo", "label": "leitura + aprovação" },
+      { "from": "bo", "to": "sub", "label": "solicita PIX", "boundary": true },
+      { "from": "sub", "to": "hook", "label": "confirma pagamento", "dashed": true, "boundary": true },
+      { "from": "hook", "to": "db", "label": "marca como pago", "dashed": true }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "idor",
+      "truth": true,
+      "category": "técnico",
+      "title": "GET /documentos/{id} sem checar dono",
+      "sub": "O endpoint de leitura de documento não filtra por motorista logado — só valida o token."
+    },
+    {
+      "id": "hmac",
+      "truth": true,
+      "category": "técnico",
+      "title": "Webhook /pix/callback aceita callbacks sem assinatura",
+      "sub": "O endpoint da sub-adquirente confirma pagamentos por POST simples, sem verificar origem."
+    },
+    {
+      "id": "role",
+      "truth": true,
+      "category": "processo",
+      "title": "Role de tesouraria pode aprovar antecipação E alterar chave PIX",
+      "sub": "As três pessoas da tesouraria têm o mesmo papel, com ambas as permissões acumuladas."
+    },
+    {
+      "id": "consent",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Consentimento agregado em um único checkbox",
+      "sub": "\"Aceito os termos, a política de privacidade e comunicações\" — LGPD pede consentimento livre e específico por finalidade."
+    },
+    {
+      "id": "kyc-min",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Envio ao KYC provider inclui mais dados do que ele precisa",
+      "sub": "O provedor recebe endereço completo, chave PIX e histórico de fretes, além do que precisa para validação de identidade."
+    },
+    {
+      "id": "duplo-canhoto",
+      "truth": true,
+      "category": "lógica",
+      "title": "Mesmo canhoto aceito em dois fretes diferentes",
+      "sub": "Upload de comprovante não deduplica por hash — motorista sobe o mesmo canhoto assinado em duas antecipações distintas."
+    },
+    {
+      "id": "reconc-planilha",
+      "truth": true,
+      "category": "operativo",
+      "title": "Conciliação bancária diária feita em planilha compartilhada",
+      "sub": "A tesouraria roda o D+1 numa spreadsheet no Drive editada por várias pessoas; sem trilha imutável nem versionamento estruturado."
+    },
+    {
+      "id": "cancel-sem-reversao",
+      "truth": true,
+      "category": "lógica",
+      "title": "Cancelamento pós-antecipação sem estorno automático",
+      "sub": "Nada garante que o cancelamento do frete depois da antecipação já paga dispare reversão — pode ficar como resíduo operacional."
+    },
+    {
+      "id": "md5",
+      "truth": false,
+      "category": "técnico",
+      "title": "Senhas dos motoristas armazenadas em MD5",
+      "sub": "Não está no contexto; não assuma. O treino é ler o que está descrito, não presumir o pior."
+    },
+    {
+      "id": "sql-inj",
+      "truth": false,
+      "category": "técnico",
+      "title": "SQL injection nos filtros de busca de fretes",
+      "sub": "Vulnerabilidade real, mas nada no contexto sugere uma injeção específica aqui. É o que se pega em outra camada de revisão."
+    },
+    {
+      "id": "session-long",
+      "truth": false,
+      "category": "técnico",
+      "title": "Sessão do motorista muito longa",
+      "sub": "É trade-off de UX de app mobile financeiro, não o buraco central do fluxo transacional que a operação descreve."
+    },
+    {
+      "id": "retro-limit",
+      "truth": false,
+      "category": "lógica",
+      "title": "Alteração retroativa de limite aumenta antecipação já aprovada",
+      "sub": "Parece brecha lógica, mas o fluxo descrito só reprocessa na janela seguinte — é feature intencional com controle no batch."
+    }
+  ],
+  "risks": [
+    {
+      "id": "idor",
+      "category": "técnico",
+      "severity": "crítico",
+      "title": "IDOR no download de documentos",
+      "signal": "O endpoint <code>GET /documentos/{id}</code> foi descrito como validando apenas o token — nenhum filtro de dono. O contexto ainda menciona uploads sensíveis: CNH, selfie, comprovantes.",
+      "abuse": [
+        "Motorista A autentica normalmente, incrementa o <code>id</code> do documento em <code>+1</code> e baixa a CNH do motorista B.",
+        "Um script rodando com um token válido varre a faixa <code>id ∈ [1, N]</code> e coleta todas as CNHs cadastradas no fim de semana.",
+        "Um insider de tesouraria com acesso de leitura acessa selfies fora do fluxo de aprovação em que teria justificativa."
+      ],
+      "impact": "Exposição em massa de documentos de identidade e financeiros. Além do dano direto, LGPD art. 46 (segurança) e art. 48 (incidente reportável à ANPD e aos titulares); dependendo do volume, comunicação à imprensa.",
+      "mitigation": [
+        "Filtro obrigatório por <code>ownerId</code> no repositório, não no controller. Nunca dependa do desenvolvedor lembrar.",
+        "URLs assinadas de curta duração (pre-signed) para o bucket, geradas pelo backend só quando o requisitante é o dono ou tem justificativa registrada.",
+        "Teste de autorização automatizado: fixture de dois usuários, matriz de \"eu leio o meu / eu não leio o do outro\" para cada rota."
+      ]
+    },
+    {
+      "id": "hmac",
+      "category": "técnico",
+      "severity": "crítico",
+      "title": "Webhook de pagamento sem verificação de assinatura",
+      "signal": "A sub-adquirente confirma o PIX chamando <code>POST /pix/callback</code>. O contexto não menciona segredo compartilhado, HMAC nem allowlist — e o endpoint é externo por definição (é o parceiro chamando).",
+      "abuse": [
+        "Atacante descobre o formato do callback (recon de rede ou vazamento de doc) e forja <code>{status: paid}</code> para uma antecipação sua.",
+        "Antecipação é marcada como paga no seu sistema; conciliação bancária só bate <em>depois</em> e, se manual, pode levar dias.",
+        "Se o mesmo callback também acionar liberação de novo limite pro motorista, o atacante encadeia várias antecipações antes da reconciliação bater."
+      ],
+      "impact": "Perda direta de caixa por antecipação nunca sacada da adquirente. Fraude interna também: um dev com acesso ao endpoint replica callbacks e libera pagamentos.",
+      "mitigation": [
+        "HMAC-SHA256 do corpo com segredo compartilhado, header <code>X-Signature</code>. Rejeitar sem 200.",
+        "Idempotência por <code>callback_id</code>: um mesmo id só produz efeito uma vez.",
+        "Conciliação em tempo real (ou pelo menos horária) com o extrato da sub-adquirente, e alerta quando divergência > R$ X."
+      ]
+    },
+    {
+      "id": "role",
+      "category": "processo",
+      "severity": "alto",
+      "title": "Segregação de funções ausente na tesouraria",
+      "signal": "\"As três pessoas rodam a operação diária de aprovação\" — e o mesmo cargo mexe em cadastro (chave PIX) e em aprovação (liberação). Sem SoD, uma única credencial comprometida é uma fraude completa.",
+      "abuse": [
+        "Insider troca a chave PIX de um motorista real pela dele, aprova a antecipação, retorna a chave. O motorista descobre no dia seguinte; o dinheiro já saiu.",
+        "Phishing acerta uma pessoa da tesouraria. O invasor entra no backoffice fora de horário, faz o mesmo com N motoristas.",
+        "Em auditoria PCI/BACEN: achado grave sobre <em>segregation of duties</em>, especialmente combinado com o item anterior."
+      ],
+      "impact": "Fraude interna ou externa via engenharia social. Descumprimento de controles esperados por BACEN e por auditorias PCI-DSS quando aplicável.",
+      "mitigation": [
+        "Dois papéis distintos: <em>Cadastros</em> (mexe em dados do motorista) e <em>Aprovação</em> (libera antecipação). Nenhuma pessoa acumula ambos.",
+        "Maker-checker para mudança de chave PIX: só entra em vigor após confirmação de um segundo operador (ou reautenticação do próprio motorista).",
+        "Auditoria imutável de cada mudança de dado bancário, com alerta imediato para o BISO."
+      ]
+    },
+    {
+      "id": "consent",
+      "category": "regulatório",
+      "severity": "médio",
+      "title": "Consentimento agregado viola LGPD",
+      "signal": "Um único checkbox cobre \"termos, política e comunicações\". Comunicação de marketing é finalidade distinta — a LGPD exige consentimento livre, informado e para finalidade específica (art. 8º §4º).",
+      "abuse": [
+        "Titular reclama à ANPD ou entra com ação: exige exclusão do marketing sem perder acesso ao produto — e não consegue.",
+        "Concorrente ou órgão de defesa do consumidor reporta a prática, gerando processo administrativo.",
+        "Ao pedir a base de marketing para o Procon, a Ponto de Carga não consegue demonstrar consentimento válido para nenhum motorista."
+      ],
+      "impact": "Sanção da ANPD (advertência, publicização, multa até 2% do faturamento por infração). Custo de retrabalho do consentimento em toda a base já cadastrada.",
+      "mitigation": [
+        "Checkboxes separados: (1) aceito termos, (2) tomei ciência da política, (3) autorizo comunicações de marketing — opcional.",
+        "Base legal correta por finalidade: execução de contrato para o serviço, consentimento só para o que não é necessário ao contrato.",
+        "Fluxo trivial de revogação: um toggle no perfil, sem precisar falar com atendimento."
+      ]
+    },
+    {
+      "id": "kyc-min",
+      "category": "privacidade",
+      "severity": "médio",
+      "title": "Provider externo recebe dados excessivos",
+      "signal": "O KYC valida identidade — precisa de CPF, foto do documento e selfie. O contexto diz que enviamos <em>endereço completo, chave PIX e histórico de fretes</em>. Isso é mais que a finalidade.",
+      "abuse": [
+        "Vazamento no provedor expõe dados que nunca precisaram estar lá — e a Ponto de Carga é corresponsável pelo compartilhamento.",
+        "O provedor \"enriquece\" a base para outro produto seu, criando uso não previsto que o titular nunca consentiu.",
+        "Em uma auditoria de terceiros, o contrato precisa justificar cada campo compartilhado. Não justificar é achado."
+      ],
+      "impact": "Aumento da superfície em incidentes de terceiros. Falha de minimização (LGPD art. 6º III). Auditorias apontam contratos de compartilhamento sem base racional campo a campo.",
+      "mitigation": [
+        "Contrato de operador de dados listando os campos permitidos, revisado ao adicionar campo.",
+        "Camada intermediária que <em>projeta</em> só o subset necessário antes de chamar o provider.",
+        "Revisão periódica: cada campo enviado a terceiro tem uma finalidade escrita — se não tem, sai."
+      ]
+    },
+    {
+      "id": "duplo-canhoto",
+      "category": "lógica",
+      "severity": "alto",
+      "title": "Duplo canhoto: mesmo comprovante em dois fretes",
+      "signal": "O contexto descreve upload de canhoto por entrega, mas não menciona deduplicação. Sem hash ou vínculo obrigatório 1-para-1 entre frete e comprovante, o mesmo arquivo pode ser aceito duas vezes.",
+      "abuse": [
+        "Motorista aceita dois fretes com o mesmo embarcador, executa uma entrega, sobe o mesmo canhoto assinado nas duas antecipações e recebe pelas duas.",
+        "Grupo colude — motoristas trocam comprovantes de embarcadores diferentes que fazem parte do esquema, sistemas tratam como fretes independentes.",
+        "Fraudador fotografa canhoto de um motorista legítimo, associa ao próprio frete fake e antecipa."
+      ],
+      "impact": "Antecipação em duplicidade — pagamento duplicado sem retorno real do embarcador. Rombo direto no caixa; contabilmente sai como \"serviço prestado\", difícil de reverter depois que o motorista sacou.",
+      "mitigation": [
+        "Hash perceptual (pHash) do comprovante no upload, rejeição direta se já existe no sistema.",
+        "Vínculo obrigatório 1-para-1 entre frete e canhoto no aceite; o mesmo arquivo não passa em segunda antecipação.",
+        "Detecção diária de similaridade cruzada entre uploads da mesma janela — flag para antifraude antes da aprovação."
+      ]
+    },
+    {
+      "id": "reconc-planilha",
+      "category": "operativo",
+      "severity": "alto",
+      "title": "Conciliação bancária diária em planilha compartilhada",
+      "signal": "A operação diária de conciliação é feita pela tesouraria numa spreadsheet no Drive, editada por três pessoas em turnos. Não há trilha imutável nem versionamento estruturado — é procedimento operacional que assume boa-fé.",
+      "abuse": [
+        "Operador (ou credencial comprometida) apaga uma linha entre turnos — a antecipação parece conciliada e ninguém percebe até o fechamento mensal.",
+        "Erro honesto sobrescreve um valor, cria discrepância entre extrato bancário e sistema, corrigida \"manualmente\" pelo turno seguinte sem trilha.",
+        "Planilha vaza fora da empresa por engano de compartilhamento — dados de conciliação (motoristas, valores, chaves PIX) expostos a terceiros."
+      ],
+      "impact": "Rombos operacionais invisíveis até auditoria. Achado grave em revisão BACEN/PCI, sem forma de demonstrar quem alterou o quê. Uma reconciliação errada compõe pra cima em antecipações futuras.",
+      "mitigation": [
+        "Substituir spreadsheet por sistema de conciliação com log imutável — cada mudança versionada, com autor e timestamp.",
+        "Enquanto o processo estiver em planilha, versionamento do Drive com controle individual de acesso e diff automático no fechamento do turno.",
+        "Fechamento diário exige aprovação de dois operadores (maker-checker) antes de virar o dia; qualquer discrepância trava o fechamento."
+      ]
+    },
+    {
+      "id": "cancel-sem-reversao",
+      "category": "lógica",
+      "severity": "alto",
+      "title": "Cancelamento pós-antecipação sem estorno automático",
+      "signal": "O contexto descreve o caminho feliz: aceite → entrega → antecipação. Não é dito que cancelamento após antecipação dispare qualquer reversão. Na prática, o sistema pode apenas marcar cancelado — sem retirar o dinheiro já sacado.",
+      "abuse": [
+        "Motorista aceita frete, executa, antecipa em D+1 (recebe -2,3%), depois cancela alegando problema com o embarcador — mantém o dinheiro.",
+        "Motorista de má-fé faz isso em série numa janela curta, antes que a auditoria manual pegue; saca de várias contas laranjas.",
+        "Conluio com embarcador: o embarcador cancela o frete legítimo, motorista fica com o valor da antecipação, ambos dividem a diferença por fora."
+      ],
+      "impact": "Perda direta de caixa por antecipação nunca reconciliada com o embarcador. O efeito compõe conforme cresce a janela entre entrega e reconciliação. Rombo aparece na DRE dias depois, difícil de rastrear até o cancelamento original.",
+      "mitigation": [
+        "Estorno automático disparado por evento de cancelamento — trava o valor antecipado, notifica tesouraria e antifraude.",
+        "Janela mínima entre entrega confirmada e possibilidade de cancelar (24–48h) reduz surface sem prejudicar caso legítimo.",
+        "Alerta em tempo real quando cancelamento chega depois da antecipação já paga; fila prioritária de investigação para antifraude."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Autorização é uma decisão de linha de código, não de política",
+      "body": "Todo endpoint que devolve um recurso precisa perguntar \"isso é meu?\" — e a pergunta deve viver no repositório, não no controller. Se depende do dev lembrar, uma hora vai esquecer."
+    },
+    {
+      "title": "Callbacks externos são inputs adversariais",
+      "body": "Qualquer endpoint que aceita chamadas de terceiros começa hostil. Assinatura, idempotência e reconciliação são as três camadas — qualquer uma isolada é insuficiente."
+    },
+    {
+      "title": "Segregation of duties é gratuita e cara de retroativar",
+      "body": "Papéis separados custam pouco no início do produto. Deixar acumular vira dívida técnica que só se paga cortando permissões de gente que já se acostumou a ter."
+    },
+    {
+      "title": "Consentimento agregado é sempre inválido",
+      "body": "\"Marcar um por finalidade\" parece atrito, mas é o único caminho que se sustenta na ANPD. Melhor pagar o atrito no cadastro do que pagar a sanção depois."
+    },
+    {
+      "title": "Minimização é uma cláusula contratual, não um sentimento",
+      "body": "Se você não consegue listar campo a campo por que o terceiro recebe cada coisa, você está enviando demais. Escreva a lista antes da integração; revisite a cada trimestre."
+    },
+    {
+      "title": "Lógica de negócio abusável não aparece em nenhum scanner",
+      "body": "Duplo canhoto, cancelamento sem reversão, retro-limite. Nenhum SAST/DAST pega esses. Só um mapa de fluxo lido por quem pensa como adversário — sempre antes do primeiro commit."
+    },
+    {
+      "title": "Vulnerabilidade operativa é fraude esperando trigger",
+      "body": "Planilha compartilhada, aprovação por chat, runbook que assume Slack no ar. Tudo isso é abuso fácil e caro. Trate a operação como código: versione, log imutável, maker-checker."
+    }
+  ]
+}

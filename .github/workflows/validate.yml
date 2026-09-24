@@ -1,0 +1,36 @@
+name: Validate cases
+
+on:
+  pull_request:
+    paths:
+      - 'cases/**'
+      - 'schema/**'
+      - 'scripts/validate.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main]
+    paths:
+      - 'cases/**'
+      - 'schema/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate all cases against schema
+        run: npm run validate
+
+      - name: Dry-run build
+        run: npm run build

@@ -1,0 +1,9 @@
+{
+  "slug": "consulta-fila",
+  "status": "soon",
+  "domain": "healthtech",
+  "title": "Fila de Especialidades",
+  "subtitle": "Plataforma pública de agendamento de consultas de especialidades em um município",
+  "difficulty": "Intermediário",
+  "tags": ["Saúde", "Setor público", "LGPD"]
+}

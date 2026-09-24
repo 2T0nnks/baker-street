@@ -1,0 +1,31 @@
+{
+  "name": "baker-street",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Adler — open source security & privacy by design training platform. Cases as JSON, engine as a single HTML file.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate.mjs",
+    "new": "node scripts/new-case.mjs",
+    "dev": "npm run build && python3 -m http.server --directory dist 8000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2T0nnks/baker-street.git"
+  },
+  "keywords": [
+    "security",
+    "privacy",
+    "training",
+    "threat-modeling",
+    "abuse-cases",
+    "secure-by-design"
+  ],
+  "author": "Tonnks",
+  "license": "MIT",
+  "devDependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1"
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/2T0nnks/baker-street/schema/case.schema.json",
+  "title": "Adler Case",
+  "description": "A single security/privacy training case for the Adler platform.",
+  "type": "object",
+  "required": ["slug", "status", "title", "subtitle"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "description": "URL-safe identifier. Must match the filename (without .json)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "soon", "draft"],
+      "description": "open = playable; soon = placeholder in catalog; draft = hidden from catalog."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Industry / sector (e.g. fintech, healthtech, edtech, marketplace, govtech)."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60
+    },
+    "subtitle": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 160
+    },
+    "duration": {
+      "type": "string",
+      "description": "Estimated run time (e.g. ~45 min)."
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["Iniciante", "Intermediário", "Avançado"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 24 },
+      "maxItems": 8
+    },
+    "license": {
+      "type": "string",
+      "default": "CC-BY-SA-4.0"
+    },
+    "author": {
+      "type": "string",
+      "description": "GitHub username or handle of the case author."
+    },
+    "context": {
+      "type": "object",
+      "required": ["narrative", "actors", "data", "scale"],
+      "additionalProperties": false,
+      "properties": {
+        "narrative": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 20 },
+          "minItems": 2,
+          "maxItems": 8,
+          "description": "Story paragraphs. First one is highlighted as the lede."
+        },
+        "actors": { "$ref": "#/$defs/pairs" },
+        "data": { "$ref": "#/$defs/pairs" },
+        "scale": { "$ref": "#/$defs/pairs" }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "kind", "x", "y"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "label": { "type": "string" },
+              "kind": { "type": "string", "enum": ["internal", "boundary", "external"] },
+              "x": { "type": "integer", "minimum": 0 },
+              "y": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "minItems": 2
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "label": { "type": "string" },
+              "boundary": { "type": "boolean" },
+              "dashed": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "description": "All options shown in the reading stage (real risks + plausible distractors).",
+      "items": {
+        "type": "object",
+        "required": ["id", "truth", "category", "title", "sub"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "truth": { "type": "boolean", "description": "true = real risk; false = distractor." },
+          "category": { "$ref": "#/$defs/category" },
+          "title": { "type": "string", "minLength": 4, "maxLength": 120 },
+          "sub": { "type": "string", "minLength": 8, "maxLength": 240 }
+        }
+      },
+      "minItems": 6
+    },
+    "risks": {
+      "type": "array",
+      "description": "Only the real risks. Every real candidate must have a matching risk entry with the same id.",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "severity", "title", "signal", "abuse", "impact", "mitigation"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "$ref": "#/$defs/category" },
+          "severity": { "type": "string", "enum": ["crítico", "alto", "médio", "baixo"] },
+          "title": { "type": "string" },
+          "signal": { "type": "string", "description": "Clues in the context that pointed to this risk. Inline HTML allowed for <em>, <code>." },
+          "abuse": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "description": "Concrete abuse scenarios."
+          },
+          "impact": { "type": "string" },
+          "mitigation": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "takeaways": {
+      "type": "array",
+      "description": "3-5 generalizable patterns to carry to the next case.",
+      "items": {
+        "type": "object",
+        "required": ["title", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string", "minLength": 4, "maxLength": 100 },
+          "body": { "type": "string", "minLength": 20 }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "open" } } },
+      "then": {
+        "required": ["context", "flow", "candidates", "risks", "takeaways"]
+      }
+    }
+  ],
+  "$defs": {
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "category": {
+      "type": "string",
+      "enum": ["técnico", "lógica", "operativo", "processo", "regulatório", "privacidade", "fraude"]
+    }
+  }
+}
