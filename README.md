@@ -27,11 +27,14 @@ Um caso é um único arquivo JSON em `cases/`. Leia `docs/CONTRIBUTING.md` para 
 ```bash
 npm install
 npm run validate    # roda o JSON Schema em cada caso
-npm run build       # gera dist/index.html
+npm run build       # gera dist/index.html + dist/fonts/
+npm run dev         # build + servidor local em http://localhost:8000
 npm run new         # scaffold interativo de um caso novo
 ```
 
-Abra `dist/index.html` no navegador.
+Use `npm run dev` para ver o site. Abrir `dist/index.html` direto do disco funciona, mas as fontes podem não carregar.
+
+O site não faz nenhuma requisição a terceiros: as fontes são servidas do próprio domínio e uma Content-Security-Policy libera só o script do motor.
 
 ## Licenças
 
