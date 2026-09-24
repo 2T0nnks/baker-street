@@ -15,7 +15,7 @@
     "status": {
       "type": "string",
       "enum": ["open", "soon", "draft"],
-      "description": "open = playable; soon = placeholder in catalog; draft = hidden from catalog."
+      "description": "open = playable; soon = placeholder in catalog; draft = excluded from the build (never published)."
     },
     "domain": {
       "type": "string",
