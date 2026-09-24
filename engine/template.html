@@ -140,7 +140,11 @@ button {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 button:hover { border-color: var(--trail); color: var(--trail); }
-button:focus-visible { outline: 2px solid var(--trail); outline-offset: 2px; }
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible,
+.check-item input:focus-visible { outline: 2px solid var(--trail); outline-offset: 2px; }
+h3[tabindex="-1"]:focus { outline: none; }
 button.primary {
   background: var(--ink);
   color: var(--paper);
@@ -393,9 +397,14 @@ section.block:first-of-type { border-top: none; }
 }
 .progress-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   margin-block: 8px 28px;
+}
+/* On phones only the numbers fit; the stage heading below already names it. */
+@media (max-width: 480px) {
+  .progress-strip .pc-label { display: none; }
+  .progress-strip .pc-num { font-size: 12px; opacity: 1; }
 }
 .progress-cell {
   border: 1px solid var(--line);
@@ -622,6 +631,8 @@ section.block:first-of-type { border-top: none; }
 .check-item input:checked {
   background: var(--trail); border-color: var(--trail);
 }
+.check-item input:disabled { cursor: not-allowed; }
+.check-item:has(input:disabled) { cursor: default; }
 .check-item input:checked::after {
   content: "";
   width: 10px; height: 5px;
@@ -1028,7 +1039,7 @@ footer .foot-brand {
         <span class="brand-name">Adler</span>
         <span class="brand-dot" aria-hidden="true"></span>
       </a>
-      <nav class="nav-tabs" role="tablist">
+      <nav class="nav-tabs" aria-label="Principal">
         <button class="nav-tab on" data-nav="landing">Início</button>
         <button class="nav-tab" data-nav="cases">Casos</button>
         <button class="nav-tab" data-nav="contribute">Contribuir</button>
@@ -1213,7 +1224,7 @@ footer .foot-brand {
           <button class="ghost" data-nav="landing">← Voltar</button>
         </div>
 
-        <div class="progress-strip" id="progressStrip" role="tablist"></div>
+        <nav class="progress-strip" id="progressStrip" aria-label="Estágios do caso"></nav>
 
         <!-- Stage 1: Context -->
         <div class="stage on" data-stage="0">
@@ -1286,7 +1297,7 @@ footer .foot-brand {
           <div class="analysis-actions">
             <button data-prev>← Voltar</button>
             <button class="primary" id="revealBtn">Revelar leitura →</button>
-            <span class="count" id="checkCount">0 marcados</span>
+            <span class="count" id="checkCount" aria-live="polite">0 marcados</span>
           </div>
         </div>
 
@@ -1544,18 +1555,25 @@ footer .foot-brand {
     return !!(slug && state.revealed && state.revealed[slug]);
   }
 
+  // The origin (2t0nnks.github.io) is shared by every Pages site on the account,
+  // so stored progress is untrusted input: copy only known fields and values.
+  const VIEWS = ["landing", "cases", "case", "contribute", "about"];
   function loadPersist() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") {
-          for (const k of Object.keys(parsed.checks || {})) {
-            parsed.checks[k] = new Set(parsed.checks[k] || []);
-          }
-          Object.assign(state, parsed);
-          if (!state.revealed || typeof state.revealed !== "object") state.revealed = {};
-        }
+      if (!raw) return;
+      const p = JSON.parse(raw);
+      if (!p || typeof p !== "object") return;
+      const known = slug => CASES.some(c => c.slug === slug);
+      if (VIEWS.includes(p.view)) state.view = p.view;
+      if (typeof p.caseSlug === "string" && known(p.caseSlug)) state.caseSlug = p.caseSlug;
+      if (Number.isInteger(p.stage) && p.stage >= 0 && p.stage <= 4) state.stage = p.stage;
+      if (typeof p.cat === "string") state.cat = p.cat;
+      for (const [slug, ids] of Object.entries(p.checks || {})) {
+        if (known(slug) && Array.isArray(ids)) state.checks[slug] = new Set(ids.filter(id => typeof id === "string"));
+      }
+      for (const [slug, v] of Object.entries(p.revealed || {})) {
+        if (known(slug) && v === true) state.revealed[slug] = true;
       }
     } catch (e) { /* ignore */ }
   }
@@ -1593,15 +1611,24 @@ footer .foot-brand {
     const cur = document.documentElement.getAttribute("data-theme");
     const mq = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const isDark = cur === "dark" || (!cur && mq);
+    // The button names the action, not the current state.
     const label = document.getElementById("themeLabel");
-    if (label) label.textContent = isDark ? "Escuro" : "Claro";
+    if (label) label.textContent = isDark ? "Modo claro" : "Modo escuro";
+    const btn = document.getElementById("themeBtn");
+    if (btn) btn.setAttribute("aria-label", isDark ? "Mudar para o modo claro" : "Mudar para o modo escuro");
   }
 
   // ============ NAV ============
   function setView(name) {
     state.view = name;
     document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "view-" + name));
-    document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("on", t.dataset.nav === name || (name === "case" && t.dataset.nav === "cases")));
+    document.querySelectorAll(".nav-tab").forEach(t => {
+      const on = t.dataset.nav === name || (name === "case" && t.dataset.nav === "cases");
+      t.classList.toggle("on", on);
+      if (on) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
+    });
+    const c = name === "case" ? CASES.find(x => x.slug === state.caseSlug) : null;
+    document.title = c ? `${c.title} · Adler` : "Adler";
     window.scrollTo({ top: 0, behavior: "instant" });
     // Clear URL params when leaving case view (except case tab)
     if (name !== "case") {
@@ -1614,7 +1641,17 @@ footer .foot-brand {
   function renderCaseCard(c) {
     const el = document.createElement("div");
     el.className = "case-card" + (c.status === "soon" ? " soon" : "");
-    if (c.status !== "soon") el.setAttribute("data-goto-case", c.slug);
+    if (c.status !== "soon") {
+      // Clicks go through the global [data-goto-case] handler; this makes the card keyboard-reachable.
+      el.setAttribute("data-goto-case", c.slug);
+      el.setAttribute("role", "link");
+      el.tabIndex = 0;
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCase(c.slug); }
+      });
+    } else {
+      el.setAttribute("aria-disabled", "true");
+    }
 
     const tags = (c.tags || []).map(t => `<span class="chip line">${t}</span>`).join("");
     el.innerHTML = `
@@ -1630,9 +1667,6 @@ footer .foot-brand {
         <span>${c.status === "soon" ? "" : (c.duration || "")}</span>
       </div>
     `;
-    if (c.status !== "soon") {
-      el.addEventListener("click", () => openCase(c.slug));
-    }
     return el;
   }
   function renderCases() {
@@ -1674,6 +1708,7 @@ footer .foot-brand {
     STAGE_LABELS.forEach((label, i) => {
       const b = document.createElement("button");
       b.className = "progress-cell" + (i === state.stage ? " on" : "");
+      b.setAttribute("aria-label", `Estágio ${i + 1}: ${label}`);
       b.innerHTML = `<span class="pc-num">0${i + 1}</span><span class="pc-label">${label}</span>`;
       b.addEventListener("click", () => setStage(i));
       ps.appendChild(b);
@@ -1730,8 +1765,16 @@ footer .foot-brand {
       b.classList.toggle("done", idx < i);
       b.classList.toggle("locked", locked);
       b.setAttribute("aria-disabled", locked ? "true" : "false");
+      if (idx === i) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
       b.title = locked ? "Disponível depois de revelar a leitura" : "";
     });
+    // When the change came from inside the player, move focus to the new stage's
+    // heading so keyboard and screen-reader users land where the content is.
+    const heading = document.querySelector(`.stage[data-stage="${i}"] h3`);
+    if (heading && document.getElementById("view-case").contains(document.activeElement)) {
+      heading.tabIndex = -1;
+      heading.focus({ preventScroll: true });
+    }
     // Stage 1 = Fluxo — redraw arrows since the flow-wrap only has real dimensions once visible
     if (i === 1 && typeof scheduleFlowDraw === "function") scheduleFlowDraw();
     window.scrollTo({ top: 0, behavior: "smooth" });
