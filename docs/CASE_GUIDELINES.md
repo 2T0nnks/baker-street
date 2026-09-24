@@ -1,6 +1,6 @@
 # Anatomia de um caso bom
 
-Adler treina o *olhar* — não é checklist OWASP, não é revisão de código, não é threat model retroativo. É a habilidade de ler um fluxo e antecipar quem vai abusar dele antes de haver commit.
+Adler treina o *olhar* de threat modeling — não é checklist OWASP nem revisão de código. É a habilidade de ler um fluxo e mapear seus casos de abuso antes do primeiro commit.
 
 Um caso bom respeita essa promessa. Aqui está o que a gente considera na revisão editorial.
 
@@ -20,7 +20,7 @@ Todo caso deve cobrir múltiplas categorias. Se você só tem riscos `técnico`,
 | Categoria | O que é |
 |---|---|
 | `técnico` | Vulnerabilidade clássica de código — IDOR, injection, HMAC ausente, race condition. |
-| `lógica` | Abuso da lógica de negócio — fórmula manipulável, aceite duplo, cancelamento sem reversão. |
+| `lógica` | Falhas na lógica de negócio — fórmula manipulável, aceite duplo, cancelamento sem reversão. |
 | `operativo` | Quebras no fluxo humano/procedimento — conciliação em planilha, aprovação por chat, runbook incompleto. |
 | `processo` | SoD ausente, maker-checker faltando, papéis acumulados, permissões amplas. |
 | `regulatório` | LGPD, PCI, KYC, BACEN, retenção. |
