@@ -2,7 +2,7 @@
 
 **Onde a segurança começa.**
 
-Utilitário open source de treinamento, pensado para ensinar os prováveis casos de abuso de um fluxo sob diferentes perspectivas — para os times de ideação e desenvolvimento de produtos, processos e fluxos. No papel, antes do primeiro commit.
+Utilitário open source de treinamento, pensado para ensinar os casos de abuso de um fluxo sob diferentes perspectivas — para os times de ideação e desenvolvimento de produtos, processos e fluxos. No papel, antes do primeiro commit.
 
 Cada caso é um fluxo de negócio real. Você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais, cada um com o caso de abuso, o impacto e a mitigação.
 
