@@ -9,7 +9,7 @@ Este documento é a leitura humana do schema.
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `slug` | string | sim | URL-safe, kebab-case. Deve bater com o nome do arquivo (sem `.json`). |
-| `status` | enum: `open` \| `soon` \| `draft` | sim | `open` = jogável; `soon` = placeholder no catálogo; `draft` = escondido. |
+| `status` | enum: `open` \| `soon` \| `draft` | sim | `open` = jogável; `soon` = placeholder no catálogo; `draft` = fora do build, nunca publicado. |
 | `title` | string (2-60) | sim | Nome curto do caso. |
 | `subtitle` | string (4-160) | sim | Uma frase descritiva do negócio. |
 | `domain` | string | não | Setor (fintech, healthtech, edtech...). |

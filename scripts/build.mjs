@@ -55,8 +55,11 @@ async function main() {
     throw new Error(`Template is missing marker ${MARKER}`);
   }
 
-  const cases = await readAllCases();
-  console.log(`build: found ${cases.length} case(s)`);
+  const all = await readAllCases();
+  // Drafts never ship: everything injected here is public in dist/index.html.
+  const cases = all.filter(({ data }) => data.status !== "draft");
+  const drafts = all.length - cases.length;
+  console.log(`build: found ${all.length} case(s)${drafts ? `, skipping ${drafts} draft(s)` : ""}`);
 
   const injected = cases
     .map(({ data }) => {
