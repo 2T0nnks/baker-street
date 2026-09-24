@@ -104,7 +104,10 @@ async function main() {
   console.log(`    1. Fill it out — see docs/CASE_GUIDELINES.md`);
   console.log(`    2. npm run validate`);
   console.log(`    3. Change "status": "draft" → "open" once complete`);
-  console.log(`    4. git checkout -b caso/${slug} && git commit -am "add: case ${slug}" && push`);
+  console.log(`    4. git switch -c caso/${slug}`);
+  console.log(`       git add cases/${slug}.json`);
+  console.log(`       git commit -m "add: case ${slug}"`);
+  console.log(`       git push -u origin caso/${slug}   # then open a pull request`);
 }
 
 main().catch(err => {
