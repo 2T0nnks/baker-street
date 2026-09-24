@@ -1,6 +1,6 @@
 # Anatomia de um caso bom
 
-Adler treina o *olhar* de threat modeling — não é checklist OWASP nem revisão de código. É a habilidade de ler um fluxo e mapear seus casos de abuso antes do primeiro commit.
+Adler treina a *análise de casos de abuso* — não é checklist OWASP nem revisão de código. É a habilidade de ler um fluxo e identificar onde ele quebra antes do primeiro commit.
 
 Um caso bom respeita essa promessa. Aqui está o que a gente considera na revisão editorial.
 

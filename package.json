@@ -2,7 +2,7 @@
   "name": "baker-street",
   "version": "0.1.0",
   "private": true,
-  "description": "Adler — open source security & privacy by design training platform. Cases as JSON, engine as a single HTML file.",
+  "description": "Adler — open source training utility for abuse case analysis. Cases as JSON, engine as a single HTML file.",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",

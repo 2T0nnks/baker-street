@@ -2,9 +2,9 @@
 
 **Onde a segurança começa.**
 
-Plataforma open source de threat modeling para times inteiros — produto, engenharia, tesouraria, antifraude e compliance. No papel, antes do primeiro commit.
+Utilitário open source de treinamento em análise de casos de abuso, para times inteiros — produto, engenharia, tesouraria, antifraude e compliance. No papel, antes do primeiro commit.
 
-Cada caso é um fluxo de negócio real. Você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais, cada um com seus casos de abuso, impacto e mitigação.
+Cada caso é um fluxo de negócio real. Você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais, cada um com o caso de abuso, o impacto e a mitigação.
 
 > Homenagem a Irene Adler, a única a superar Sherlock Holmes — porque o leu antes que ele a lesse. É esse o olhar que Adler treina.
 
