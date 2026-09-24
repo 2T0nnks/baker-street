@@ -22,7 +22,7 @@ Rodou? Ótimo. Vamos escrever.
    ```bash
    npm run new
    ```
-   Responde as perguntas (slug, título, subtítulo, domínio). O script cria `cases/<slug>.json` com o esqueleto correto e status `"draft"` (não aparece no catálogo até você mudar).
+   Responde as perguntas (slug, título, subtítulo, domínio). O script cria `cases/<slug>.json` com o esqueleto correto e status `"draft"`. Rascunhos ficam fora do build e não são publicados até você mudar o status.
 
 2. **Edita o JSON.** Preenche narrativa, atores, dados, escala, fluxo, candidatos e riscos. Leia `docs/CASE_GUIDELINES.md` pra saber o que faz um caso bom.
 
