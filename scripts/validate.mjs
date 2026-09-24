@@ -55,7 +55,7 @@ async function main() {
     }
 
     // Extra structural checks the schema can't express well
-    const errors = crossCheck(data);
+    const errors = [...checkHtml(data), ...crossCheck(data)];
     if (errors.length) {
       console.error(`✗ cases/${file}:`);
       errors.forEach(e => console.error(`    ${e}`));
@@ -79,6 +79,30 @@ async function main() {
     process.exit(1);
   }
   console.log(`\nvalidate: all ${files.length} case(s) passed.`);
+}
+
+// The engine renders case text with innerHTML, so any markup in a case runs
+// on the site's origin. Only bare inline formatting tags are allowed — no
+// attributes, no comments, no other elements.
+const ALLOWED_TAG = /^<\/?(em|code|strong)>$|^<br\s*\/?>$/i;
+const MARKUP = /<[a-zA-Z\/!?][^>]*>?/g;
+
+function checkHtml(data) {
+  const errors = [];
+  (function walk(value, where) {
+    if (typeof value === "string") {
+      for (const m of value.matchAll(MARKUP)) {
+        if (!ALLOWED_TAG.test(m[0])) {
+          errors.push(`${where}: markup not allowed: ${JSON.stringify(m[0].slice(0, 60))} (only <em>, <code>, <strong>, <br> without attributes)`);
+        }
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach((v, i) => walk(v, `${where}[${i}]`));
+    } else if (value && typeof value === "object") {
+      Object.entries(value).forEach(([k, v]) => walk(v, `${where}.${k}`));
+    }
+  })(data, "$");
+  return errors;
 }
 
 function crossCheck(data) {

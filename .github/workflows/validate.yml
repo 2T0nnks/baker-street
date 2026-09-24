@@ -1,19 +1,16 @@
 name: Validate cases
 
 on:
+  # Every PR runs this, so it can be a required status check on main.
   pull_request:
-    paths:
-      - 'cases/**'
-      - 'schema/**'
-      - 'scripts/validate.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
       - 'cases/**'
       - 'schema/**'
+
+permissions:
+  contents: read
 
 jobs:
   validate:
