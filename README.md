@@ -36,6 +36,10 @@ Use `npm run dev` para ver o site. Abrir `dist/index.html` direto do disco funci
 
 O site não faz nenhuma requisição a terceiros: as fontes são servidas do próprio domínio e uma Content-Security-Policy libera só o script do motor.
 
+## Segurança
+
+Achou uma vulnerabilidade? Não abra issue pública: veja [SECURITY.md](./SECURITY.md).
+
 ## Licenças
 
 - **Código do motor** (`engine/`, `scripts/`): [MIT](./LICENSE)
