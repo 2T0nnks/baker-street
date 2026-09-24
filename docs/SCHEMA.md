@@ -91,7 +91,7 @@ Só os reais. `id` de cada risco deve ter um candidato correspondente com `truth
 
 - `severity`: `crítico` | `alto` | `médio` | `baixo`.
 - `abuse` e `mitigation` são arrays de string, mínimo 1 elemento cada.
-- `signal` aceita HTML inline: `<em>`, `<code>`.
+- Qualquer texto do caso aceita só estas tags, sem atributos: `<em>`, `<code>`, `<strong>`, `<br>`. O `npm run validate` rejeita qualquer outra marcação (`<img>`, `<a>`, `<script>`, atributos como `onclick`, comentários HTML), porque o motor renderiza o texto como HTML.
 
 ## `takeaways`
 
