@@ -132,9 +132,27 @@
         "required": ["id", "category", "severity", "title", "signal", "abuse", "impact", "mitigation"],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string" },
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "category": { "$ref": "#/$defs/category" },
           "severity": { "type": "string", "enum": ["crítico", "alto", "médio", "baixo"] },
+          "where": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Where the risk lives in the flow, for the reveal map. The pin goes on the first node (or, without nodes, the first edge); all listed nodes and edges light up on hover.",
+            "properties": {
+              "nodes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "edges": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["from", "to"],
+                  "additionalProperties": false,
+                  "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+                }
+              }
+            }
+          },
           "title": { "type": "string" },
           "signal": { "type": "string", "description": "Clues in the context that pointed to this risk. Inline HTML allowed for <em>, <code>." },
           "abuse": {

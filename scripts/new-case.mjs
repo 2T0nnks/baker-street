@@ -86,6 +86,7 @@ async function main() {
         id: "exemplo",
         category: "técnico",
         severity: "alto",
+        where: { nodes: ["app"] },
         title: "Título do risco real",
         signal: "Pistas no contexto que apontavam para isso",
         abuse: ["Cenário concreto 1", "Cenário concreto 2"],

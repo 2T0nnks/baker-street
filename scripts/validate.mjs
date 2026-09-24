@@ -130,6 +130,17 @@ function crossCheck(data) {
     if (!nodeIds.has(e.to)) errors.push(`flow.edges[${i}].to = "${e.to}" — no such node`);
   });
 
+  // risks[].where must point at nodes and edges that exist in the flow
+  const edgeKeys = new Set((data.flow?.edges || []).map(e => `${e.from}>${e.to}`));
+  (data.risks || []).forEach(r => {
+    (r.where?.nodes || []).forEach(n => {
+      if (!nodeIds.has(n)) errors.push(`risk "${r.id}": where.nodes has "${n}" — no such node`);
+    });
+    (r.where?.edges || []).forEach(e => {
+      if (!edgeKeys.has(`${e.from}>${e.to}`)) errors.push(`risk "${r.id}": where.edges has ${e.from} → ${e.to} — no such edge in flow.edges`);
+    });
+  });
+
   // Recommend at least 3 distinct categories in the risks (breadth of the case)
   const cats = new Set((data.risks || []).map(r => r.category));
   if (cats.size < 3) {

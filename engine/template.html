@@ -580,6 +580,81 @@ section.block:first-of-type { border-top: none; }
 .flow-legend i {
   display: inline-block; width: 10px; height: 10px; border-radius: 2px;
 }
+.flow-legend .replay-btn { margin-left: auto; font-size: 12.5px; padding: 4px 12px; }
+.flow-hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+/* Nodes: kind tag, hover/focus highlight */
+.flow-node { flex-direction: column; gap: 3px; cursor: default; transition: opacity 0.2s, box-shadow 0.2s; }
+.flow-node.kind-boundary { border-style: dashed; }
+.fn-kind {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.flow-node.kind-boundary .fn-kind { color: var(--ochre); }
+.flow-node.kind-external .fn-kind { color: var(--rust); }
+.flow-arrows .line { fill: none; stroke-width: 1.5; transition: stroke-width 0.2s; }
+.flow-arrows .edge { transition: opacity 0.2s; }
+.flow-grid.focus-mode .flow-node:not(.lit) { opacity: 0.28; }
+.flow-grid.focus-mode .flow-node.lit { box-shadow: 0 0 0 3px color-mix(in oklab, var(--ochre) 30%, transparent); }
+.flow-grid.focus-mode .edge:not(.lit) { opacity: 0.12; }
+.flow-grid.focus-mode .edge.lit .line { stroke-width: 2.6; }
+
+/* Intro animation (only while .play is on; see playFlow) */
+@keyframes flowNodeIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes flowDraw { to { stroke-dashoffset: 0; } }
+@keyframes flowFade { from { opacity: 0; } to { opacity: 1; } }
+.flow-wrap.play .flow-node { animation: flowNodeIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+.flow-wrap.play .edge .line.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: flowDraw 0.65s ease-out forwards; animation-delay: var(--d, 0ms); }
+.flow-wrap.play .edge.async .line { animation: flowFade 0.6s both; animation-delay: var(--d, 0ms); }
+.flow-wrap.play .edge .head,
+.flow-wrap.play .edge .lbl { animation: flowFade 0.35s both; animation-delay: calc(var(--d, 0ms) + 550ms); }
+
+/* Reveal map */
+.risk-map { margin: 8px 0 40px; }
+.rm-hint { margin: 6px 0 16px; font-size: 14px; color: var(--ink-soft); max-width: 70ch; }
+.rm-legend { display: flex; gap: 20px; margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+.rm-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.pin-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.pin-dot.hit { background: var(--trail); }
+.pin-dot.missed { background: var(--rust); }
+.flow-pins { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.flow-pins .pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px; height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--paper);
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 0 0 2px var(--card);
+  transition: transform 0.15s;
+}
+.flow-pins .pin.hit, .flow-pins .pin.hit:hover { background: var(--trail); color: var(--paper); }
+.flow-pins .pin.missed, .flow-pins .pin.missed:hover { background: var(--rust); color: var(--paper); }
+.flow-pins .pin:hover, .flow-pins .pin.active { transform: translate(-50%, -50%) scale(1.2); }
+.rc-num {
+  display: inline-grid; place-items: center;
+  width: 24px; height: 24px; margin-right: 10px;
+  border-radius: 50%;
+  vertical-align: 3px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--paper);
+}
+.rc-num.hit { background: var(--trail); }
+.rc-num.missed { background: var(--rust); }
+@keyframes cardFlash { from { box-shadow: 0 0 0 3px var(--ochre); } to { box-shadow: 0 0 0 0 transparent; } }
+.risk-card.flash { animation: cardFlash 1.4s ease-out; }
 
 /* Analysis stage — checklist */
 .lens-tabs {
@@ -1274,7 +1349,9 @@ footer .foot-brand {
             <span><i style="background: var(--ochre);"></i> Fronteira de confiança</span>
             <span><i style="background: var(--rust);"></i> Terceiro / externo</span>
             <span><i style="background: transparent; border: 1px dashed var(--muted);"></i> Fluxo assíncrono</span>
+            <button class="ghost replay-btn" id="replayFlow" type="button">↻ Rever animação</button>
           </div>
+          <p class="flow-hint">Passe o mouse (ou navegue com Tab) sobre um sistema para ver com quem ele troca dados.</p>
           <div class="nav-actions">
             <button data-prev>← Voltar</button>
             <button class="primary" data-next>Ir para a leitura →</button>
@@ -1312,6 +1389,16 @@ footer .foot-brand {
             <div class="stage-count">04</div>
           </div>
           <div class="reveal-summary" id="revealSummary"></div>
+          <section class="risk-map" id="riskMapBlock" hidden>
+            <span class="eyebrow">Mapa de riscos</span>
+            <h4 class="display" style="margin-top: 8px; font-size: 22px;">Onde cada risco mora no fluxo</h4>
+            <p class="rm-hint">Clique num número para ir ao risco. Passe o mouse num risco, aqui ou nos cards abaixo, para ver por onde ele passa.</p>
+            <div class="flow-wrap" id="riskMap"></div>
+            <div class="rm-legend">
+              <span><b class="pin-dot hit"></b> Você pegou</span>
+              <span><b class="pin-dot missed"></b> Passou batido</span>
+            </div>
+          </section>
           <div id="riskList"></div>
           <div class="false-positives-block" id="fpBlock" hidden>
             <span class="eyebrow">Armadilhas plausíveis</span>
@@ -1407,7 +1494,7 @@ footer .foot-brand {
               </div>
               <div class="field-def">
                 <code>risks</code><span class="type-tag">item[]</span>
-                <p>Só os itens reais. Cada risco tem: título, <code>category</code>, <code>severity</code>, <code>signal</code> (pistas no contexto), <code>abuse</code> (casos de abuso), <code>impact</code>, <code>mitigation</code>.</p>
+                <p>Só os itens reais. Cada risco tem: título, <code>category</code>, <code>severity</code>, <code>signal</code> (pistas no contexto), <code>abuse</code> (casos de abuso), <code>impact</code>, <code>mitigation</code> e, opcional, <code>where</code>: os nós e arestas do fluxo onde o risco mora, que viram o mapa de riscos da revelação.</p>
               </div>
               <div class="field-def">
                 <code>takeaways</code><span class="type-tag">item[]</span>
@@ -1527,6 +1614,7 @@ footer .foot-brand {
         "id": "identificador",
         "category": "técnico",
         "severity": "crítico",
+        "where": { "nodes": ["api"], "edges": [{ "from": "app", "to": "api" }] },
         "title": "Título do risco real",
         "signal": "Pistas no contexto que apontavam para isso",
         "abuse": ["Cenário concreto 1", "Cenário concreto 2"],
@@ -1728,7 +1816,7 @@ footer .foot-brand {
     fillDL("ctxScaleList", c.context.scale);
 
     // Flow
-    renderFlow(c.flow);
+    renderFlow(document.getElementById("flowWrap"), c.flow, { animate: true });
 
     // Analysis (checklist)
     renderCheckList(c);
@@ -1775,75 +1863,129 @@ footer .foot-brand {
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });
     }
-    // Stage 1 = Fluxo — redraw arrows since the flow-wrap only has real dimensions once visible
-    if (i === 1 && typeof scheduleFlowDraw === "function") scheduleFlowDraw();
+    // Diagrams only have real dimensions once their stage is visible.
+    if (i === 1) {
+      const fw = document.getElementById("flowWrap");
+      if (fw._played) scheduleFlowDraw(fw); else playFlow(fw);
+    }
+    if (i === 3) scheduleFlowDraw(document.getElementById("riskMap"));
     window.scrollTo({ top: 0, behavior: "smooth" });
     savePersist();
   }
 
   // ---- Flow diagram (HTML grid + SVG overlay) ----
-  let _flowResizeObs = null;
-  let _flowRaf = null;
+  // One renderer serves two diagrams: the Fluxo stage (animated, with data
+  // packets travelling the edges) and the reveal map (numbered risk pins).
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const KIND_COLOR = { internal: "var(--trail)", boundary: "var(--ochre)", external: "var(--rust)" };
+  const KIND_LABEL = { internal: "sistema interno", boundary: "fronteira de confiança", external: "terceiro / externo" };
+  const KIND_TAG = { boundary: "fronteira", external: "terceiro" };
+  const STEP_MS = 360;   // delay between each "wave" of nodes in the intro
+  const edgeKey = e => `${e.from}>${e.to}`;
 
-  function renderFlow(flow) {
-    const wrap = document.getElementById("flowWrap");
-    if (!flow) { wrap.innerHTML = ""; wrap._flow = null; return; }
-    wrap._flow = flow;
+  // Breadth-first depth from the entry points, so the intro follows the data.
+  function flowLevels(flow) {
+    const level = {};
+    const incoming = new Set(flow.edges.map(e => e.to));
+    let frontier = flow.nodes.filter(n => !incoming.has(n.id)).map(n => n.id);
+    if (!frontier.length && flow.nodes.length) frontier = [flow.nodes[0].id];
+    frontier.forEach(id => { level[id] = 0; });
+    while (frontier.length) {
+      const next = [];
+      frontier.forEach(id => {
+        flow.edges.filter(e => e.from === id).forEach(e => {
+          if (level[e.to] === undefined) { level[e.to] = level[id] + 1; next.push(e.to); }
+        });
+      });
+      frontier = next;
+    }
+    const max = Math.max(0, ...Object.values(level));
+    flow.nodes.forEach(n => { if (level[n.id] === undefined) level[n.id] = max + 1; });
+    return level;
+  }
 
-    const kindColor = {
-      internal: "var(--trail)",
-      boundary: "var(--ochre)",
-      external: "var(--rust)"
-    };
+  function renderFlow(wrap, flow, opts = {}) {
+    if (wrap._obs) { wrap._obs.disconnect(); wrap._obs = null; }
+    clearTimeout(wrap._playTimer);
+    wrap.classList.remove("play");
+    wrap._played = false;
+    wrap._flow = flow || null;
+    wrap._opts = opts;
+    if (!flow) { wrap.innerHTML = ""; return; }
+    wrap._levels = flowLevels(flow);
+
     // Map original x/y coordinates from case data into grid col/row.
-    // Falls back to sequential placement for arbitrary values.
     const xValues = Array.from(new Set(flow.nodes.map(n => n.x))).sort((a, b) => a - b);
     const yValues = Array.from(new Set(flow.nodes.map(n => n.y))).sort((a, b) => a - b);
-    const colFor = x => xValues.indexOf(x) + 1;
-    const rowFor = y => yValues.indexOf(y) + 1;
 
-    let html = '<div class="flow-grid" id="flowGrid">';
-    html += '<svg class="flow-arrows" id="flowArrows" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>';
+    let html = '<div class="flow-grid">';
+    html += '<svg class="flow-arrows" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>';
     flow.nodes.forEach(n => {
-      const col = colFor(n.x);
-      const row = rowFor(n.y);
-      const color = kindColor[n.kind] || "var(--ink)";
-      html += `<div class="flow-node" data-id="${n.id}" style="grid-column:${col};grid-row:${row};border-color:${color}">${n.label}</div>`;
+      const style = `grid-column:${xValues.indexOf(n.x) + 1};grid-row:${yValues.indexOf(n.y) + 1};` +
+        `border-color:${KIND_COLOR[n.kind] || "var(--ink)"};--d:${wrap._levels[n.id] * STEP_MS}ms`;
+      html += `<div class="flow-node kind-${n.kind}" data-id="${n.id}" tabindex="0" style="${style}">` +
+        `<span class="fn-label">${n.label}</span>` +
+        (KIND_TAG[n.kind] ? `<span class="fn-kind">${KIND_TAG[n.kind]}</span>` : "") +
+        `</div>`;
     });
-    html += '</div>';
+    html += '<div class="flow-pins"></div></div>';
     wrap.innerHTML = html;
 
-    // Set columns count to match the widest row
-    const gridEl = document.getElementById("flowGrid");
-    if (gridEl) {
-      gridEl.style.setProperty("--cols", xValues.length);
-      gridEl.style.gridTemplateColumns = `repeat(${xValues.length}, minmax(0, 1fr))`;
-    }
+    const grid = wrap.querySelector(".flow-grid");
+    grid.style.gridTemplateColumns = `repeat(${xValues.length}, minmax(0, 1fr))`;
 
-    scheduleFlowDraw();
+    grid.querySelectorAll(".flow-node").forEach(el => {
+      const n = flow.nodes.find(x => x.id === el.dataset.id);
+      el.setAttribute("aria-label", `${el.querySelector(".fn-label").textContent} — ${KIND_LABEL[n.kind] || ""}`);
+      const on = () => highlightNode(wrap, n.id);
+      const off = () => clearHighlight(wrap);
+      el.addEventListener("mouseenter", on);
+      el.addEventListener("focus", on);
+      el.addEventListener("mouseleave", off);
+      el.addEventListener("blur", off);
+    });
 
-    // Redraw on container resize
-    if (_flowResizeObs) _flowResizeObs.disconnect();
-    if (gridEl && window.ResizeObserver) {
-      _flowResizeObs = new ResizeObserver(() => scheduleFlowDraw());
-      _flowResizeObs.observe(gridEl);
+    scheduleFlowDraw(wrap);
+    if (window.ResizeObserver) {
+      wrap._obs = new ResizeObserver(() => scheduleFlowDraw(wrap));
+      wrap._obs.observe(grid);
     }
   }
 
-  function scheduleFlowDraw() {
-    if (_flowRaf) cancelAnimationFrame(_flowRaf);
-    _flowRaf = requestAnimationFrame(() => {
-      _flowRaf = null;
-      const wrap = document.getElementById("flowWrap");
-      if (!wrap || !wrap._flow) return;
+  // Intro: nodes appear wave by wave, edges draw after their source node,
+  // then packets start flowing. Skipped entirely under reduced motion.
+  function playFlow(wrap) {
+    if (!wrap._flow) return;
+    clearTimeout(wrap._playTimer);
+    if (REDUCED_MOTION) { wrap._played = true; scheduleFlowDraw(wrap); return; }
+    wrap._played = false;
+    wrap.classList.remove("play");
+    void wrap.offsetWidth; // restart CSS animations
+    wrap.classList.add("play");
+    scheduleFlowDraw(wrap);
+    const last = Math.max(0, ...Object.values(wrap._levels)) * STEP_MS;
+    wrap._playTimer = setTimeout(() => {
+      wrap.classList.remove("play");
+      wrap._played = true;
+      scheduleFlowDraw(wrap);
+    }, last + 1300);
+  }
+
+  function scheduleFlowDraw(wrap) {
+    if (!wrap) return;
+    if (wrap._raf) cancelAnimationFrame(wrap._raf);
+    wrap._raf = requestAnimationFrame(() => {
+      wrap._raf = null;
+      if (!wrap._flow) return;
       if (wrap.offsetWidth <= 0 || wrap.offsetHeight <= 0) return; // stage hidden
-      drawFlowArrows(wrap._flow);
+      drawFlowArrows(wrap);
     });
   }
 
-  function drawFlowArrows(flow) {
-    const grid = document.getElementById("flowGrid");
-    const svg = document.getElementById("flowArrows");
+  function drawFlowArrows(wrap) {
+    const flow = wrap._flow;
+    const grid = wrap.querySelector(".flow-grid");
+    const svg = wrap.querySelector(".flow-arrows");
     if (!grid || !svg) return;
     const gridRect = grid.getBoundingClientRect();
     const W = grid.offsetWidth;
@@ -1857,86 +1999,157 @@ footer .foot-brand {
     const nodes = {};
     grid.querySelectorAll(".flow-node").forEach(el => {
       const r = el.getBoundingClientRect();
-      nodes[el.dataset.id] = {
-        x: r.left - gridRect.left,
-        y: r.top - gridRect.top,
-        w: r.width,
-        h: r.height
-      };
+      nodes[el.dataset.id] = { x: r.left - gridRect.left, y: r.top - gridRect.top, w: r.width, h: r.height };
     });
 
-    let defsSvg = "";
-    let edgesSvg = "";
+    const mids = {};
+    const withPackets = wrap._opts.animate && wrap._played && !REDUCED_MOTION;
+    let out = "";
     flow.edges.forEach((e, idx) => {
       const a = nodes[e.from], b = nodes[e.to];
       if (!a || !b) return;
       const aCX = a.x + a.w / 2, aCY = a.y + a.h / 2;
       const bCX = b.x + b.w / 2, bCY = b.y + b.h / 2;
-      const isVertical = Math.abs(aCX - bCX) < 24;
-      const isHorizontal = Math.abs(aCY - bCY) < 24;
-      let path;
-      let labelPos = "mid";
-
-      if (isVertical) {
-        if (b.y >= a.y + a.h) {
-          path = `M ${aCX} ${a.y + a.h} L ${bCX} ${b.y}`;
-        } else {
-          path = `M ${aCX} ${a.y} L ${bCX} ${b.y + b.h}`;
-        }
+      let pts, labelPos;
+      if (Math.abs(aCX - bCX) < 24) {
+        pts = b.y >= a.y + a.h ? [[aCX, a.y + a.h], [bCX, b.y]] : [[aCX, a.y], [bCX, b.y + b.h]];
         labelPos = "vertical";
-      } else if (isHorizontal) {
-        if (b.x >= a.x + a.w) {
-          path = `M ${a.x + a.w} ${aCY} L ${b.x} ${bCY}`;
-        } else {
-          path = `M ${a.x} ${aCY} L ${b.x + b.w} ${bCY}`;
-        }
+      } else if (Math.abs(aCY - bCY) < 24) {
+        pts = b.x >= a.x + a.w ? [[a.x + a.w, aCY], [b.x, bCY]] : [[a.x, aCY], [b.x + b.w, bCY]];
         labelPos = "horizontal";
+      } else if (b.y > a.y) {
+        const aBottom = a.y + a.h, midY = (aBottom + b.y) / 2;
+        pts = [[aCX, aBottom], [aCX, midY], [bCX, midY], [bCX, b.y]];
+        labelPos = "diagonal";
       } else {
-        if (b.y > a.y) {
-          const aBottom = a.y + a.h;
-          const midY = (aBottom + b.y) / 2;
-          path = `M ${aCX} ${aBottom} L ${aCX} ${midY} L ${bCX} ${midY} L ${bCX} ${b.y}`;
-        } else {
-          const bBottom = b.y + b.h;
-          const midY = (a.y + bBottom) / 2;
-          path = `M ${aCX} ${a.y} L ${aCX} ${midY} L ${bCX} ${midY} L ${bCX} ${bBottom}`;
-        }
+        const bBottom = b.y + b.h, midY = (a.y + bBottom) / 2;
+        pts = [[aCX, a.y], [aCX, midY], [bCX, midY], [bCX, bBottom]];
         labelPos = "diagonal";
       }
+      const d = "M " + pts.map(p => `${p[0]} ${p[1]}`).join(" L ");
+      const m1 = pts[pts.length === 2 ? 0 : 1], m2 = pts[pts.length === 2 ? 1 : 2];
+      mids[edgeKey(e)] = { x: (m1[0] + m2[0]) / 2, y: (m1[1] + m2[1]) / 2 };
+
+      // Arrowhead as its own shape (not a marker) so it can fade in after the line draws.
+      const [px, py] = pts[pts.length - 2], [ex, ey] = pts[pts.length - 1];
+      const angle = Math.atan2(ey - py, ex - px) * 180 / Math.PI;
 
       const stroke = e.boundary ? "var(--ochre)" : "var(--muted)";
-      const dashArr = e.dashed ? "4 4" : "none";
-      defsSvg += `<marker id="arrow-${idx}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="${stroke}"/></marker>`;
-      edgesSvg += `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-dasharray="${dashArr}" marker-end="url(#arrow-${idx})"/>`;
+      const pathId = `${wrap.id}-edge-${idx}`;
+      const delay = (wrap._levels[e.from] || 0) * STEP_MS + 220;
+      const cls = "edge" + (e.boundary ? " boundary" : "") + (e.dashed ? " async" : "");
+      out += `<g class="${cls}" data-key="${edgeKey(e)}" style="--d:${delay}ms">`;
+      out += e.dashed
+        ? `<path id="${pathId}" class="line" d="${d}" stroke="${stroke}" stroke-dasharray="4 4"/>`
+        : `<path id="${pathId}" class="line draw" d="${d}" stroke="${stroke}" pathLength="1"/>`;
+      out += `<path class="head" d="M 0 0 L -8 -4.2 L -8 4.2 Z" fill="${stroke}" transform="translate(${ex} ${ey}) rotate(${angle})"/>`;
 
       if (e.label) {
         let mx, my, anchor;
         if (labelPos === "vertical") {
-          mx = aCX + 10;
-          my = (a.y + a.h/2 + b.y + b.h/2) / 2;
-          anchor = "start";
+          mx = aCX + 10; my = (aCY + bCY) / 2; anchor = "start";
         } else if (labelPos === "horizontal") {
-          // Above the node row so the label never overlaps neighbouring nodes
-          mx = (aCX + bCX) / 2;
-          my = a.y - 8;
-          anchor = "middle";
+          mx = (aCX + bCX) / 2; my = a.y - 8; anchor = "middle"; // above the row, never over nodes
         } else {
-          // diagonal — label near the horizontal midY leg
-          mx = (aCX + bCX) / 2;
-          if (b.y > a.y) {
-            my = (a.y + a.h + b.y) / 2 - 6;
-          } else {
-            my = (a.y + b.y + b.h) / 2 - 6;
-          }
-          anchor = "middle";
+          mx = (aCX + bCX) / 2; my = mids[edgeKey(e)].y - 6; anchor = "middle";
         }
         const w = e.label.length * 5.8 + 10;
-        const bx = anchor === "middle" ? mx - w / 2 : (anchor === "end" ? mx - w + 4 : mx - 4);
-        edgesSvg += `<rect x="${bx}" y="${my - 9}" width="${w}" height="13" fill="var(--card)" opacity="0.94" rx="1"/>`;
-        edgesSvg += `<text x="${mx}" y="${my}" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="${anchor}" letter-spacing="0.4">${e.label}</text>`;
+        const bx = anchor === "middle" ? mx - w / 2 : mx - 4;
+        out += `<g class="lbl"><rect x="${bx}" y="${my - 9}" width="${w}" height="13" fill="var(--card)" opacity="0.94" rx="1"/>` +
+          `<text x="${mx}" y="${my}" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="${anchor}" letter-spacing="0.4">${e.label}</text></g>`;
       }
+
+      if (withPackets) {
+        // Async edges: hollow, slower packet. Boundary crossings: ochre.
+        const len = pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
+        const dur = Math.max(1.6, len / 70) * (e.dashed ? 1.8 : 1);
+        const begin = (idx * 0.37).toFixed(2);
+        const fill = e.dashed ? "var(--card)" : (e.boundary ? "var(--ochre)" : "var(--trail)");
+        const packetStroke = e.dashed ? stroke : "none";
+        out += `<circle class="packet" r="${e.dashed ? 3 : 3.4}" fill="${fill}" stroke="${packetStroke}" stroke-width="1.4" opacity="0">` +
+          `<animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite"><mpath href="#${pathId}"/></animateMotion>` +
+          `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.82;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>` +
+          `</circle>`;
+      }
+      out += "</g>";
     });
-    svg.innerHTML = `<defs>${defsSvg}</defs>${edgesSvg}`;
+    svg.innerHTML = out;
+    wrap._geom = { nodes, mids };
+    if (wrap._opts.pins) placePins(wrap);
+  }
+
+  // ---- Highlighting (hover a node, or a risk on the reveal map) ----
+  function highlightFlow(wrap, nodeIds, edgeKeys) {
+    const grid = wrap.querySelector(".flow-grid");
+    if (!grid) return;
+    grid.classList.add("focus-mode");
+    grid.querySelectorAll(".flow-node").forEach(n => n.classList.toggle("lit", nodeIds.has(n.dataset.id)));
+    grid.querySelectorAll(".edge").forEach(g => g.classList.toggle("lit", edgeKeys.has(g.dataset.key)));
+  }
+  function clearHighlight(wrap) {
+    const grid = wrap.querySelector(".flow-grid");
+    if (!grid) return;
+    grid.classList.remove("focus-mode");
+    grid.querySelectorAll(".lit").forEach(el => el.classList.remove("lit"));
+    grid.querySelectorAll(".pin.active").forEach(el => el.classList.remove("active"));
+  }
+  function highlightNode(wrap, id) {
+    const nodeIds = new Set([id]), keys = new Set();
+    wrap._flow.edges.forEach(e => {
+      if (e.from === id || e.to === id) { keys.add(edgeKey(e)); nodeIds.add(e.from); nodeIds.add(e.to); }
+    });
+    highlightFlow(wrap, nodeIds, keys);
+  }
+  function highlightRisk(wrap, risk) {
+    const where = risk.where || {};
+    highlightFlow(wrap, new Set(where.nodes || []), new Set((where.edges || []).map(edgeKey)));
+    wrap.querySelectorAll(`.pin[data-risk="${risk.id}"]`).forEach(p => p.classList.add("active"));
+  }
+
+  // ---- Reveal map pins: one numbered pin per risk, at its first node (or edge) ----
+  function placePins(wrap) {
+    const layer = wrap.querySelector(".flow-pins");
+    const { nodes, mids } = wrap._geom;
+    layer.innerHTML = "";
+    const perSpot = {};
+    wrap._opts.pins.forEach(pin => {
+      const where = pin.risk.where || {};
+      let x, y, spot;
+      if (where.nodes && where.nodes.length && nodes[where.nodes[0]]) {
+        const n = nodes[where.nodes[0]];
+        spot = "n:" + where.nodes[0];
+        const k = perSpot[spot] = (perSpot[spot] || 0) + 1;
+        // Bottom-right corner: horizontal edge labels sit above the row, so the top is taken.
+        x = n.x + n.w - 4 - (k - 1) * 26; y = n.y + n.h + 1;
+      } else if (where.edges && where.edges.length && mids[edgeKey(where.edges[0])]) {
+        const m = mids[edgeKey(where.edges[0])];
+        spot = "e:" + edgeKey(where.edges[0]);
+        const k = perSpot[spot] = (perSpot[spot] || 0) + 1;
+        x = m.x + (k - 1) * 26; y = m.y;
+      } else {
+        return;
+      }
+      const b = document.createElement("button");
+      b.className = "pin " + (pin.hit ? "hit" : "missed");
+      b.dataset.risk = pin.risk.id;
+      b.textContent = pin.n;
+      b.style.left = `${x}px`;
+      b.style.top = `${y}px`;
+      b.setAttribute("aria-label", `Risco ${pin.n}: ${pin.title}${pin.hit ? " (você pegou)" : " (passou batido)"}`);
+      b.addEventListener("mouseenter", () => highlightRisk(wrap, pin.risk));
+      b.addEventListener("focus", () => highlightRisk(wrap, pin.risk));
+      b.addEventListener("mouseleave", () => clearHighlight(wrap));
+      b.addEventListener("blur", () => clearHighlight(wrap));
+      b.addEventListener("click", () => {
+        const card = document.getElementById(`risk-${pin.risk.id}`);
+        if (!card) return;
+        card.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "center" });
+        card.classList.remove("flash");
+        void card.offsetWidth;
+        card.classList.add("flash");
+      });
+      layer.appendChild(b);
+    });
   }
 
   // ---- Checklist ----
@@ -2034,18 +2247,32 @@ footer .foot-brand {
       </div>
     `;
 
+    // Risk map: the flow again, with a numbered pin where each risk lives.
+    const mapBlock = document.getElementById("riskMapBlock");
+    const map = document.getElementById("riskMap");
+    const pins = risks
+      .map((r, i) => ({ n: i + 1, risk: r, hit: set.has(r.id), title: r.title.replace(/<[^>]*>/g, "") }))
+      .filter(p => p.risk.where);
+    mapBlock.hidden = pins.length === 0;
+    renderFlow(map, pins.length ? c.flow : null, { pins });
+
     // Risk cards
     const list = document.getElementById("riskList");
     list.innerHTML = "";
-    risks.forEach(r => {
+    risks.forEach((r, i) => {
       const hit = set.has(r.id);
       const card = document.createElement("article");
       card.className = "risk-card " + (hit ? "hit" : "missed");
+      card.id = `risk-${r.id}`;
+      if (r.where && pins.length) {
+        card.addEventListener("mouseenter", () => highlightRisk(map, r));
+        card.addEventListener("mouseleave", () => clearHighlight(map));
+      }
       const catLabel = r.category ? (r.category.charAt(0).toUpperCase() + r.category.slice(1)) : "—";
       const sevClass = r.severity === "crítico" ? "rust" : (r.severity === "alto" ? "ochre" : "");
       card.innerHTML = `
         <div class="rc-head">
-          <h4>${r.title}</h4>
+          <h4><span class="rc-num ${hit ? "hit" : "missed"}" aria-hidden="true">${i + 1}</span>${r.title}</h4>
           <span class="rc-status ${hit ? "hit" : "missed"}">${hit ? "Você pegou" : "Passou batido"}</span>
         </div>
         <div class="rc-tags">
@@ -2256,6 +2483,9 @@ footer .foot-brand {
     document.getElementById("themeBtn").addEventListener("click", toggleTheme);
     document.getElementById("copyTemplate").addEventListener("click", copyTemplate);
     document.getElementById("revealBtn").addEventListener("click", revealReading);
+    const replay = document.getElementById("replayFlow");
+    if (REDUCED_MOTION) replay.hidden = true;
+    replay.addEventListener("click", () => playFlow(document.getElementById("flowWrap")));
     document.getElementById("resetCase").addEventListener("click", () => {
       if (!state.caseSlug) return;
       if (!confirm("Recomeçar apaga suas marcações e o placar deste caso. Continuar?")) return;
