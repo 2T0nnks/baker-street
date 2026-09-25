@@ -1,0 +1,326 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "slug": "link-de-pagamento",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Link de Pagamento",
+  "subtitle": "Subcredenciadora que vende por link para pequenos lojistas e repassa em D+2",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Fintech", "Chargeback", "Antifraude", "PLD"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "A Vitrine Pay é uma subcredenciadora para quem vende por Instagram e WhatsApp: o lojista cria um link de pagamento no painel, manda ao cliente, e o cliente paga com cartão de crédito em até 12 vezes. São 64 mil lojistas ativos e R$ 180 milhões por mês em vendas. A Vitrine liquida as transações por uma adquirente parceira.",
+      "O cadastro é o diferencial comercial: o lojista entra só com CPF ou CNPJ, e-mail e uma chave PIX para receber, e já pode vender no mesmo dia. O repasse é automático em D+2 para a chave PIX cadastrada, sem reserva — as vendas parceladas são antecipadas por padrão. Portadores podem contestar compras (chargeback) por até 120 dias.",
+      "O checkout monta o valor a partir dos parâmetros do link, e a API de pagamento recebe o valor que vem do checkout. O lojista pode trocar a chave PIX de recebimento no painel, com a sessão logada; a sessão dura 30 dias. O painel também exporta, em CSV, todos os compradores do lojista com nome, CPF, telefone e endereço completos.",
+      "O time de risco tem dois analistas. Os alertas da adquirente sobre lojistas com muitos chargebacks chegam por e-mail e são acompanhados numa planilha. Reembolsos pedidos por compradores são feitos pelo backoffice, que permite devolver o valor por PIX para a chave que o atendente informar."
+    ],
+    "actors": [
+      ["Lojista", "cria links e recebe em D+2"],
+      ["Comprador", "paga com cartão pelo link"],
+      ["Analistas de risco", "2 pessoas, alertas por e-mail"],
+      ["Atendimento", "processa reembolsos no backoffice"],
+      ["Adquirente parceira", "terceiro: liquida e repassa chargebacks"],
+      ["PSP de PIX", "terceiro: paga os repasses"]
+    ],
+    "data": [
+      ["CPF/CNPJ e chave PIX", "cadastro do lojista"],
+      ["Dados do cartão", "tokenizados no checkout"],
+      ["Dados do comprador", "nome, CPF, telefone, endereço"],
+      ["Valor e parcelas", "vêm dos parâmetros do link"],
+      ["Chargebacks", "alertas da adquirente por e-mail"]
+    ],
+    "scale": [
+      ["64 mil", "lojistas ativos"],
+      ["R$ 180 mi / mês", "volume processado"],
+      ["D+2", "repasse, sem reserva"],
+      ["120 dias", "prazo de contestação"],
+      ["2 analistas", "time de risco"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "painel", "label": "Painel do lojista", "kind": "internal", "icon": "web", "x": 60, "y": 40 },
+      { "id": "checkout", "label": "Checkout do link", "kind": "boundary", "icon": "web", "x": 240, "y": 40 },
+      { "id": "api", "label": "API de pagamento", "kind": "internal", "icon": "api", "x": 440, "y": 40 },
+      { "id": "adquirente", "label": "Adquirente parceira", "kind": "external", "icon": "payment", "x": 640, "y": 40 },
+      { "id": "cadastro", "label": "Cadastro de lojistas", "kind": "internal", "icon": "database", "x": 60, "y": 160 },
+      { "id": "repasse", "label": "Motor de repasse D+2", "kind": "internal", "icon": "service", "x": 440, "y": 160 },
+      { "id": "risco", "label": "Planilha de risco", "kind": "internal", "icon": "spreadsheet", "x": 640, "y": 160 },
+      { "id": "backoffice", "label": "Backoffice de reembolso", "kind": "internal", "icon": "team", "x": 240, "y": 260 },
+      { "id": "pix", "label": "PSP de PIX", "kind": "external", "icon": "bank", "x": 440, "y": 260 }
+    ],
+    "edges": [
+      { "from": "painel", "to": "checkout", "label": "cria link" },
+      { "from": "checkout", "to": "api", "label": "valor + cartão" },
+      { "from": "api", "to": "adquirente", "label": "autorização", "boundary": true },
+      { "from": "painel", "to": "cadastro", "label": "troca chave PIX" },
+      { "from": "cadastro", "to": "repasse", "label": "chave de destino" },
+      { "from": "api", "to": "repasse", "label": "vendas aprovadas" },
+      { "from": "adquirente", "to": "risco", "label": "alertas por e-mail", "dashed": true, "boundary": true },
+      { "from": "repasse", "to": "pix", "label": "repasse D+2", "boundary": true },
+      { "from": "backoffice", "to": "pix", "label": "reembolso p/ qualquer chave", "boundary": true }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "autovenda",
+      "truth": true,
+      "category": "fraude",
+      "title": "Lojista paga os próprios links com cartões roubados",
+      "sub": "Cadastro no mesmo dia, repasse em D+2 sem reserva e 120 dias para o chargeback aparecer."
+    },
+    {
+      "id": "valor-cliente",
+      "truth": true,
+      "category": "técnico",
+      "title": "O valor cobrado vem do checkout, não do link salvo",
+      "sub": "A API de pagamento aceita o valor que o checkout envia, montado a partir dos parâmetros do link."
+    },
+    {
+      "id": "troca-chave",
+      "truth": true,
+      "category": "técnico",
+      "title": "Troca da chave PIX de recebimento só com sessão logada",
+      "sub": "Sessão de 30 dias e nenhuma confirmação adicional para mudar para onde vai o dinheiro."
+    },
+    {
+      "id": "cadastro-laranja",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Lojista entra só com CPF, e-mail e chave PIX",
+      "sub": "O contexto não fala em validar que a chave PIX é do próprio lojista nem em qualquer checagem além disso."
+    },
+    {
+      "id": "reembolso-qualquer-chave",
+      "truth": true,
+      "category": "lógica",
+      "title": "Reembolso por PIX para qualquer chave informada",
+      "sub": "O backoffice devolve para a chave que o atendente digitar, não para o meio de pagamento original."
+    },
+    {
+      "id": "sem-reserva",
+      "truth": true,
+      "category": "processo",
+      "title": "Antecipação automática sem reserva para chargeback",
+      "sub": "Vendas parceladas são antecipadas por padrão e repassadas em D+2, sem reter nada."
+    },
+    {
+      "id": "alerta-planilha",
+      "truth": true,
+      "category": "operativo",
+      "title": "Alertas de chargeback por e-mail numa planilha de dois analistas",
+      "sub": "O lojista suspeito continua recebendo enquanto o alerta espera na caixa de entrada."
+    },
+    {
+      "id": "export-compradores",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Exportação com CPF, telefone e endereço de todos os compradores",
+      "sub": "Qualquer lojista — inclusive um fraudador recém-cadastrado — baixa a base completa de quem comprou dele."
+    },
+    {
+      "id": "doze-vezes",
+      "truth": false,
+      "category": "lógica",
+      "title": "Parcelar em até 12 vezes aumenta a inadimplência",
+      "sub": "Quem assume o risco de crédito do parcelado é o emissor do cartão, não a Vitrine. Não é o problema deste fluxo."
+    },
+    {
+      "id": "pan-armazenado",
+      "truth": false,
+      "category": "técnico",
+      "title": "Número do cartão guardado em texto no banco",
+      "sub": "O contexto diz que o cartão é tokenizado no checkout. Não há sinal de armazenamento do número."
+    },
+    {
+      "id": "instagram-canal",
+      "truth": false,
+      "category": "operativo",
+      "title": "Vender por Instagram e WhatsApp é inseguro",
+      "sub": "É o canal de venda do cliente, não uma falha da Vitrine. O risco está em quem vende, não em onde vende."
+    },
+    {
+      "id": "ddos-checkout",
+      "truth": false,
+      "category": "técnico",
+      "title": "Checkout pode sair do ar por ataque de negação de serviço",
+      "sub": "Disponibilidade importa, mas nada no contexto aponta para isso — e não é abuso da lógica do produto."
+    }
+  ],
+  "risks": [
+    {
+      "id": "autovenda",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["checkout", "repasse", "api"], "edges": [{ "from": "checkout", "to": "api" }, { "from": "repasse", "to": "pix" }] },
+      "title": "Autovenda: cartões roubados viram PIX em D+2",
+      "signal": "O lojista vende <em>no mesmo dia</em> do cadastro, recebe <em>em D+2</em>, sem reserva, e o portador tem <em>120 dias</em> para contestar. Toda a janela de chargeback fica depois de o dinheiro já ter saído.",
+      "abuse": [
+        "Fraudador cadastra uma loja de fachada, cria links de R$ 900 e paga com cartões comprados em fórum; dois dias depois, recebe tudo por PIX.",
+        "Rede de lojas criadas com CPFs diferentes divide os cartões para não chamar atenção em nenhuma delas.",
+        "Quando os chargebacks chegam, semanas depois, as chaves PIX de destino já foram esvaziadas e as lojas abandonadas."
+      ],
+      "impact": "A adquirente debita os chargebacks da Vitrine, que não tem de quem cobrar. Perda direta de caixa, além do risco de a adquirente cortar a parceria ou exigir garantias quando a taxa de chargeback passar dos limites das bandeiras.",
+      "mitigation": [
+        "Repasse de lojistas novos com prazo maior e reserva (rolling reserve) que diminui conforme o histórico.",
+        "Limites de volume nos primeiros dias, liberados por comportamento: ticket médio, dispersão de cartões e taxa de aprovação.",
+        "Regras de autovenda: mesmo aparelho, IP ou dados entre lojista e comprador, muitos cartões diferentes em pouco tempo."
+      ]
+    },
+    {
+      "id": "valor-cliente",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["api", "checkout"], "edges": [{ "from": "checkout", "to": "api" }] },
+      "title": "Preço definido por quem paga",
+      "signal": "O checkout <em>monta o valor a partir dos parâmetros do link</em> e a API aceita o valor que vem do checkout. Nada garante que o valor cobrado é o que o lojista cadastrou.",
+      "abuse": [
+        "Comprador edita o parâmetro de valor da URL e paga R$ 1,00 por um produto de R$ 400; o lojista vê \"pago\" e envia a mercadoria.",
+        "Script automatizado compra de muitos lojistas com valores alterados, revendendo os produtos."
+      ],
+      "impact": "Prejuízo direto dos lojistas, que acionam a Vitrine. Perda de confiança no produto principal da empresa.",
+      "mitigation": [
+        "O link guarda valor e parcelas no servidor; o checkout envia só o identificador do link e a API busca o valor.",
+        "Rejeitar pagamento cujo valor não bate com o do link, com alerta.",
+        "Mostrar ao lojista, na confirmação do pedido, o valor efetivamente cobrado."
+      ]
+    },
+    {
+      "id": "troca-chave",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["cadastro", "painel"], "edges": [{ "from": "painel", "to": "cadastro" }, { "from": "cadastro", "to": "repasse" }] },
+      "title": "Quem tem a sessão decide para onde vai o dinheiro",
+      "signal": "A chave PIX de recebimento muda <em>com a sessão logada</em>, e a sessão dura <em>30 dias</em>. Não há segundo fator, aviso nem carência descritos para a troca do destino do dinheiro.",
+      "abuse": [
+        "Malware que rouba cookies pega a sessão de um lojista grande, troca a chave e desvia o repasse do dia seguinte.",
+        "Funcionário demitido que ainda tem o painel aberto num computador da loja muda a chave antes de sair.",
+        "Phishing \"sua conta será bloqueada\" leva o lojista a logar numa página falsa; o atacante reaproveita a sessão."
+      ],
+      "impact": "Repasses desviados para terceiros; o lojista cobra a Vitrine, que paga de novo. Cada caso é perda direta e desgaste com clientes justamente nos lojistas de maior volume.",
+      "mitigation": [
+        "Troca de chave de recebimento exige segundo fator e confirmação no e-mail e no celular já cadastrados.",
+        "Carência de 24 a 72 horas para a nova chave valer, com aviso nos canais antigos e opção de cancelar.",
+        "Chave de recebimento só em nome do próprio CPF/CNPJ do lojista (validar titularidade no PSP)."
+      ]
+    },
+    {
+      "id": "cadastro-laranja",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["cadastro"], "edges": [{ "from": "painel", "to": "cadastro" }] },
+      "title": "Onboarding sem conhecer o lojista",
+      "signal": "O cadastro pede <em>só CPF ou CNPJ, e-mail e chave PIX</em> — é o diferencial comercial. O contexto não fala em validar identidade, atividade ou se a chave PIX é do próprio lojista.",
+      "abuse": [
+        "CPFs vazados viram lojistas; o dinheiro das vendas cai em chaves PIX de terceiros.",
+        "Lojas de fachada recebem pagamentos de golpes (produto que nunca é entregue) e somem em uma semana.",
+        "Organizações usam links de pagamento para dar aparência de venda a dinheiro de origem ilícita."
+      ],
+      "impact": "Subcredenciadoras precisam conhecer seus clientes e monitorar operações suspeitas (Circular BCB 3.978/2020), além das regras de cadastro das bandeiras e da adquirente. Falhar nisso traz risco regulatório, multas das bandeiras e descredenciamento.",
+      "mitigation": [
+        "KYC proporcional: validação de identidade com prova de vida e conferência de que a chave PIX pertence ao titular.",
+        "Checagem de CNPJ (situação, atividade) e de listas restritivas antes de liberar volume.",
+        "Liberação gradual: vende no mesmo dia, mas com limite até completar o cadastro."
+      ]
+    },
+    {
+      "id": "reembolso-qualquer-chave",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["backoffice", "pix"], "edges": [{ "from": "backoffice", "to": "pix" }] },
+      "title": "Reembolso vira saque: devolução para qualquer chave",
+      "signal": "O backoffice devolve o valor <em>por PIX para a chave que o atendente informar</em>. Um pagamento feito com cartão pode voltar como dinheiro para outra pessoa.",
+      "abuse": [
+        "Fraudador paga com cartão roubado, pede reembolso e informa a própria chave PIX: o cartão roubado vira dinheiro limpo, e o chargeback ainda vem depois.",
+        "Atendente combina com cúmplices e processa reembolsos de compras reais para chaves deles.",
+        "Engenharia social: \"troquei de banco, devolve nessa outra chave\"."
+      ],
+      "impact": "Perda em dobro — o reembolso sai e o chargeback do cartão original chega — e um canal de lavagem que transforma crédito roubado em PIX.",
+      "mitigation": [
+        "Reembolso sempre pelo meio original (estorno no cartão); PIX só em exceção, para chave do titular do pagamento.",
+        "Aprovação de uma segunda pessoa para qualquer reembolso fora do meio original.",
+        "Relatório de reembolsos por atendente e por chave de destino, com alerta para repetição."
+      ]
+    },
+    {
+      "id": "sem-reserva",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["repasse"], "edges": [{ "from": "api", "to": "repasse" }, { "from": "repasse", "to": "pix" }] },
+      "title": "Política de crédito que antecipa tudo para todos",
+      "signal": "Vendas parceladas são <em>antecipadas por padrão</em> e repassadas em D+2, <em>sem reserva</em>. A Vitrine paga agora um dinheiro que a adquirente vai pagar em até 12 meses — e que pode voltar em chargeback.",
+      "abuse": [
+        "Lojista legítimo quebra ou fecha com vendas parceladas futuras; os chargebacks e cancelamentos chegam e não há saldo para descontar.",
+        "Fraudadores escolhem a Vitrine justamente porque é a que paga mais rápido e sem reter nada."
+      ],
+      "impact": "Exposição de crédito concentrada e sem garantia. Cada venda parcelada é um empréstimo ao lojista sem nenhuma análise.",
+      "mitigation": [
+        "Antecipação como produto com análise de risco do lojista, e não padrão para todos.",
+        "Reserva percentual sobre o volume parcelado, calibrada pelo histórico de chargeback.",
+        "Poder de reter repasses futuros para cobrir perdas previsto em contrato."
+      ]
+    },
+    {
+      "id": "alerta-planilha",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["risco", "adquirente"], "edges": [{ "from": "adquirente", "to": "risco" }] },
+      "title": "O alerta chega, mas ninguém consegue agir a tempo",
+      "signal": "Os alertas de chargeback <em>chegam por e-mail</em> e são acompanhados <em>numa planilha</em> por dois analistas, para 64 mil lojistas. Nada liga o alerta a uma ação automática no repasse.",
+      "abuse": [
+        "Um lojista com chargebacks disparando segue recebendo repasses por dias enquanto o e-mail espera na fila.",
+        "O fraudador que conhece o ritmo da equipe concentra as vendas no fim de semana."
+      ],
+      "impact": "Perdas que poderiam ser contidas continuam crescendo. O limite de chargeback das bandeiras é ultrapassado antes de alguém ver.",
+      "mitigation": [
+        "Integração dos alertas da adquirente com retenção automática de repasse acima de um limite.",
+        "Fila de casos com prioridade por valor em risco, em vez de planilha.",
+        "Indicadores diários de chargeback por lojista e por safra de cadastro."
+      ]
+    },
+    {
+      "id": "export-compradores",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["painel"] },
+      "title": "Base de compradores entregue em CSV a qualquer lojista",
+      "signal": "O painel exporta <em>todos os compradores</em> do lojista com nome, CPF, telefone e endereço completos. E o lojista pode ser qualquer pessoa, cadastrada no mesmo dia.",
+      "abuse": [
+        "Fraudador cria uma loja, vende pouco e baixa a lista completa de compradores para golpes (\"seu pedido foi retido, pague a taxa\").",
+        "Lojista legítimo vende a base de clientes a terceiros.",
+        "Sessão roubada do painel é usada só para exportar dados."
+      ],
+      "impact": "Exposição de dados pessoais além do necessário para entregar a compra (LGPD, princípio da necessidade), com a Vitrine como controladora que disponibilizou a exportação.",
+      "mitigation": [
+        "Mostrar e exportar só o necessário para a entrega; CPF mascarado.",
+        "Exportação em massa só para lojistas verificados, com segundo fator e registro.",
+        "Limite e alerta para volumes de exportação fora do padrão."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Quem define o destino do dinheiro é a credencial mais valiosa",
+      "body": "Trocar chave de recebimento, conta de repasse ou destino de reembolso tem que ser mais difícil que vender. Se não for, o atacante não precisa fraudar venda nenhuma."
+    },
+    {
+      "title": "Prazo de liquidação curto e prazo de contestação longo é crédito",
+      "body": "Pagar em D+2 algo que pode voltar em 120 dias é emprestar dinheiro. Trate como crédito: análise, limite e garantia."
+    },
+    {
+      "title": "Nunca confie em valor que veio do cliente",
+      "body": "Preço, parcelas e desconto são estado do servidor. O cliente envia um identificador; o servidor sabe quanto cobrar."
+    },
+    {
+      "title": "Reembolso é um meio de pagamento — e de saque",
+      "body": "Toda devolução por um meio diferente do original é uma porta para converter crédito roubado em dinheiro."
+    },
+    {
+      "title": "Cadastro rápido exige limites rápidos",
+      "body": "Se o onboarding é leve para crescer, o controle migra para os limites iniciais e para o monitoramento. Leveza sem limite é convite."
+    }
+  ]
+}
