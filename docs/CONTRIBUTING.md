@@ -22,32 +22,41 @@ Rodou? Ótimo. Vamos escrever.
    ```bash
    npm run new
    ```
-   Responde as perguntas (slug, título, subtítulo, domínio). O script cria `cases/<slug>.json` com o esqueleto correto e status `"draft"`. Rascunhos ficam fora do build e não são publicados até você mudar o status.
+   Responde as perguntas (slug, título, subtítulo, domínio). O script cria `cases/<slug>.json` com status `"draft"` e um **exemplo mínimo completo**: 3 sistemas com ícone, 2 setas, 3 riscos reais com `where` e 3 armadilhas. Ele já passa na validação e já aparece inteiro no motor (fluxo animado, mapa de riscos) — você troca o conteúdo mantendo o formato. Rascunhos ficam fora do build e não são publicados até você mudar o status.
 
 2. **Edita o JSON.** Preenche narrativa, atores, dados, escala, fluxo, candidatos e riscos. Leia `docs/CASE_GUIDELINES.md` pra saber o que faz um caso bom.
+
+   No VS Code (e em outros editores com suporte a JSON Schema), a linha `"$schema": "../schema/case.schema.json"` no topo do arquivo liga **autocompletar e checagem enquanto você digita**: os valores possíveis de `icon`, `kind`, `category`, `severity` aparecem na sugestão.
 
 3. **Valida:**
    ```bash
    npm run validate
    ```
-   Se der erro, ele aponta o campo. Se passar, `✓ cases/<slug>.json`.
+   Se der erro, ele aponta o campo. Se passar, `✓ cases/<slug>.json`. Além do schema, ele confere o que o motor precisa para desenhar o caso sem quebrar:
+   - ids repetidos (nós, candidatos, riscos) e setas duplicadas;
+   - dois nós na mesma posição `x`/`y` (ficariam um em cima do outro);
+   - seta de um nó para ele mesmo;
+   - rótulo de seta com mais de 32 caracteres (não cabe entre os nós);
+   - todo nó com `icon`, todo risco com `where` apontando nós/setas que existem;
+   - pelo menos 3 armadilhas (`truth: false`), senão marcar tudo tira nota máxima;
+   - risco e candidato com a mesma categoria;
+   - aviso (não bloqueia) para nó sem nenhuma seta.
 
 4. **Testa localmente:**
    ```bash
-   npm run build
    npm run dev
    ```
-   Abre `http://localhost:8000`. Roda seu caso do início ao fim. Volte, ajuste, iterage.
+   Abre `http://localhost:8000/?caso=<slug>&debug=layout`. Roda seu caso do início ao fim. Com `debug=layout`, embaixo do fluxo e do mapa de riscos aparece um painel dizendo se algum rótulo ou pino ficou em cima de outra coisa (verde = tudo certo, vermelho = lista do que ajustar). Se aparecer vermelho, encurte rótulos ou reposicione nós (`x`/`y`).
 
 5. **Promove pra `"open"`:**
    Muda o campo `"status": "draft"` pra `"status": "open"` quando estiver pronto.
 
 6. **PR:**
    ```bash
-   git checkout -b caso/<slug>
+   git switch -c caso/<slug>
    git add cases/<slug>.json
    git commit -m "add: caso <slug>"
-   git push origin caso/<slug>
+   git push -u origin caso/<slug>
    ```
    Abre o PR pelo GitHub. O template já vem com um checklist. Preenche.
 

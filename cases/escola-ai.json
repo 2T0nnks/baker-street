@@ -1,4 +1,5 @@
 {
+  "$schema": "../schema/case.schema.json",
   "slug": "escola-ai",
   "status": "soon",
   "domain": "edtech",
