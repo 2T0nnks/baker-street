@@ -529,7 +529,8 @@ section.block:first-of-type { border-top: none; }
   column-gap: 44px;
   row-gap: 64px;
 }
-.flow-arrows {
+.flow-arrows,
+.flow-labels {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
@@ -538,6 +539,15 @@ section.block:first-of-type { border-top: none; }
   z-index: 0;
   overflow: visible;
 }
+.flow-labels { z-index: 2; }
+.flow-labels rect { fill: var(--card); stroke: var(--line); stroke-width: 0.6; }
+.flow-labels text {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  fill: var(--ink-soft);
+}
+.flow-labels .lbl { transition: opacity 0.2s; }
 .flow-node {
   padding: 10px 12px;
   border: 1.4px solid var(--ink);
@@ -600,7 +610,8 @@ section.block:first-of-type { border-top: none; }
 .flow-arrows .edge { transition: opacity 0.2s; }
 .flow-grid.focus-mode .flow-node:not(.lit) { opacity: 0.28; }
 .flow-grid.focus-mode .flow-node.lit { box-shadow: 0 0 0 3px color-mix(in oklab, var(--ochre) 30%, transparent); }
-.flow-grid.focus-mode .edge:not(.lit) { opacity: 0.12; }
+.flow-grid.focus-mode .edge:not(.lit),
+.flow-grid.focus-mode .lbl:not(.lit) { opacity: 0.12; }
 .flow-grid.focus-mode .edge.lit .line { stroke-width: 2.6; }
 
 /* Intro animation (only while .play is on; see playFlow) */
@@ -611,7 +622,7 @@ section.block:first-of-type { border-top: none; }
 .flow-wrap.play .edge .line.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: flowDraw 0.65s ease-out forwards; animation-delay: var(--d, 0ms); }
 .flow-wrap.play .edge.async .line { animation: flowFade 0.6s both; animation-delay: var(--d, 0ms); }
 .flow-wrap.play .edge .head,
-.flow-wrap.play .edge .lbl { animation: flowFade 0.35s both; animation-delay: calc(var(--d, 0ms) + 550ms); }
+.flow-wrap.play .lbl { animation: flowFade 0.35s both; animation-delay: calc(var(--d, 0ms) + 550ms); }
 
 /* Reveal map */
 .risk-map { margin: 8px 0 40px; }
@@ -1920,6 +1931,8 @@ footer .foot-brand {
 
     let html = '<div class="flow-grid">';
     html += '<svg class="flow-arrows" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>';
+    // Edge labels live in their own layer on top, so no line, packet or node covers them.
+    html += '<svg class="flow-labels" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"></svg>';
     flow.nodes.forEach(n => {
       const style = `grid-column:${xValues.indexOf(n.x) + 1};grid-row:${yValues.indexOf(n.y) + 1};` +
         `border-color:${KIND_COLOR[n.kind] || "var(--ink)"};--d:${wrap._levels[n.id] * STEP_MS}ms`;
@@ -1994,9 +2007,12 @@ footer .foot-brand {
     const W = grid.offsetWidth;
     const H = grid.offsetHeight;
     if (W === 0 || H === 0) return;
-    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.setAttribute("width", W);
-    svg.setAttribute("height", H);
+    const labelSvg = wrap.querySelector(".flow-labels");
+    [svg, labelSvg].forEach(el => {
+      el.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      el.setAttribute("width", W);
+      el.setAttribute("height", H);
+    });
 
     // Measure current node positions from the live layout
     const nodes = {};
@@ -2007,7 +2023,7 @@ footer .foot-brand {
 
     const mids = {};
     const lengths = {};
-    let out = "";
+    let out = "", labelsOut = "";
     flow.edges.forEach((e, idx) => {
       const a = nodes[e.from], b = nodes[e.to];
       if (!a || !b) return;
@@ -2069,16 +2085,25 @@ footer .foot-brand {
         } else {
           mx = (aCX + bCX) / 2; my = mids[edgeKey(e)].y - 6 + (side > 0 ? 18 : 0); anchor = "middle";
         }
-        const w = e.label.length * 5.8 + 10;
-        const bx = anchor === "middle" ? mx - w / 2 : (anchor === "end" ? mx - w + 4 : mx - 4);
-        out += `<g class="lbl"><rect x="${bx}" y="${my - 9}" width="${w}" height="13" fill="var(--card)" opacity="0.94" rx="1"/>` +
-          `<text x="${mx}" y="${my}" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="${anchor}" letter-spacing="0.4">${e.label}</text></g>`;
+        // The backing rect is resized to the measured text right after insertion.
+        labelsOut += `<g class="lbl" data-key="${edgeKey(e)}" style="--d:${delay}ms">` +
+          `<rect x="${mx}" y="${my - 10}" width="0" height="14" rx="2"/>` +
+          `<text x="${mx}" y="${my}" text-anchor="${anchor}">${e.label}</text></g>`;
       }
 
       lengths[edgeKey(e)] = pts.reduce((sum, p, i) => i ? sum + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
       out += "</g>";
     });
     svg.innerHTML = out;
+    labelSvg.innerHTML = labelsOut;
+    labelSvg.querySelectorAll(".lbl").forEach(g => {
+      const t = g.querySelector("text").getBBox();
+      const r = g.querySelector("rect");
+      r.setAttribute("x", t.x - 5);
+      r.setAttribute("y", t.y - 2);
+      r.setAttribute("width", t.width + 10);
+      r.setAttribute("height", t.height + 4);
+    });
     wrap._geom = { nodes, mids, lengths };
     if (wrap._opts.pins) placePins(wrap);
     if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
@@ -2116,7 +2141,7 @@ footer .foot-brand {
     if (!grid) return;
     grid.classList.add("focus-mode");
     grid.querySelectorAll(".flow-node").forEach(n => n.classList.toggle("lit", nodeIds.has(n.dataset.id)));
-    grid.querySelectorAll(".edge").forEach(g => g.classList.toggle("lit", edgeKeys.has(g.dataset.key)));
+    grid.querySelectorAll(".edge, .lbl").forEach(g => g.classList.toggle("lit", edgeKeys.has(g.dataset.key)));
   }
   function clearHighlight(wrap) {
     const grid = wrap.querySelector(".flow-grid");
