@@ -576,6 +576,9 @@ section.block:first-of-type { border-top: none; }
   .flow-node { font-size: 12px; padding: 8px 10px; min-height: 38px; }
   .flow-scroll-hint { display: block; }
 }
+.layout-debug { margin: 8px 0 0; padding: 8px 12px; border-radius: 4px; font: 12px/1.5 "JetBrains Mono", monospace; background: color-mix(in oklab, var(--trail) 12%, var(--card)); color: var(--ink); }
+.layout-debug.bad { background: color-mix(in oklab, var(--rust) 16%, var(--card)); }
+.layout-debug ul { margin: 6px 0 0; padding-left: 18px; }
 .flow-scroll-hint { display: none; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 .flow-legend {
   display: flex; gap: 20px; flex-wrap: wrap;
@@ -2132,6 +2135,43 @@ footer .foot-brand {
     wrap._geom = { nodes, mids, lengths, labelBoxes };
     if (wrap._opts.pins) placePins(wrap);
     if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
+    if (DEBUG_LAYOUT) reportLayout(wrap);
+  }
+
+  // ---- Authoring aid: ?debug=layout lists anything that overlaps in a diagram ----
+  const DEBUG_LAYOUT = new URLSearchParams(location.search).get("debug") === "layout";
+  function reportLayout(wrap) {
+    const g = wrap._geom;
+    const W = wrap.querySelector(".flow-grid").offsetWidth;
+    const X = (a, b) => a.l < b.r - 0.5 && a.r > b.l + 0.5 && a.t < b.b - 0.5 && a.b > b.t + 0.5;
+    const nodes = Object.entries(g.nodes).map(([id, n]) => ({ id, l: n.x, t: n.y, r: n.x + n.w, b: n.y + n.h }));
+    const labels = g.labelBoxes || [];
+    const pins = (g.pins || []).map(p => ({ n: p.n, l: p.x - 12, r: p.x + 12, t: p.y - 12, b: p.y + 12 }));
+    const issues = [];
+    labels.forEach(l => nodes.forEach(n => { if (X(l, n)) issues.push(`rótulo "${l.text}" cobre o nó "${n.id}"`); }));
+    labels.forEach((a, i) => labels.forEach((b, j) => { if (i < j && X(a, b)) issues.push(`rótulo "${a.text}" cobre o rótulo "${b.text}"`); }));
+    pins.forEach(p => labels.forEach(l => { if (X(p, l)) issues.push(`pino ${p.n} cobre o rótulo "${l.text}"`); }));
+    pins.forEach((p, i) => pins.forEach((q, j) => { if (i < j && X(p, q)) issues.push(`pino ${p.n} cobre o pino ${q.n}`); }));
+    labels.forEach(l => { if (l.l < 0 || l.r > W) issues.push(`rótulo "${l.text}" sai do quadro`); });
+    let panel = wrap.nextElementSibling;
+    if (!panel || !panel.classList.contains("layout-debug")) {
+      panel = document.createElement("div");
+      panel.className = "layout-debug";
+      wrap.after(panel);
+    }
+    panel.classList.toggle("bad", issues.length > 0);
+    panel.innerHTML = "";
+    const head = document.createElement("strong");
+    head.textContent = issues.length
+      ? `debug=layout · ${wrap.id}: ${issues.length} sobreposição(ões)`
+      : `debug=layout · ${wrap.id}: sem sobreposições (${labels.length} rótulos, ${pins.length} pinos)`;
+    panel.appendChild(head);
+    if (issues.length) {
+      const list = document.createElement("ul");
+      [...new Set(issues)].forEach(i => { const li = document.createElement("li"); li.textContent = i; list.appendChild(li); });
+      panel.appendChild(list);
+    }
+    issues.forEach(i => console.warn(`[Adler layout] ${wrap.id}: ${i}`));
   }
 
   // Edge labels float just above their own line segment, like a hand-drawn
@@ -2190,7 +2230,7 @@ footer .foot-brand {
       text.setAttribute("y", pick[1]);
       text.setAttribute("text-anchor", pick[2]);
       obstacles.push(boxOf(pick));
-      placed.push(boxOf(pick));
+      placed.push({ ...boxOf(pick), text: l.text });
     });
     return placed;
   }
@@ -2257,7 +2297,7 @@ footer .foot-brand {
     const onLabel = (x, y) => labelBoxes.some(b => x + R > b.l && x - R < b.r && y + R > b.t && y - R < b.b);
     layer.innerHTML = "";
     const W = wrap.querySelector(".flow-grid").offsetWidth;
-    const placedPins = [];
+    const placedPins = wrap._geom.pins = [];
     const clash = (x, y) => onLabel(x, y) || placedPins.some(p => Math.abs(p.x - x) < 25 && Math.abs(p.y - y) < 25);
     wrap._opts.pins.forEach(pin => {
       const where = pin.risk.where || {};
@@ -2275,7 +2315,7 @@ footer .foot-brand {
       }
       for (let tries = 0; tries < 8 && clash(x, y); tries++) x += step;
       x = Math.min(Math.max(x, R), W - R);
-      placedPins.push({ x, y });
+      placedPins.push({ x, y, n: pin.n });
       const b = document.createElement("button");
       b.className = "pin " + (pin.hit ? "hit" : "missed");
       b.dataset.risk = pin.risk.id;

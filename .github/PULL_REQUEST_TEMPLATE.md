@@ -25,6 +25,7 @@ Preencha o que se aplica e apague o que não se aplica.
 - [ ] Riscos reais cobrem no mínimo **3 categorias** distintas (não só técnico)
 - [ ] Cada risco tem `signal` (pistas no contexto), 2+ `abuse` cenários, `impact` concreto, 2+ `mitigation` acionáveis
 - [ ] Cada nó do fluxo tem `icon`
+- [ ] Abri o caso com `npm run dev` em `?caso=<slug>&debug=layout` e o painel ficou verde no fluxo e no mapa de riscos
 - [ ] Cada risco tem `where` apontando os nós/arestas do fluxo onde ele mora (conferi o mapa de riscos na revelação com `npm run dev`)
 - [ ] Há 3+ distratores plausíveis (armadilhas que qualquer BISO consideraria)
 - [ ] Takeaways generalizam — não só resumem o caso
