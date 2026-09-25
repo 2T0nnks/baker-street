@@ -1494,7 +1494,7 @@ footer .foot-brand {
               </div>
               <div class="field-def">
                 <code>risks</code><span class="type-tag">item[]</span>
-                <p>Só os itens reais. Cada risco tem: título, <code>category</code>, <code>severity</code>, <code>signal</code> (pistas no contexto), <code>abuse</code> (casos de abuso), <code>impact</code>, <code>mitigation</code> e, opcional, <code>where</code>: os nós e arestas do fluxo onde o risco mora, que viram o mapa de riscos da revelação.</p>
+                <p>Só os itens reais. Cada risco tem: título, <code>category</code>, <code>severity</code>, <code>signal</code> (pistas no contexto), <code>abuse</code> (casos de abuso), <code>impact</code>, <code>mitigation</code> e <code>where</code>: os nós e arestas do fluxo onde o risco mora, que viram o mapa de riscos da revelação.</p>
               </div>
               <div class="field-def">
                 <code>takeaways</code><span class="type-tag">item[]</span>
@@ -1965,9 +1965,12 @@ footer .foot-brand {
     scheduleFlowDraw(wrap);
     const last = Math.max(0, ...Object.values(wrap._levels)) * STEP_MS;
     wrap._playTimer = setTimeout(() => {
+      // Don't redraw here: rebuilding the SVG at the end of the intro made the
+      // diagram blink. The final frame of every animation equals the resting
+      // style, so dropping .play is invisible; packets are added in place.
       wrap.classList.remove("play");
       wrap._played = true;
-      scheduleFlowDraw(wrap);
+      addPackets(wrap);
     }, last + 1300);
   }
 
@@ -2003,7 +2006,7 @@ footer .foot-brand {
     });
 
     const mids = {};
-    const withPackets = wrap._opts.animate && wrap._played && !REDUCED_MOTION;
+    const lengths = {};
     let out = "";
     flow.edges.forEach((e, idx) => {
       const a = nodes[e.from], b = nodes[e.to];
@@ -2026,6 +2029,17 @@ footer .foot-brand {
         pts = [[aCX, a.y], [aCX, midY], [bCX, midY], [bCX, bBottom]];
         labelPos = "diagonal";
       }
+      // Two-way pairs (A→B and B→A) would be drawn on top of each other:
+      // pull them 5px apart and put the return edge's label on the other side.
+      const twoWay = flow.edges.some(o => o.from === e.to && o.to === e.from);
+      const side = twoWay ? (e.from < e.to ? -1 : 1) : 0;
+      if (side) {
+        const off = 5 * side;
+        pts = pts.map(([x, y], i) =>
+          labelPos === "horizontal" ? [x, y + off]
+          : labelPos === "vertical" ? [x + off, y]
+          : [x + off, (i === 1 || i === 2) ? y + off : y]);
+      }
       const d = "M " + pts.map(p => `${p[0]} ${p[1]}`).join(" L ");
       const m1 = pts[pts.length === 2 ? 0 : 1], m2 = pts[pts.length === 2 ? 1 : 2];
       mids[edgeKey(e)] = { x: (m1[0] + m2[0]) / 2, y: (m1[1] + m2[1]) / 2 };
@@ -2047,35 +2061,53 @@ footer .foot-brand {
       if (e.label) {
         let mx, my, anchor;
         if (labelPos === "vertical") {
-          mx = aCX + 10; my = (aCY + bCY) / 2; anchor = "start";
+          my = (aCY + bCY) / 2;
+          if (side < 0) { mx = aCX - 10; anchor = "end"; } else { mx = aCX + 10; anchor = "start"; }
         } else if (labelPos === "horizontal") {
-          mx = (aCX + bCX) / 2; my = a.y - 8; anchor = "middle"; // above the row, never over nodes
+          // Above the row, never over nodes; a return edge goes below it.
+          mx = (aCX + bCX) / 2; my = side > 0 ? Math.max(a.y + a.h, b.y + b.h) + 16 : Math.min(a.y, b.y) - 8; anchor = "middle";
         } else {
-          mx = (aCX + bCX) / 2; my = mids[edgeKey(e)].y - 6; anchor = "middle";
+          mx = (aCX + bCX) / 2; my = mids[edgeKey(e)].y - 6 + (side > 0 ? 18 : 0); anchor = "middle";
         }
         const w = e.label.length * 5.8 + 10;
-        const bx = anchor === "middle" ? mx - w / 2 : mx - 4;
+        const bx = anchor === "middle" ? mx - w / 2 : (anchor === "end" ? mx - w + 4 : mx - 4);
         out += `<g class="lbl"><rect x="${bx}" y="${my - 9}" width="${w}" height="13" fill="var(--card)" opacity="0.94" rx="1"/>` +
           `<text x="${mx}" y="${my}" font-family="JetBrains Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="${anchor}" letter-spacing="0.4">${e.label}</text></g>`;
       }
 
-      if (withPackets) {
-        // Async edges: hollow, slower packet. Boundary crossings: ochre.
-        const len = pts.reduce((s, p, i) => i ? s + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
-        const dur = Math.max(1.6, len / 70) * (e.dashed ? 1.8 : 1);
-        const begin = (idx * 0.37).toFixed(2);
-        const fill = e.dashed ? "var(--card)" : (e.boundary ? "var(--ochre)" : "var(--trail)");
-        const packetStroke = e.dashed ? stroke : "none";
-        out += `<circle class="packet" r="${e.dashed ? 3 : 3.4}" fill="${fill}" stroke="${packetStroke}" stroke-width="1.4" opacity="0">` +
-          `<animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite"><mpath href="#${pathId}"/></animateMotion>` +
-          `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.82;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>` +
-          `</circle>`;
-      }
+      lengths[edgeKey(e)] = pts.reduce((sum, p, i) => i ? sum + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
       out += "</g>";
     });
     svg.innerHTML = out;
-    wrap._geom = { nodes, mids };
+    wrap._geom = { nodes, mids, lengths };
     if (wrap._opts.pins) placePins(wrap);
+    if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
+  }
+
+  // Data packets looping along each edge: ochre when crossing a trust boundary,
+  // hollow and slower on async edges. Begin times are relative to the SVG's
+  // current clock so every packet starts at the head of its edge, staggered.
+  function addPackets(wrap) {
+    if (!wrap._opts.animate || REDUCED_MOTION || !wrap._geom) return;
+    const svg = wrap.querySelector(".flow-arrows");
+    if (!svg) return;
+    svg.querySelectorAll(".packet").forEach(p => p.remove());
+    const now = typeof svg.getCurrentTime === "function" ? svg.getCurrentTime() : 0;
+    wrap._flow.edges.forEach((e, idx) => {
+      const g = svg.querySelector(`.edge[data-key="${edgeKey(e)}"]`);
+      const path = g && g.querySelector(".line");
+      if (!path) return;
+      const len = wrap._geom.lengths[edgeKey(e)] || 100;
+      const dur = (Math.max(1.6, len / 70) * (e.dashed ? 1.8 : 1)).toFixed(2);
+      const begin = (now + 0.15 + idx * 0.37).toFixed(2);
+      const fill = e.dashed ? "var(--card)" : (e.boundary ? "var(--ochre)" : "var(--trail)");
+      const stroke = e.dashed ? path.getAttribute("stroke") : "none";
+      g.insertAdjacentHTML("beforeend",
+        `<circle class="packet" r="${e.dashed ? 3 : 3.4}" fill="${fill}" stroke="${stroke}" stroke-width="1.4" opacity="0">` +
+        `<animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite"><mpath href="#${path.id}"/></animateMotion>` +
+        `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.12;0.82;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>` +
+        `</circle>`);
+    });
   }
 
   // ---- Highlighting (hover a node, or a risk on the reveal map) ----

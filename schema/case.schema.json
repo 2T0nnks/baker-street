@@ -138,7 +138,7 @@
           "where": {
             "type": "object",
             "additionalProperties": false,
-            "description": "Where the risk lives in the flow, for the reveal map. The pin goes on the first node (or, without nodes, the first edge); all listed nodes and edges light up on hover.",
+            "description": "Where the risk lives in the flow, for the reveal map. Required by validate.mjs for open cases. The pin goes on the first node (or, without nodes, the first edge); all listed nodes and edges light up on hover.",
             "properties": {
               "nodes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
               "edges": {

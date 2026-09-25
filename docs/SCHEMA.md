@@ -91,7 +91,7 @@ Só os reais. `id` de cada risco deve ter um candidato correspondente com `truth
 ```
 
 - `severity`: `crítico` | `alto` | `médio` | `baixo`.
-- `where` (opcional): onde o risco mora no fluxo, com ids de `flow.nodes` e pares `from`/`to` de `flow.edges`. Alimenta o **mapa de riscos** da revelação: o número do risco fica no primeiro nó (ou, sem nós, na primeira aresta) e tudo o que estiver listado acende quando a pessoa passa o mouse. O `npm run validate` confere se os ids existem.
+- `where` (obrigatório em casos `open`): onde o risco mora no fluxo, com ids de `flow.nodes` e pares `from`/`to` de `flow.edges`. Alimenta o **mapa de riscos** da revelação: o número do risco fica no primeiro nó (ou, sem nós, na primeira aresta) e tudo o que estiver listado acende quando a pessoa passa o mouse. O `npm run validate` confere se os ids existem.
 - `abuse` e `mitigation` são arrays de string, mínimo 1 elemento cada.
 - Qualquer texto do caso aceita só estas tags, sem atributos: `<em>`, `<code>`, `<strong>`, `<br>`. O `npm run validate` rejeita qualquer outra marcação (`<img>`, `<a>`, `<script>`, atributos como `onclick`, comentários HTML), porque o motor renderiza o texto como HTML.
 

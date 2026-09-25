@@ -132,7 +132,11 @@ function crossCheck(data) {
 
   // risks[].where must point at nodes and edges that exist in the flow
   const edgeKeys = new Set((data.flow?.edges || []).map(e => `${e.from}>${e.to}`));
+  // …and every published risk needs one, so each case gets the reveal map.
   (data.risks || []).forEach(r => {
+    if (!r.where || (!r.where.nodes && !r.where.edges)) {
+      errors.push(`risk "${r.id}" has no "where" — list the flow nodes/edges where it lives (feeds the reveal map)`);
+    }
     (r.where?.nodes || []).forEach(n => {
       if (!nodeIds.has(n)) errors.push(`risk "${r.id}": where.nodes has "${n}" — no such node`);
     });

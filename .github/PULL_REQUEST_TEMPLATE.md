@@ -24,6 +24,7 @@ Preencha o que se aplica e apague o que não se aplica.
 - [ ] O contexto usa vocabulário real do domínio (não é "corp fictícia com um endpoint")
 - [ ] Riscos reais cobrem no mínimo **3 categorias** distintas (não só técnico)
 - [ ] Cada risco tem `signal` (pistas no contexto), 2+ `abuse` cenários, `impact` concreto, 2+ `mitigation` acionáveis
+- [ ] Cada risco tem `where` apontando os nós/arestas do fluxo onde ele mora (conferi o mapa de riscos na revelação com `npm run dev`)
 - [ ] Há 3+ distratores plausíveis (armadilhas que qualquer BISO consideraria)
 - [ ] Takeaways generalizam — não só resumem o caso
 - [ ] Fluxo tem nós, arestas e fronteiras de confiança marcadas
