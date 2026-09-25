@@ -1,50 +1,66 @@
-# Adler
+<div align="center">
 
-**Onde a segurança começa.**
+<a href="https://2t0nnks.github.io/baker-street/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/hero-dark.png">
+    <img alt="Adler — Onde a segurança começa." src="docs/img/hero-light.png" width="100%">
+  </picture>
+</a>
 
-Utilitário open source de treinamento, pensado para ensinar os casos de abuso de um fluxo sob diferentes perspectivas — para os times de ideação e desenvolvimento de produtos, processos e fluxos. No papel, antes do primeiro commit.
+### [▶&nbsp; Jogar agora](https://2t0nnks.github.io/baker-street/)
 
-Cada caso é um fluxo de negócio real. Você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais, cada um com o caso de abuso, o impacto e a mitigação.
+</div>
 
-> Homenagem a Irene Adler, a única a superar Sherlock Holmes — porque o leu antes que ele a lesse. É esse o olhar que Adler treina.
+> O motorista sobe **o mesmo canhoto** em duas antecipações.
+> O convidado faz o PIX qualificador **para quem o indicou**.
+> **Doze SREs** sabem o PIN do HSM que assina o PIX.
+>
+> Nenhum scanner pega isso. Quem pega é quem leu o fluxo antes do primeiro commit.
 
-## Como funciona
+**Adler** treina essa leitura. Você estuda um fluxo de negócio real, marca o que acha arriscado e vê os casos de abuso — com impacto e mitigação. Para produto, engenharia, segurança, tesouraria, antifraude e compliance.
 
-1. **Contexto** — um negócio real com atores, dados e escala.
-2. **Fluxo** — diagrama transacional com fronteiras de confiança.
-3. **Leitura** — você marca o que suspeita, sem gabarito à mostra.
-4. **Revelação** — os riscos reais com casos de abuso, impacto e mitigação.
-5. **Placar** — o padrão dos que passaram batido; o que levar pro próximo.
+## Casos
 
-Categorias de risco cobertas: **técnico**, **lógica de negócio**, **operativo**, **processo**, **regulatório**, **privacidade**, **fraude**.
+| Caso | | Cenário |
+|---|---|---|
+| **[Frete Adiantado](https://2t0nnks.github.io/baker-street/?caso=frete-adiantado)** | fintech | antecipação de recebíveis para caminhoneiros |
+| **[Indique e Ganhe](https://2t0nnks.github.io/baker-street/?caso=indique-e-ganhe)** | fintech | campanha de indicação com bônus via PIX |
+| **[Link de Pagamento](https://2t0nnks.github.io/baker-street/?caso=link-de-pagamento)** | fintech | subcredenciadora com repasse em D+2 |
+| **[Saque Antecipado](https://2t0nnks.github.io/baker-street/?caso=saque-antecipado)** | fintech | antecipação do FGTS por correspondentes |
+| **[Cofre de Chaves](https://2t0nnks.github.io/baker-street/?caso=cofre-de-chaves)** | fintech | HSM do PIX e transição pós-quântica |
+| **[Consulta Expressa](https://2t0nnks.github.io/baker-street/?caso=consulta-expressa)** | saúde | telemedicina com receita e atestado |
 
-## Como contribuir
+## Como é
 
-Um caso é um único arquivo JSON em `cases/`. Leia `docs/CONTRIBUTING.md` para o passo a passo e `docs/CASE_GUIDELINES.md` pra saber o que faz um caso bom.
+Contexto → fluxo → leitura → revelação → placar. Clique em qualquer sistema para ver o que ele é e com quem troca dados.
 
-## Rodar localmente
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/fluxo-dark.png">
+  <img alt="Fluxo do caso Cofre de Chaves com o painel do HSM aberto" src="docs/img/fluxo-light.png" width="100%">
+</picture>
+
+Na revelação, cada risco aparece onde mora no fluxo — verde se você pegou, vermelho se passou batido. Marcar tudo não compensa: armadilha desconta.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/mapa-dark.png">
+  <img alt="Mapa de riscos do caso Frete Adiantado" src="docs/img/mapa-light.png" width="100%">
+</picture>
+
+## Escreva um caso
+
+Um caso é um JSON em `cases/`. O resto o motor faz.
 
 ```bash
-npm install
-npm run validate    # roda o JSON Schema em cada caso
-npm run build       # gera dist/index.html + dist/fonts/
-npm run dev         # build + servidor local em http://localhost:8000
-npm run new         # scaffold interativo de um caso novo
+npm install && npm run new    # exemplo completo em cases/<slug>.json
+npm run validate              # tudo o que o motor precisa para desenhar
+npm run dev                   # localhost:8000/?caso=<slug>&debug=layout
 ```
 
-Use `npm run dev` para ver o site. Abrir `dist/index.html` direto do disco funciona, mas as fontes podem não carregar.
+[Passo a passo](./docs/CONTRIBUTING.md) · [O que faz um caso bom](./docs/CASE_GUIDELINES.md) · [Campos](./docs/SCHEMA.md) · [Segurança](./SECURITY.md)
 
-O site não faz nenhuma requisição a terceiros: as fontes são servidas do próprio domínio e uma Content-Security-Policy libera só o script do motor.
+---
 
-## Segurança
-
-Achou uma vulnerabilidade? Não abra issue pública: veja [SECURITY.md](./SECURITY.md).
-
-## Licenças
-
-- **Código do motor** (`engine/`, `scripts/`): [MIT](./LICENSE)
-- **Casos e conteúdo** (`cases/`, `docs/`): [CC BY-SA 4.0](./LICENSE-CASES)
-
-## Comunidade
-
-Contribuidores aceitos entram como **Irregulares** — em referência aos garotos de rua que faziam a reconnaissance de Sherlock em Londres.
+<div align="center">
+<sub>Código <a href="./LICENSE">MIT</a> · casos <a href="./LICENSE-CASES">CC BY-SA 4.0</a> · sem analytics, sem terceiros<br>
+Homenagem a Irene Adler, que leu Sherlock Holmes antes que ele a lesse.</sub>
+</div>
