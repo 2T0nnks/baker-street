@@ -56,6 +56,8 @@ Nós (`nodes`) e arestas (`edges`). Cada nó marca `kind`:
 
 E cada nó diz o que ele *é* com `icon`: `api`, `database`, `storage`, `queue`, `webhook`, `payment`, `partner`, `team`… (lista completa em `docs/SCHEMA.md`). `kind` responde "de quem é"; `icon` responde "o que é". Um bucket pode ser `boundary` + `storage`; um provedor de KYC, `external` + `partner`.
 
+Cada nó também tem uma `description`, que aparece quando a pessoa clica no sistema. Escreva como quem apresenta a arquitetura a alguém que chegou ao time: o que o sistema faz, quem opera, que dados passam, com que frequência. **Não aponte o risco** ("não valida o dono", "sem assinatura"): a descrição aparece antes da leitura e não pode ser o gabarito. Os detalhes que sustentam os riscos devem estar na narrativa, como em qualquer caso.
+
 Os rótulos das arestas ficam flutuando acima da linha; prefira rótulos curtos (até ~30 caracteres), que cabem entre os nós.
 
 Coordenadas `x`, `y` são pra layout. Convenção atual:

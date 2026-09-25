@@ -78,9 +78,12 @@ async function main() {
     },
     flow: {
       nodes: [
-        { id: "app", label: "App do cliente", kind: "internal", icon: "app", x: 60, y: 40 },
-        { id: "api", label: "API", kind: "internal", icon: "api", x: 240, y: 40 },
-        { id: "parceiro", label: "Parceiro externo", kind: "external", icon: "partner", x: 440, y: 40 }
+        { id: "app", label: "App do cliente", kind: "internal", icon: "app", x: 60, y: 40,
+          description: "O que é o sistema, quem usa e que dados passam por ele. Sem apontar o risco." },
+        { id: "api", label: "API", kind: "internal", icon: "api", x: 240, y: 40,
+          description: "O que é o sistema, quem usa e que dados passam por ele. Sem apontar o risco." },
+        { id: "parceiro", label: "Parceiro externo", kind: "external", icon: "partner", x: 440, y: 40,
+          description: "Quem é o terceiro, o que recebe e para que. Sem apontar o risco." }
       ],
       edges: [
         { from: "app", to: "api", label: "cadastro" },

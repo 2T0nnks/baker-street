@@ -42,15 +42,15 @@
   },
   "flow": {
     "nodes": [
-      { "id": "parceiros", "label": "Parceiros Open Finance", "kind": "external", "icon": "partner", "x": 60, "y": 40 },
-      { "id": "gateway", "label": "Gateway PIX e APIs", "kind": "boundary", "icon": "api", "x": 240, "y": 40 },
-      { "id": "spi", "label": "SPI do Banco Central", "kind": "external", "icon": "bank", "x": 440, "y": 40 },
-      { "id": "sre", "label": "SREs de plantão", "kind": "internal", "icon": "team", "x": 640, "y": 40 },
-      { "id": "servicos", "label": "40 microsserviços", "kind": "internal", "icon": "service", "x": 60, "y": 160 },
-      { "id": "assinatura", "label": "Serviço de assinatura", "kind": "internal", "icon": "service", "x": 240, "y": 160 },
-      { "id": "hsm", "label": "Cluster de HSM", "kind": "internal", "icon": "key", "x": 440, "y": 160 },
-      { "id": "arquivo", "label": "Arquivo de documentos", "kind": "internal", "icon": "storage", "x": 640, "y": 160 },
-      { "id": "cofre", "label": "Cofre físico", "kind": "internal", "icon": "storage", "x": 440, "y": 260 }
+      { "id": "parceiros", "label": "Parceiros Open Finance", "kind": "external", "icon": "partner", "x": 60, "y": 40, "description": "Instituições do Open Finance que trocam dados com o Banco Âncora por API. Parte delas participa do piloto de TLS híbrido." },
+      { "id": "gateway", "label": "Gateway PIX e APIs", "kind": "boundary", "icon": "api", "x": 240, "y": 40, "description": "Porta de entrada e saída do banco: recebe as chamadas dos parceiros e envia ao Banco Central as mensagens PIX já assinadas." },
+      { "id": "spi", "label": "SPI do Banco Central", "kind": "external", "icon": "bank", "x": 440, "y": 40, "description": "Sistema de Pagamentos Instantâneos do Banco Central, que recebe e liquida as mensagens PIX assinadas pelo banco." },
+      { "id": "sre", "label": "SREs de plantão", "kind": "internal", "icon": "team", "x": 640, "y": 40, "description": "Os 12 engenheiros de confiabilidade que operam a infraestrutura, inclusive o cluster de HSM, e atendem incidentes de plantão." },
+      { "id": "servicos", "label": "40 microsserviços", "kind": "internal", "icon": "service", "x": 60, "y": 160, "description": "Os 40 microsserviços do banco (PIX, cartões, crédito, notificações…) que precisam de assinaturas digitais." },
+      { "id": "assinatura", "label": "Serviço de assinatura", "kind": "internal", "icon": "service", "x": 240, "y": 160, "description": "Serviço central que recebe pedidos de assinatura dos microsserviços, usa a chave guardada no HSM e devolve o payload assinado." },
+      { "id": "hsm", "label": "Cluster de HSM", "kind": "internal", "icon": "key", "x": 440, "y": 160, "description": "Cluster de dois módulos de segurança de hardware no datacenter. Guarda a chave de assinatura do PIX e a chave RSA do arquivo de documentos." },
+      { "id": "arquivo", "label": "Arquivo de documentos", "kind": "internal", "icon": "storage", "x": 640, "y": 160, "description": "Arquivo de contratos e documentos de KYC, cifrados com AES-256 e mantidos por pelo menos dez anos." },
+      { "id": "cofre", "label": "Cofre físico", "kind": "internal", "icon": "storage", "x": 440, "y": 260, "description": "Cofre físico na sede, com os smartcards dos administradores do HSM, os envelopes com PINs e as mídias de backup." }
     ],
     "edges": [
       { "from": "parceiros", "to": "gateway", "label": "TLS híbrido (piloto)", "boundary": true },

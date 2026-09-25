@@ -166,9 +166,12 @@ function crossCheck(data, warnings = []) {
     }
   });
 
-  // Every node says what it is, so the flow shows its type icon
+  // Every node says what it is (icon) and explains itself when clicked (description)
   (data.flow?.nodes || []).forEach(n => {
     if (!n.icon) errors.push(`flow node "${n.id}" has no "icon" — see the enum in schema/case.schema.json`);
+    if (!n.description || n.description.trim().length < 30) {
+      errors.push(`flow node "${n.id}" needs a "description" (30+ characters) — shown when someone clicks the system in the flow`);
+    }
   });
 
   // Every edge references existing node ids

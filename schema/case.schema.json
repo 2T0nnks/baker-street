@@ -93,6 +93,11 @@
                 "enum": ["user", "app", "web", "api", "service", "database", "storage", "queue", "webhook", "payment", "bank", "partner", "team", "ai", "document", "spreadsheet", "email", "audit", "key"],
                 "description": "What the node is (drawn as an icon). Required by validate.mjs for open cases."
               },
+              "description": {
+                "type": "string",
+                "maxLength": 400,
+                "description": "Neutral context shown when the node is clicked: what the system is, who runs it, what data passes through. Must not point at the risks. Required by validate.mjs for open cases."
+              },
               "x": { "type": "integer", "minimum": 0 },
               "y": { "type": "integer", "minimum": 0 }
             }
@@ -110,7 +115,12 @@
               "to": { "type": "string" },
               "label": { "type": "string" },
               "boundary": { "type": "boolean" },
-              "dashed": { "type": "boolean" }
+              "dashed": { "type": "boolean" },
+              "description": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "Optional. Shown under the connection in the node detail panel."
+              }
             }
           }
         }

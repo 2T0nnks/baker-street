@@ -43,14 +43,14 @@
   },
   "flow": {
     "nodes": [
-      { "id": "app", "label": "App do motorista", "kind": "internal", "icon": "app", "x": 60, "y": 40 },
-      { "id": "api", "label": "API pública", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
-      { "id": "kyc", "label": "KYC Provider", "kind": "external", "icon": "partner", "x": 240, "y": 160 },
-      { "id": "db", "label": "Banco Postgres", "kind": "internal", "icon": "database", "x": 440, "y": 40 },
-      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "icon": "storage", "x": 60, "y": 160 },
-      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "icon": "team", "x": 640, "y": 40 },
-      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "icon": "payment", "x": 640, "y": 160 },
-      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "icon": "webhook", "x": 440, "y": 260 }
+      { "id": "app", "label": "App do motorista", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "App que o motorista usa para aceitar fretes, enviar canhoto e nota fiscal e pedir a antecipação. Também compartilha a localização durante as viagens." },
+      { "id": "api", "label": "API pública", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "API pública que atende o app: cadastro, aceite de fretes, upload de documentos e pedidos de antecipação. É mantida pelos quatro devs da Ponto de Carga." },
+      { "id": "kyc", "label": "KYC Provider", "kind": "external", "icon": "partner", "x": 240, "y": 160, "description": "Provedor terceirizado que valida a identidade do motorista no cadastro e reverifica a CNH uma vez por ano, com selfie e documento." },
+      { "id": "db", "label": "Banco Postgres", "kind": "internal", "icon": "database", "x": 440, "y": 40, "description": "Banco Postgres principal: motoristas, fretes, antecipações e status de pagamento. É a fonte que o backoffice lê para aprovar antecipações." },
+      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "icon": "storage", "x": 60, "y": 160, "description": "Bucket onde ficam CNH, selfies, canhotos e notas fiscais enviados pelo app. A API busca os arquivos aqui quando alguém abre um documento." },
+      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "icon": "team", "x": 640, "y": 40, "description": "Aplicação web usada pelas três pessoas da tesouraria para aprovar antecipações, cadastrar chaves PIX e fazer a conciliação bancária diária." },
+      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "icon": "payment", "x": 640, "y": 160, "description": "Sub-adquirente parceira que executa os PIX aos motoristas quando uma antecipação é aprovada e avisa a Ponto de Carga quando o pagamento é feito." },
+      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "icon": "webhook", "x": 440, "y": 260, "description": "Endpoint público <code>/pix/callback</code> que recebe da sub-adquirente a confirmação de cada pagamento e atualiza o status da antecipação no banco." }
     ],
     "edges": [
       { "from": "app", "to": "api", "label": "cadastro / upload / aceite" },

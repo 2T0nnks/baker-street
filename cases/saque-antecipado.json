@@ -42,16 +42,16 @@
   },
   "flow": {
     "nodes": [
-      { "id": "portal", "label": "Portal do correspondente", "kind": "boundary", "icon": "web", "x": 60, "y": 40 },
-      { "id": "api", "label": "API de propostas", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
-      { "id": "fgts", "label": "Consulta de saldo FGTS", "kind": "external", "icon": "bank", "x": 440, "y": 40 },
-      { "id": "pix", "label": "Pagamento via PIX", "kind": "external", "icon": "payment", "x": 640, "y": 40 },
-      { "id": "whatsapp", "label": "Listas no WhatsApp", "kind": "external", "icon": "spreadsheet", "x": 60, "y": 160 },
-      { "id": "aceite", "label": "Link de aceite do cliente", "kind": "boundary", "icon": "app", "x": 240, "y": 160 },
-      { "id": "biometria", "label": "Provedor de biometria", "kind": "external", "icon": "partner", "x": 440, "y": 160 },
-      { "id": "contratos", "label": "Contratos e comissões", "kind": "internal", "icon": "database", "x": 640, "y": 160 },
-      { "id": "retorno", "label": "Arquivo de averbação", "kind": "boundary", "icon": "document", "x": 640, "y": 260 },
-      { "id": "operacoes", "label": "Operações", "kind": "internal", "icon": "team", "x": 440, "y": 260 }
+      { "id": "portal", "label": "Portal do correspondente", "kind": "boundary", "icon": "web", "x": 60, "y": 40, "description": "Portal web usado pelas lojas de correspondentes para simular, digitar propostas e acompanhar comissões." },
+      { "id": "api", "label": "API de propostas", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "API da Adianta que simula a antecipação a partir do CPF, cria a proposta e envia ao cliente o link de aceite." },
+      { "id": "fgts", "label": "Consulta de saldo FGTS", "kind": "external", "icon": "bank", "x": 440, "y": 40, "description": "Consulta ao saldo do FGTS do trabalhador, disponível para as instituições que o cliente autorizou no app do FGTS." },
+      { "id": "pix", "label": "Pagamento via PIX", "kind": "external", "icon": "payment", "x": 640, "y": 40, "description": "Pagamento do valor liberado ao cliente por PIX, depois que o contrato é aprovado." },
+      { "id": "whatsapp", "label": "Listas no WhatsApp", "kind": "external", "icon": "spreadsheet", "x": 60, "y": 160, "description": "Listas de clientes que os correspondentes montam e trocam por WhatsApp para fazer campanhas de venda." },
+      { "id": "aceite", "label": "Link de aceite do cliente", "kind": "boundary", "icon": "app", "x": 240, "y": 160, "description": "Página aberta pelo link enviado por SMS, onde o cliente confere os valores, tira a selfie e aceita o contrato." },
+      { "id": "biometria", "label": "Provedor de biometria", "kind": "external", "icon": "partner", "x": 440, "y": 160, "description": "Provedor terceirizado de prova de vida, que analisa a selfie tirada no aceite." },
+      { "id": "contratos", "label": "Contratos e comissões", "kind": "internal", "icon": "database", "x": 640, "y": 160, "description": "Base de contratos e comissões: registra propostas aprovadas, averbações e o que é devido a cada correspondente." },
+      { "id": "retorno", "label": "Arquivo de averbação", "kind": "boundary", "icon": "document", "x": 640, "y": 260, "description": "Arquivo com o retorno de averbação e bloqueio das parcelas, gerado pelo agente operador do FGTS." },
+      { "id": "operacoes", "label": "Operações", "kind": "internal", "icon": "team", "x": 440, "y": 260, "description": "Time que baixa o arquivo de retorno todas as manhãs e importa as averbações na base de contratos." }
     ],
     "edges": [
       { "from": "portal", "to": "api", "label": "digita proposta" },
