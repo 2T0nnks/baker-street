@@ -921,7 +921,19 @@ section.block:first-of-type { border-top: none; }
 }
 .score-breakdown { margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
 .score-breakdown .neg { color: var(--ochre); }
-.locked-note { margin: 0 0 16px; font-size: 14px; color: var(--ink-soft); }
+.locked-note {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  margin: 0 0 18px; padding: 12px 16px;
+  border: 1px solid var(--ochre); border-left-width: 3px; border-radius: 4px;
+  background: color-mix(in oklab, var(--ochre) 8%, var(--card));
+  font-size: 14px; color: var(--ink);
+}
+.locked-note p { margin: 0; flex: 1; min-width: 220px; }
+.locked-note button { flex: none; }
+/* A frozen reading must look frozen, not broken. */
+.check-item:has(input:disabled) { opacity: 0.6; }
+.check-item:has(input:disabled:checked) { opacity: 0.85; }
+.check-item:has(input:disabled):hover { border-color: var(--line); }
 .score-verdict {
   font-family: "Fraunces", serif;
   font-variation-settings: "opsz" 24, "SOFT" 50;
@@ -1389,7 +1401,10 @@ footer .foot-brand {
             </div>
             <div class="stage-count">03</div>
           </div>
-          <p class="locked-note" id="lockedNote" hidden>Leitura já revelada: as marcações estão travadas. Use <em>Recomeçar caso</em>, no placar, para refazer.</p>
+          <div class="locked-note" id="lockedNote" role="status" hidden>
+            <p><strong>Leitura já revelada.</strong> As marcações ficam travadas depois da revelação, para que a resposta não mude depois de ver o gabarito.</p>
+            <button type="button" id="redoReading">Refazer leitura</button>
+          </div>
           <div class="lens-tabs" id="catTabs"></div>
           <div class="check-list" id="checkList"></div>
           <div class="analysis-actions">
@@ -2673,16 +2688,20 @@ footer .foot-brand {
     const replay = document.getElementById("replayFlow");
     if (REDUCED_MOTION) replay.hidden = true;
     replay.addEventListener("click", () => playFlow(document.getElementById("flowWrap")));
-    document.getElementById("resetCase").addEventListener("click", () => {
+    // Clear the marks and the reveal lock, then land on the given stage.
+    function restartReading(stage, message) {
       if (!state.caseSlug) return;
-      if (!confirm("Recomeçar apaga suas marcações e o placar deste caso. Continuar?")) return;
+      if (!confirm(message)) return;
       state.checks[state.caseSlug] = new Set();
       delete state.revealed[state.caseSlug];
-      const c = CASES.find(x => x.slug === state.caseSlug);
-      renderCase(c);
-      setStage(0);
+      renderCase(CASES.find(x => x.slug === state.caseSlug));
+      setStage(stage);
       savePersist();
-    });
+    }
+    document.getElementById("resetCase").addEventListener("click", () =>
+      restartReading(0, "Recomeçar apaga suas marcações e o placar deste caso. Continuar?"));
+    document.getElementById("redoReading").addEventListener("click", () =>
+      restartReading(2, "Refazer a leitura apaga suas marcações e o placar deste caso. Continuar?"));
 
     // Popstate — user hits back/forward
     window.addEventListener("popstate", () => {
