@@ -2084,6 +2084,7 @@ footer .foot-brand {
 
     const mids = {};
     const lengths = {};
+    const segments = [];   // every straight piece of every edge, for label placement and the debug report
     let out = "";
     const labels = [];
     flow.edges.forEach((e, idx) => {
@@ -2118,6 +2119,10 @@ footer .foot-brand {
           : labelPos === "vertical" ? [x + off, y]
           : [x + off, (i === 1 || i === 2) ? y + off : y]);
       }
+      for (let i = 1; i < pts.length; i++) {
+        const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+        segments.push({ key: edgeKey(e), l: Math.min(x1, x2) - 3, r: Math.max(x1, x2) + 3, t: Math.min(y1, y2) - 3, b: Math.max(y1, y2) + 3 });
+      }
       const d = "M " + pts.map(p => `${p[0]} ${p[1]}`).join(" L ");
       const m1 = pts[pts.length === 2 ? 0 : 1], m2 = pts[pts.length === 2 ? 1 : 2];
       mids[edgeKey(e)] = { x: (m1[0] + m2[0]) / 2, y: (m1[1] + m2[1]) / 2 };
@@ -2146,8 +2151,8 @@ footer .foot-brand {
       out += "</g>";
     });
     svg.innerHTML = out;
-    const labelBoxes = layoutLabels(labelSvg, labels, nodes, W);
-    wrap._geom = { nodes, mids, lengths, labelBoxes };
+    const labelBoxes = layoutLabels(labelSvg, labels, nodes, W, segments);
+    wrap._geom = { nodes, mids, lengths, labelBoxes, segments };
     if (wrap._opts.pins) placePins(wrap);
     if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
     if (DEBUG_LAYOUT) reportLayout(wrap);
@@ -2164,6 +2169,13 @@ footer .foot-brand {
     const pins = (g.pins || []).map(p => ({ n: p.n, l: p.x - 12, r: p.x + 12, t: p.y - 12, b: p.y + 12 }));
     const issues = [];
     labels.forEach(l => nodes.forEach(n => { if (X(l, n)) issues.push(`rótulo "${l.text}" cobre o nó "${n.id}"`); }));
+    const segs = g.segments || [];
+    labels.forEach(l => segs.forEach(sg => { if (sg.key !== l.key && X(l, sg)) issues.push(`rótulo "${l.text}" fica sobre a seta ${sg.key.replace(">", " → ")}`); }));
+    segs.forEach(sg => nodes.forEach(n => {
+      const [from, to] = sg.key.split(">");
+      const inner = { l: n.l + 2, r: n.r - 2, t: n.t + 2, b: n.b - 2 };
+      if (n.id !== from && n.id !== to && X(sg, inner)) issues.push(`seta ${from} → ${to} atravessa o nó "${n.id}"`);
+    }));
     labels.forEach((a, i) => labels.forEach((b, j) => { if (i < j && X(a, b)) issues.push(`rótulo "${a.text}" cobre o rótulo "${b.text}"`); }));
     pins.forEach(p => labels.forEach(l => { if (X(p, l)) issues.push(`pino ${p.n} cobre o rótulo "${l.text}"`); }));
     pins.forEach((p, i) => pins.forEach((q, j) => { if (i < j && X(p, q)) issues.push(`pino ${p.n} cobre o pino ${q.n}`); }));
@@ -2193,12 +2205,14 @@ footer .foot-brand {
   // diagram. Each label tries a few spots in order and takes the first one
   // that touches no node and no label already placed; a halo in the card
   // colour keeps text readable if it crosses another line.
-  function layoutLabels(labelSvg, labels, nodes, W) {
+  function layoutLabels(labelSvg, labels, nodes, W, segments) {
     labelSvg.innerHTML = labels.map(l =>
       `<g class="lbl" data-key="${l.key}" style="--d:${l.delay}ms"><text x="0" y="0">${l.text}</text></g>`).join("");
     const obstacles = Object.values(nodes).map(n => ({ l: n.x - 4, t: n.y - 4, r: n.x + n.w + 4, b: n.y + n.h + 4 }));
-    const overlap = box => obstacles.reduce((sum, o) =>
-      sum + Math.max(0, Math.min(box.r, o.r) - Math.max(box.l, o.l)) * Math.max(0, Math.min(box.b, o.b) - Math.max(box.t, o.t)), 0);
+    const area = (box, o) => Math.max(0, Math.min(box.r, o.r) - Math.max(box.l, o.l)) * Math.max(0, Math.min(box.b, o.b) - Math.max(box.t, o.t));
+    // Nodes and placed labels, plus the lines of every other edge (a label may sit on its own line's side, never across another line).
+    const overlap = (box, key) => obstacles.reduce((sum, o) => sum + area(box, o), 0)
+      + segments.reduce((sum, sg) => sg.key === key ? sum : sum + area(box, sg), 0);
     const GAP = 7;
     const placed = [];
     labelSvg.querySelectorAll(".lbl").forEach((g, i) => {
@@ -2239,13 +2253,13 @@ footer .foot-brand {
         return { l: left - 2, t: y - asc - 1, r: left + w + 2, b: y - asc + h + 1 };
       };
       // First spot that touches nothing; otherwise the one that overlaps least.
-      const pick = spots.find(sp => overlap(boxOf(sp)) === 0)
-        || spots.reduce((best, sp) => overlap(boxOf(sp)) < overlap(boxOf(best)) ? sp : best);
+      const pick = spots.find(sp => overlap(boxOf(sp), l.key) === 0)
+        || spots.reduce((best, sp) => overlap(boxOf(sp), l.key) < overlap(boxOf(best), l.key) ? sp : best);
       text.setAttribute("x", pick[0]);
       text.setAttribute("y", pick[1]);
       text.setAttribute("text-anchor", pick[2]);
       obstacles.push(boxOf(pick));
-      placed.push({ ...boxOf(pick), text: l.text });
+      placed.push({ ...boxOf(pick), text: l.text, key: l.key });
     });
     return placed;
   }
