@@ -1,0 +1,327 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "slug": "indique-e-ganhe",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Indique e Ganhe",
+  "subtitle": "Campanha de indicação com bônus em dinheiro numa carteira digital com PIX",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Fintech", "PIX", "Antifraude", "PLD"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "A Trevo é uma carteira digital com 2,1 milhões de contas: conta de pagamento, PIX, cartão pré-pago e cashback em compras com QR code. A empresa é participante indireta do PIX — as transferências liquidam por um PSP parceiro — e cresce principalmente por indicação.",
+      "O produto em foco é o \"Indique e Ganhe\". Cada cliente tem um código de 8 caracteres aleatórios e compartilha um link pelo WhatsApp. Quando o convidado abre a conta, passa no KYC e faz o primeiro PIX de pelo menos R$ 20, os dois ganham R$ 30 em saldo disponível, que pode ser sacado via PIX na hora. Cada cliente pode indicar até 50 pessoas. Para facilitar, o app pede acesso aos contatos e envia a agenda ao servidor, que mostra quais amigos já têm Trevo e sugere quem convidar. O orçamento é de R$ 2 milhões por trimestre.",
+      "O time de Growth — três devs — entregou a campanha em três sprints. Quando o primeiro PIX do convidado é confirmado, a API publica um evento de conversão numa fila; o motor de recompensas consome a fila e credita os dois bônus no ledger. A fila entrega cada mensagem pelo menos uma vez, e depois de incidentes o SRE reprocessa as mensagens pendentes. O marketing ajusta valor do bônus, PIX mínimo e limite de indicações num painel de campanhas, sem deploy; o financeiro acompanha o gasto numa planilha, uma vez por semana. Um SDK de device fingerprint de um fornecedor está no app em \"fase de observação\": o score é só registrado em log por 60 dias, antes de virar regra.",
+      "O KYC (selfie e documento) é terceirizado; o provedor devolve a aprovação por callback. O atendimento é feito por uma empresa terceira, com 40 atendentes em dois turnos, que pode conceder um \"bônus de cortesia\" pelo backoffice para acalmar reclamações — o campo de valor é livre. Pagamentos PIX podem ser devolvidos pelo Mecanismo Especial de Devolução (MED) até 80 dias depois, em caso de golpe."
+    ],
+    "actors": [
+      ["Cliente indicador", "compartilha o código e ganha R$ 30"],
+      ["Convidado", "abre a conta e faz o primeiro PIX"],
+      ["Marketing", "configura a campanha no painel"],
+      ["Atendimento terceirizado", "40 pessoas, concede bônus de cortesia"],
+      ["SRE", "reprocessa a fila depois de incidentes"],
+      ["Provedor de KYC", "terceiro: valida selfie e documento"],
+      ["PSP liquidante", "terceiro: liquida os PIX da Trevo"]
+    ],
+    "data": [
+      ["CPF, selfie e documento", "KYC no cadastro"],
+      ["Agenda de contatos", "enviada ao servidor para sugestões"],
+      ["Sinais do dispositivo", "SDK de fingerprint, só em log"],
+      ["Chave PIX e saldo", "saque do bônus"],
+      ["Código de indicação", "liga convidado ao indicador"]
+    ],
+    "scale": [
+      ["2,1 mi", "contas abertas"],
+      ["~9 mil / dia", "indicações convertidas"],
+      ["R$ 2 mi / trimestre", "orçamento da campanha"],
+      ["3 devs", "time de Growth"],
+      ["40 atendentes", "terceirizados, dois turnos"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "app", "label": "App Trevo", "kind": "internal", "icon": "app", "x": 60, "y": 40 },
+      { "id": "api", "label": "API da carteira", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
+      { "id": "fila", "label": "Fila de conversões", "kind": "internal", "icon": "queue", "x": 440, "y": 40 },
+      { "id": "motor", "label": "Motor de recompensas", "kind": "internal", "icon": "service", "x": 640, "y": 40 },
+      { "id": "device", "label": "SDK de device fingerprint", "kind": "external", "icon": "partner", "x": 60, "y": 160 },
+      { "id": "kyc", "label": "Provedor de KYC", "kind": "external", "icon": "partner", "x": 240, "y": 160 },
+      { "id": "painel", "label": "Painel de campanhas", "kind": "internal", "icon": "web", "x": 440, "y": 160 },
+      { "id": "ledger", "label": "Ledger de saldos", "kind": "internal", "icon": "database", "x": 640, "y": 160 },
+      { "id": "suporte", "label": "Backoffice do atendimento", "kind": "internal", "icon": "team", "x": 440, "y": 260 },
+      { "id": "psp", "label": "PSP liquidante (PIX)", "kind": "external", "icon": "bank", "x": 640, "y": 260 }
+    ],
+    "edges": [
+      { "from": "app", "to": "api", "label": "cadastro + código + agenda" },
+      { "from": "app", "to": "device", "label": "sinais · score só em log", "boundary": true },
+      { "from": "api", "to": "kyc", "label": "selfie + documento", "boundary": true },
+      { "from": "kyc", "to": "api", "label": "aprovação", "dashed": true, "boundary": true },
+      { "from": "api", "to": "fila", "label": "1º PIX confirmado" },
+      { "from": "fila", "to": "motor", "label": "conversão" },
+      { "from": "painel", "to": "motor", "label": "regras da campanha" },
+      { "from": "motor", "to": "ledger", "label": "credita 2 × R$ 30" },
+      { "from": "suporte", "to": "ledger", "label": "bônus de cortesia" },
+      { "from": "ledger", "to": "psp", "label": "saque via PIX", "boundary": true }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "fazenda-contas",
+      "truth": true,
+      "category": "fraude",
+      "title": "Fingerprint de dispositivo só registra, não bloqueia",
+      "sub": "O SDK está em \"fase de observação\" por 60 dias enquanto a campanha já paga R$ 30 por conta nova."
+    },
+    {
+      "id": "pix-circular",
+      "truth": true,
+      "category": "lógica",
+      "title": "O primeiro PIX do convidado pode ir para o próprio indicador",
+      "sub": "A condição é \"primeiro PIX de pelo menos R$ 20\" — para qualquer destino."
+    },
+    {
+      "id": "estorno-sem-reversao",
+      "truth": true,
+      "category": "lógica",
+      "title": "Devolução do PIX qualificador não desfaz o bônus",
+      "sub": "O evento de conversão nasce na confirmação do pagamento; nada é dito sobre o que acontece se ele volta."
+    },
+    {
+      "id": "credito-duplicado",
+      "truth": true,
+      "category": "técnico",
+      "title": "Reprocessar a fila credita o bônus de novo",
+      "sub": "A fila entrega pelo menos uma vez e o SRE reprocessa mensagens depois de incidentes."
+    },
+    {
+      "id": "painel-sem-controle",
+      "truth": true,
+      "category": "processo",
+      "title": "Marketing altera o valor do bônus sem segunda aprovação",
+      "sub": "O painel muda valor, PIX mínimo e limite sem deploy; o gasto só é visto na planilha semanal."
+    },
+    {
+      "id": "bonus-cortesia",
+      "truth": true,
+      "category": "operativo",
+      "title": "Atendimento terceirizado concede bônus de valor livre",
+      "sub": "40 atendentes de outra empresa, em dois turnos, com um campo de valor aberto no backoffice."
+    },
+    {
+      "id": "agenda-contatos",
+      "truth": true,
+      "category": "privacidade",
+      "title": "A agenda inteira do cliente é enviada ao servidor",
+      "sub": "Para sugerir convites, o app sobe os contatos — inclusive de quem nunca teve relação com a Trevo."
+    },
+    {
+      "id": "contas-mula",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Contas abertas pela campanha viram contas de passagem",
+      "sub": "Milhares de contas novas por dia, saque imediato e nenhum monitoramento de recebimentos citado."
+    },
+    {
+      "id": "codigo-previsivel",
+      "truth": false,
+      "category": "técnico",
+      "title": "Código de indicação pode ser adivinhado por força bruta",
+      "sub": "São 8 caracteres aleatórios — e, mesmo adivinhando, o bônus iria para o dono do código, não para quem adivinhou."
+    },
+    {
+      "id": "selfie-sem-cripto",
+      "truth": false,
+      "category": "privacidade",
+      "title": "Selfies do KYC armazenadas sem criptografia",
+      "sub": "O contexto não diz como as selfies são guardadas. O treino é ler o que está descrito, não presumir o pior."
+    },
+    {
+      "id": "limite-50",
+      "truth": false,
+      "category": "lógica",
+      "title": "Limite de 50 indicações por cliente é baixo demais",
+      "sub": "É decisão de produto — e um teto por indicador ainda limita o estrago de uma conta comprometida."
+    },
+    {
+      "id": "sem-pinning",
+      "truth": false,
+      "category": "técnico",
+      "title": "App sem certificate pinning",
+      "sub": "Pode valer como endurecimento do app, mas nada neste fluxo depende de interceptar o tráfego do próprio usuário."
+    }
+  ],
+  "risks": [
+    {
+      "id": "fazenda-contas",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["device", "app"], "edges": [{ "from": "app", "to": "device" }] },
+      "title": "Fazenda de contas: o sinal que pegaria o farming só vai para o log",
+      "signal": "A campanha paga R$ 30 por conta nova com saque imediato, e o único controle capaz de ligar várias contas ao mesmo aparelho está em <em>fase de observação</em>: o score é registrado, mas ninguém age sobre ele por 60 dias. O KYC valida que o documento é real — não que a pessoa não emprestou o CPF.",
+      "abuse": [
+        "Um grupo aluga CPFs e selfies de terceiros (\"laranjas\") por R$ 10 cada, abre 300 contas em cinco celulares, faz cada uma indicar a seguinte e saca os bônus no mesmo dia.",
+        "Emuladores com reset de identificador geram \"aparelhos novos\" em série; o fingerprint vê a repetição, grava no log e a conversão segue.",
+        "Quando alguém finalmente olha os dados de observação, o orçamento do trimestre já saiu em PIX para contas que não existem mais."
+      ],
+      "impact": "Orçamento de R$ 2 milhões drenado por contas falsas em semanas, métrica de crescimento inflada e decisões de produto tomadas sobre usuários que não existem. A base passa a carregar milhares de contas abertas com dados emprestados.",
+      "mitigation": [
+        "Ativar o fingerprint como regra desde o primeiro dia da campanha: aparelho com mais de N contas bloqueia o bônus (não o cadastro) e manda para revisão.",
+        "Segurar o bônus do convidado por uma carência (ex.: 7 dias ou até a segunda transação legítima) antes de liberar o saque.",
+        "Grafo de indicação com alerta para cadeias (A indica B indica C…) e para indicadores com conversão anormalmente alta."
+      ]
+    },
+    {
+      "id": "pix-circular",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["api", "fila"], "edges": [{ "from": "api", "to": "fila" }] },
+      "title": "PIX circular: o convidado paga o indicador e os dois lucram",
+      "signal": "A regra de conversão é \"primeiro PIX de pelo menos R$ 20\" — o contexto não restringe o destino. Nada impede que o PIX qualificador vá justamente para quem indicou.",
+      "abuse": [
+        "Indicador cria a conta do convidado, recebe dele um PIX de R$ 20 e, com os dois bônus, sai com R$ 80 no bolso contra R$ 20 que só mudaram de conta.",
+        "Rede de contas próprias em que cada nova conta faz o PIX qualificador para a anterior: dinheiro gira em círculo e cada volta gera R$ 60 de bônus."
+      ],
+      "impact": "Cada conversão fraudulenta custa R$ 60 sem nenhum uso real do produto, e o evento parece legítimo em todos os sistemas: um PIX de verdade, entre duas contas com KYC aprovado.",
+      "mitigation": [
+        "Excluir da conversão PIX para o próprio indicador, para contas do mesmo titular e para contas que compartilham aparelho ou chave.",
+        "Exigir uso real para converter: pagamento a comerciante (QR code) ou PIX para conta de outra instituição.",
+        "Monitorar pares indicador–convidado com fluxo de dinheiro entre si logo após a abertura."
+      ]
+    },
+    {
+      "id": "estorno-sem-reversao",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["fila", "motor"], "edges": [{ "from": "api", "to": "fila" }, { "from": "fila", "to": "motor" }] },
+      "title": "Existe evento de conversão, mas não de desconversão",
+      "signal": "O bônus nasce quando o primeiro PIX é <em>confirmado</em>. O contexto lembra que PIX pode ser devolvido pelo MED até 80 dias depois — e não menciona nenhum caminho de volta do bônus.",
+      "abuse": [
+        "Convidado faz o PIX qualificador para um terceiro cúmplice, os bônus caem, e depois pede devolução alegando golpe: o dinheiro volta, os R$ 60 ficam.",
+        "O mesmo padrão em escala, combinado com saque imediato: quando a devolução acontece, o saldo do bônus já saiu da Trevo."
+      ],
+      "impact": "Bônus pago sobre transações que deixaram de existir. A perda aparece espalhada entre a conta de campanha e a de devoluções, e ninguém a enxerga como uma coisa só.",
+      "mitigation": [
+        "Emitir um evento de desconversão quando o PIX qualificador for devolvido e estornar o bônus (ou negativar o saldo) automaticamente.",
+        "Só liberar o bônus para saque depois da janela de maior risco de devolução, ou exigir uma segunda transação.",
+        "Relatório conjunto campanha × devoluções para enxergar o padrão."
+      ]
+    },
+    {
+      "id": "credito-duplicado",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["motor", "ledger"], "edges": [{ "from": "fila", "to": "motor" }, { "from": "motor", "to": "ledger" }] },
+      "title": "Motor de recompensas sem idempotência credita em dobro",
+      "signal": "A fila entrega cada mensagem <em>pelo menos uma vez</em> e o SRE reprocessa pendências depois de incidentes. O contexto não fala em chave de idempotência no crédito — então cada reentrega é um novo crédito.",
+      "abuse": [
+        "Depois de uma queda do motor, o SRE reprocessa 40 mil mensagens; as que já tinham sido consumidas creditam de novo, e os clientes sacam antes que alguém perceba.",
+        "Quem entende o comportamento provoca a situação: faz o PIX qualificador no horário de pico, quando timeouts e reentregas são mais prováveis."
+      ],
+      "impact": "Crédito em duplicidade proporcional ao volume do incidente — dezenas de milhares de reais numa única madrugada — e um ledger que não fecha com os eventos de conversão.",
+      "mitigation": [
+        "Chave de idempotência por conversão (id do convidado + campanha) com restrição de unicidade no ledger: o segundo crédito falha no banco, não depende do código.",
+        "Reprocessamento só por ferramenta que pula mensagens já aplicadas, nunca reenfileirando tudo.",
+        "Conciliação diária entre conversões e créditos, com alerta para diferenças."
+      ]
+    },
+    {
+      "id": "painel-sem-controle",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["painel", "motor"], "edges": [{ "from": "painel", "to": "motor" }] },
+      "title": "Regra que movimenta dinheiro muda sem dupla aprovação",
+      "signal": "O marketing ajusta valor do bônus, PIX mínimo e limite de indicações <em>sem deploy</em>, e o gasto só é acompanhado numa planilha semanal. Não há teto codificado nem segunda aprovação descrita.",
+      "abuse": [
+        "Erro de digitação muda o bônus de R$ 30 para R$ 300 numa sexta à noite; a planilha só mostra o estrago na segunda.",
+        "Credencial do painel comprometida, ou alguém de dentro, zera o PIX mínimo e sobe o limite antes de ativar uma fazenda de contas."
+      ],
+      "impact": "Uma mudança de configuração vira perda financeira imediata, sem trilha clara de quem mudou o quê. Em escala, o trimestre inteiro pode ser consumido num fim de semana.",
+      "mitigation": [
+        "Maker-checker no painel: mudança em valor, mínimo ou limite só entra em vigor depois de aprovada por uma segunda pessoa.",
+        "Teto de gasto por dia e por campanha aplicado pelo motor, que pausa a campanha ao atingir o limite.",
+        "Log imutável de mudanças de regra com alerta em tempo real para o financeiro."
+      ]
+    },
+    {
+      "id": "bonus-cortesia",
+      "category": "operativo",
+      "severity": "alto",
+      "where": { "nodes": ["suporte", "ledger"], "edges": [{ "from": "suporte", "to": "ledger" }] },
+      "title": "Bônus de cortesia: dinheiro liberado por texto livre",
+      "signal": "Quarenta atendentes de uma empresa terceira, em dois turnos, podem creditar um \"bônus de cortesia\" com <em>valor livre</em>. O contexto não menciona teto, aprovação ou revisão.",
+      "abuse": [
+        "Atendente combina com conhecidos: eles abrem reclamações genéricas e recebem cortesias de R$ 200 que sacam na hora.",
+        "Engenharia social contra o atendimento: fraudador insiste, ameaça reclamar em redes sociais e sai com uma cortesia alta.",
+        "Credencial de atendente vazada dá a um atacante externo um botão de emitir dinheiro."
+      ],
+      "impact": "Canal de desvio contínuo e difícil de separar de cortesias legítimas, operado por pessoas fora da empresa. Para a Trevo, fica o prejuízo e a dificuldade de responsabilizar a terceira.",
+      "mitigation": [
+        "Tabela de valores por motivo e teto por atendente e por turno; acima disso, aprovação de supervisor da própria Trevo.",
+        "Cortesia só em saldo não sacável (ex.: cashback em compras), nunca em saldo disponível para PIX.",
+        "Relatório diário de cortesias por atendente, com alerta para concentração."
+      ]
+    },
+    {
+      "id": "agenda-contatos",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["app", "api"], "edges": [{ "from": "app", "to": "api" }] },
+      "title": "Agenda de contatos coletada muito além do necessário",
+      "signal": "Para sugerir convites, o app envia a agenda inteira ao servidor. São dados de terceiros — gente que nunca se relacionou com a Trevo — coletados para uma finalidade de marketing.",
+      "abuse": [
+        "Um vazamento da base expõe nomes e telefones de milhões de não clientes, cruzados com quem os conhece.",
+        "A lista vira insumo para campanhas de aquisição sem consentimento, e a Trevo passa a mandar mensagens a quem nunca a procurou.",
+        "Golpistas com acesso à base sabem quem é próximo de quem e montam fraudes de \"falso parente\" mais convincentes."
+      ],
+      "impact": "Tratamento de dados de terceiros sem base legal clara e contrário aos princípios de finalidade e necessidade da LGPD (art. 6º). Risco de sanção da ANPD e de dano reputacional desproporcional ao ganho da funcionalidade.",
+      "mitigation": [
+        "Fazer a correspondência no aparelho, comparando hashes com salt dos números com uma lista de clientes, sem enviar a agenda.",
+        "Se algo for enviado, só o necessário para a correspondência, descartado logo depois e nunca reutilizado para marketing.",
+        "Tornar a sugestão opcional, com explicação clara antes do pedido de permissão."
+      ]
+    },
+    {
+      "id": "contas-mula",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["ledger", "psp"], "edges": [{ "from": "ledger", "to": "psp" }] },
+      "title": "A campanha fabrica contas de passagem para golpes",
+      "signal": "Cerca de 9 mil contas convertidas por dia, abertas com incentivo em dinheiro e saque imediato. O contexto não menciona monitoramento de contas que passam a receber e repassar valores logo após a abertura.",
+      "abuse": [
+        "Contas abertas com CPFs alugados na fazenda de indicações são revendidas para quadrilhas de golpe do PIX, que as usam para receber e pulverizar o dinheiro das vítimas.",
+        "Dinheiro de golpe entra, sai em minutos para outras instituições e a conta é abandonada; quando o MED chega, não há saldo para devolver."
+      ],
+      "impact": "Como instituição de pagamento, a Trevo precisa monitorar e comunicar operações suspeitas (Circular BCB 3.978/2020) e responde pelo papel das suas contas em golpes do PIX. Há risco de apontamento do Banco Central, de restrições do PSP liquidante e de volume alto de MED sem recuperação.",
+      "mitigation": [
+        "Monitoramento transacional de contas novas: recebimentos de muitos pagadores seguidos de repasse imediato disparam bloqueio cautelar.",
+        "Limites de PIX menores nos primeiros dias da conta, aumentados com o histórico.",
+        "Ligar os dados de fraude da campanha (aparelho, cadeia de indicação) ao processo de PLD, com comunicação ao COAF quando couber."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Todo incentivo em dinheiro vira uma API para fraudadores",
+      "body": "Uma regra que paga por comportamento vai ser otimizada por quem não quer o produto, só o pagamento. Desenhe a campanha perguntando \"qual é o jeito mais barato de cumprir esta condição sem ser cliente?\"."
+    },
+    {
+      "title": "Todo evento de conversão precisa de um evento de desconversão",
+      "body": "Se um benefício depende de um pagamento, cancelamento ou devolução desse pagamento tem que desfazer o benefício automaticamente. Se não tem caminho de volta, o fraudador usa o de ida."
+    },
+    {
+      "title": "Fila que entrega pelo menos uma vez exige crédito idempotente",
+      "body": "Reentrega não é exceção, é contrato. Qualquer consumidor que movimenta dinheiro precisa de uma chave única aplicada no banco, não de cuidado na hora de reprocessar."
+    },
+    {
+      "title": "Sinal que só observa não protege",
+      "body": "Um controle em modo log produz um painel bonito sobre o prejuízo. Se o risco já está em produção, defina desde o primeiro dia o que o sinal bloqueia ou segura."
+    },
+    {
+      "title": "Quem configura dinheiro sem deploy precisa de dupla aprovação",
+      "body": "Painéis de negócio, backoffices e campos de valor livre são produção. Tratá-los como configuração inofensiva é como deixar um endpoint de pagamento sem autenticação."
+    }
+  ]
+}
