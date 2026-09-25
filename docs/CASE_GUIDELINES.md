@@ -54,6 +54,10 @@ Nós (`nodes`) e arestas (`edges`). Cada nó marca `kind`:
 - `boundary` — sua fronteira externa (bucket, webhook, endpoint público)
 - `external` — terceiro (KYC, adquirente, provider)
 
+E cada nó diz o que ele *é* com `icon`: `api`, `database`, `storage`, `queue`, `webhook`, `payment`, `partner`, `team`… (lista completa em `docs/SCHEMA.md`). `kind` responde "de quem é"; `icon` responde "o que é". Um bucket pode ser `boundary` + `storage`; um provedor de KYC, `external` + `partner`.
+
+Os rótulos das arestas ficam flutuando acima da linha; prefira rótulos curtos (até ~30 caracteres), que cabem entre os nós.
+
 Coordenadas `x`, `y` são pra layout. Convenção atual:
 - Colunas: `x` = 60, 240, 440, 640
 - Linhas: `y` = 40, 160, 260
@@ -86,6 +90,7 @@ Distratores fracos ("Senhas fracas"; "Não usa HTTPS") tornam o caso infantil. D
 
 Só os reais. Cada risco tem os mesmos `id`, `category` do candidato correspondente, e:
 
+- **`where`**: onde o risco mora no fluxo. Liste primeiro o nó onde o problema *acontece* (é ali que o número aparece no mapa) e depois os nós e arestas por onde o abuso passa. Seja preciso: um mapa com todo nó aceso não ensina nada.
 - **`severity`**: `crítico` | `alto` | `médio` | `baixo`
 - **`signal`**: as pistas no contexto que apontavam pra ele. HTML inline (`<code>`, `<em>`) é ok. Ancore a explicação em algo que estava escrito no contexto — "o contexto menciona X", "a operação diária pressupõe Y".
 - **`abuse`**: 2-4 cenários concretos de abuso. Não são listas de "possíveis riscos" — são *como um adversário faria*. Escreve como se fosse ficção mínima: "Motorista aceita frete, executa, antecipa, depois cancela...". Concreto vence abstrato.

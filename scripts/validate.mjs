@@ -123,11 +123,31 @@ function crossCheck(data) {
     }
   });
 
+  // Every node says what it is, so the flow shows its type icon
+  (data.flow?.nodes || []).forEach(n => {
+    if (!n.icon) errors.push(`flow node "${n.id}" has no "icon" — see the enum in schema/case.schema.json`);
+  });
+
   // Every edge references existing node ids
   const nodeIds = new Set((data.flow?.nodes || []).map(n => n.id));
   (data.flow?.edges || []).forEach((e, i) => {
     if (!nodeIds.has(e.from)) errors.push(`flow.edges[${i}].from = "${e.from}" — no such node`);
     if (!nodeIds.has(e.to)) errors.push(`flow.edges[${i}].to = "${e.to}" — no such node`);
+  });
+
+  // risks[].where must point at nodes and edges that exist in the flow
+  const edgeKeys = new Set((data.flow?.edges || []).map(e => `${e.from}>${e.to}`));
+  // …and every published risk needs one, so each case gets the reveal map.
+  (data.risks || []).forEach(r => {
+    if (!r.where || (!r.where.nodes && !r.where.edges)) {
+      errors.push(`risk "${r.id}" has no "where" — list the flow nodes/edges where it lives (feeds the reveal map)`);
+    }
+    (r.where?.nodes || []).forEach(n => {
+      if (!nodeIds.has(n)) errors.push(`risk "${r.id}": where.nodes has "${n}" — no such node`);
+    });
+    (r.where?.edges || []).forEach(e => {
+      if (!edgeKeys.has(`${e.from}>${e.to}`)) errors.push(`risk "${r.id}": where.edges has ${e.from} → ${e.to} — no such edge in flow.edges`);
+    });
   });
 
   // Recommend at least 3 distinct categories in the risks (breadth of the case)
