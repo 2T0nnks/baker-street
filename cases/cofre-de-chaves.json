@@ -1,0 +1,324 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "slug": "cofre-de-chaves",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Cofre de Chaves",
+  "subtitle": "HSM que assina o PIX de um banco digital e um plano pós-quântico feito às pressas",
+  "duration": "~50 min",
+  "difficulty": "Avançado",
+  "tags": ["Fintech", "HSM", "Criptografia", "Pós-quântico"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "O Banco Âncora é um banco digital com 4 milhões de clientes e participante direto do PIX: cada mensagem que ele envia ao sistema do Banco Central é assinada com a chave privada de um certificado ICP-Brasil, guardada num cluster de dois HSMs no datacenter próprio. O mesmo HSM guarda a chave RSA-2048 que protege o arquivo de documentos — contratos e KYC —, mantido por pelo menos dez anos: cada documento é cifrado com AES-256, e a chave AES é embrulhada com a chave RSA.",
+      "Os 40 microsserviços do banco pedem assinaturas a um serviço de assinatura central. Eles se autenticam por mTLS com um único certificado de cliente, o mesmo para todos, emitido pela equipe de plataforma. O serviço assina o payload que recebe e devolve para o gateway PIX, que envia ao Banco Central. O serviço fala com o HSM por PKCS#11; o PIN da partição fica no cofre de senhas do time e é acessível aos 12 SREs, que o usam também para diagnosticar problemas direto no HSM.",
+      "A administração do HSM — criar e exportar chaves, mudar políticas, restaurar backups — foi configurada com quórum de 1 de 3 administradores, \"para não travar a operação de madrugada\". Os três smartcards de administrador, os envelopes com os PINs e as mídias de backup do HSM ficam no mesmo cofre, na sede. Os logs de auditoria do HSM ficam só no próprio equipamento, por 30 dias.",
+      "No ano passado, o conselho pediu um plano pós-quântico. A equipe de plataforma começou um piloto de TLS híbrido (X25519 + ML-KEM) com parceiros do Open Finance; se o handshake híbrido falha, o gateway volta automaticamente para o TLS clássico, \"para não derrubar parceiro\". O plano para as assinaturas é migrar quando o fornecedor do HSM liberar firmware com ML-DSA. Não existe um inventário de onde RSA e curvas elípticas são usados: os algoritmos estão escritos no código de cada serviço. Enquanto isso, o arquivo de documentos continua sendo embrulhado com RSA-2048."
+    ],
+    "actors": [
+      ["Microsserviços", "40 serviços que pedem assinatura"],
+      ["SREs", "12 pessoas com o PIN da partição"],
+      ["Administradores do HSM", "3 pessoas, quórum de 1"],
+      ["Banco Central (SPI)", "recebe as mensagens PIX assinadas"],
+      ["Parceiros Open Finance", "terceiros: piloto de TLS híbrido"],
+      ["Fornecedor do HSM", "terceiro: firmware com ML-DSA"]
+    ],
+    "data": [
+      ["Chave de assinatura PIX", "certificado ICP-Brasil no HSM"],
+      ["Chave RSA-2048 do arquivo", "embrulha as chaves AES"],
+      ["Contratos e KYC", "arquivo de pelo menos 10 anos"],
+      ["PIN da partição", "cofre de senhas do time"],
+      ["Smartcards e backups", "mesmo cofre físico"]
+    ],
+    "scale": [
+      ["4 milhões", "clientes"],
+      ["40", "microsserviços com o mesmo certificado"],
+      ["12 SREs", "com o PIN da partição"],
+      ["1 de 3", "quórum de administração"],
+      ["10 anos", "retenção do arquivo"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "parceiros", "label": "Parceiros Open Finance", "kind": "external", "icon": "partner", "x": 60, "y": 40 },
+      { "id": "gateway", "label": "Gateway PIX e APIs", "kind": "boundary", "icon": "api", "x": 240, "y": 40 },
+      { "id": "spi", "label": "SPI do Banco Central", "kind": "external", "icon": "bank", "x": 440, "y": 40 },
+      { "id": "sre", "label": "SREs de plantão", "kind": "internal", "icon": "team", "x": 640, "y": 40 },
+      { "id": "servicos", "label": "40 microsserviços", "kind": "internal", "icon": "service", "x": 60, "y": 160 },
+      { "id": "assinatura", "label": "Serviço de assinatura", "kind": "internal", "icon": "service", "x": 240, "y": 160 },
+      { "id": "hsm", "label": "Cluster de HSM", "kind": "internal", "icon": "key", "x": 440, "y": 160 },
+      { "id": "arquivo", "label": "Arquivo de documentos", "kind": "internal", "icon": "storage", "x": 640, "y": 160 },
+      { "id": "cofre", "label": "Cofre físico", "kind": "internal", "icon": "storage", "x": 440, "y": 260 }
+    ],
+    "edges": [
+      { "from": "parceiros", "to": "gateway", "label": "TLS híbrido (piloto)", "boundary": true },
+      { "from": "gateway", "to": "spi", "label": "mensagem assinada", "boundary": true },
+      { "from": "servicos", "to": "assinatura", "label": "mTLS compartilhado" },
+      { "from": "assinatura", "to": "gateway", "label": "payload assinado" },
+      { "from": "assinatura", "to": "hsm", "label": "PKCS#11" },
+      { "from": "hsm", "to": "arquivo", "label": "embrulha com RSA" },
+      { "from": "sre", "to": "hsm", "label": "PIN da partição" },
+      { "from": "cofre", "to": "hsm", "label": "smartcards e backup" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "oraculo-assinatura",
+      "truth": true,
+      "category": "técnico",
+      "title": "O serviço de assinatura assina qualquer payload de qualquer serviço",
+      "sub": "Os 40 microsserviços usam o mesmo certificado mTLS, e o serviço assina o que recebe."
+    },
+    {
+      "id": "pin-particao",
+      "truth": true,
+      "category": "fraude",
+      "title": "Doze SREs podem usar a chave do PIX direto no HSM",
+      "sub": "O PIN da partição está no cofre de senhas do time e é usado para diagnóstico."
+    },
+    {
+      "id": "quorum-um",
+      "truth": true,
+      "category": "processo",
+      "title": "Uma pessoa sozinha exporta chaves e muda políticas do HSM",
+      "sub": "O quórum de administração foi configurado como 1 de 3 para não travar a madrugada."
+    },
+    {
+      "id": "cofre-unico",
+      "truth": true,
+      "category": "operativo",
+      "title": "Smartcards, PINs e backups guardados juntos",
+      "sub": "Tudo o que é preciso para restaurar e administrar o HSM está no mesmo cofre físico."
+    },
+    {
+      "id": "logs-hsm",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Logs do HSM ficam só no equipamento, por 30 dias",
+      "sub": "Ninguém exporta nem acompanha o que é feito com as chaves."
+    },
+    {
+      "id": "colhe-agora",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Arquivo de dez anos ainda protegido por RSA-2048",
+      "sub": "Documentos que precisam ficar sigilosos até a próxima década continuam sendo embrulhados com RSA."
+    },
+    {
+      "id": "fallback-classico",
+      "truth": true,
+      "category": "lógica",
+      "title": "TLS híbrido volta sozinho para o clássico quando falha",
+      "sub": "O gateway faz fallback automático \"para não derrubar parceiro\"."
+    },
+    {
+      "id": "sem-inventario",
+      "truth": true,
+      "category": "processo",
+      "title": "Não há inventário de onde RSA e curvas elípticas são usados",
+      "sub": "Os algoritmos estão escritos no código de cada um dos 40 serviços; o plano é esperar o firmware."
+    },
+    {
+      "id": "assinatura-forjada-hoje",
+      "truth": false,
+      "category": "técnico",
+      "title": "Um computador quântico pode forjar hoje as assinaturas PIX em RSA-2048",
+      "sub": "Forjar exige o computador quântico no momento do ataque, e uma mensagem PIX vale segundos. É preciso migrar, mas o urgente é o que precisa continuar secreto por anos."
+    },
+    {
+      "id": "aes-quebrado",
+      "truth": false,
+      "category": "técnico",
+      "title": "O AES-256 do arquivo será quebrado por computador quântico",
+      "sub": "O algoritmo de Grover reduz a força efetiva à metade: AES-256 continua com margem. O elo fraco é a chave RSA que embrulha a chave AES."
+    },
+    {
+      "id": "qkd",
+      "truth": false,
+      "category": "processo",
+      "title": "O banco deveria adotar distribuição quântica de chaves (QKD)",
+      "sub": "QKD exige hardware e enlaces dedicados e não resolve os problemas deste fluxo. O caminho recomendado é criptografia pós-quântica em software."
+    },
+    {
+      "id": "hsm-nuvem",
+      "truth": false,
+      "category": "operativo",
+      "title": "HSM no datacenter próprio é menos seguro que HSM em nuvem",
+      "sub": "É escolha de arquitetura. O risco está em como o HSM é operado, não em onde ele fica."
+    }
+  ],
+  "risks": [
+    {
+      "id": "oraculo-assinatura",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["assinatura", "servicos"], "edges": [{ "from": "servicos", "to": "assinatura" }, { "from": "assinatura", "to": "gateway" }] },
+      "title": "Oráculo de assinatura: o HSM protege a chave, não o uso dela",
+      "signal": "Os 40 microsserviços usam <em>o mesmo certificado mTLS</em> e o serviço <em>assina o payload que recebe</em>. A chave nunca sai do HSM — mas qualquer serviço comprometido consegue que ela assine o que quiser.",
+      "abuse": [
+        "Uma vulnerabilidade num serviço secundário (o de notificações, por exemplo) dá ao atacante acesso à rede interna e ao certificado compartilhado; ele pede ao serviço de assinatura mensagens PIX de transferência para contas dele.",
+        "Um dev com acesso ao certificado em ambiente de homologação percebe que ele também vale em produção.",
+        "Como todos usam a mesma identidade, os logs do serviço não mostram qual sistema pediu cada assinatura."
+      ],
+      "impact": "Mensagens PIX legítimas aos olhos do Banco Central, assinadas pela chave oficial do banco, movimentando dinheiro de clientes. Perda direta, incidente comunicável ao regulador e investigação sem trilha de quem pediu cada assinatura.",
+      "mitigation": [
+        "Uma identidade por serviço (certificado mTLS próprio) e política no serviço de assinatura dizendo quem pode assinar qual tipo de mensagem.",
+        "O serviço de assinatura valida o conteúdo antes de assinar: tipo de mensagem, limites e vínculo com uma transação registrada no core bancário.",
+        "Trilha de auditoria por assinatura (quem pediu, o quê, qual transação), conciliada com o que foi liquidado no PIX."
+      ]
+    },
+    {
+      "id": "pin-particao",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["hsm", "sre"], "edges": [{ "from": "sre", "to": "hsm" }] },
+      "title": "O PIN que dá acesso direto à chave do PIX está com doze pessoas",
+      "signal": "O PIN da partição está <em>no cofre de senhas do time</em>, acessível aos <em>12 SREs</em>, que o usam para diagnóstico. Com ele, qualquer um fala direto com o HSM, sem passar pelo serviço de assinatura.",
+      "abuse": [
+        "Um SRE, de casa, abre uma sessão PKCS#11 com a partição e assina mensagens de transferência para contas de laranjas.",
+        "O cofre de senhas do time é comprometido por phishing de um dos doze; o atacante ganha o PIN.",
+        "Um SRE desligado há meses ainda sabe o PIN, que nunca foi trocado."
+      ],
+      "impact": "Fraude interna com a chave oficial do banco e poucas chances de atribuição. Um único PIN compartilhado anula todo o investimento no HSM.",
+      "mitigation": [
+        "O PIN da partição de produção só com o serviço de assinatura (injetado em tempo de execução), nunca com pessoas.",
+        "Diagnóstico em partição separada, sem as chaves de produção; acesso emergencial à produção com quórum e registro.",
+        "Troca do PIN sempre que alguém do time sai e após qualquer uso emergencial."
+      ]
+    },
+    {
+      "id": "quorum-um",
+      "category": "processo",
+      "severity": "crítico",
+      "where": { "nodes": ["hsm", "cofre"], "edges": [{ "from": "cofre", "to": "hsm" }] },
+      "title": "Quórum de 1 de 3 não é quórum",
+      "signal": "Criar e exportar chaves, mudar políticas e restaurar backups exige <em>1 de 3</em> administradores. O controle de duas pessoas, que é o motivo de existir um quórum, foi desligado por conveniência.",
+      "abuse": [
+        "Um administrador exporta, embrulhada com uma chave que ele controla, a chave de assinatura do PIX e a leva para fora do banco.",
+        "Um administrador muda a política da partição para permitir exportação, faz a cópia e volta a política como estava.",
+        "O smartcard de um administrador é roubado junto com o PIN: sozinho, ele basta."
+      ],
+      "impact": "A chave mais sensível do banco pode sair do HSM pela ação de uma única pessoa. Depois disso, o banco precisa revogar o certificado junto ao Banco Central e trocar a chave às pressas, com o PIX em risco de parar.",
+      "mitigation": [
+        "Quórum de pelo menos 2 de 3 para toda operação administrativa, com uma escala de plantão que garanta dois administradores disponíveis.",
+        "Chave de assinatura do PIX marcada como não exportável.",
+        "Cerimônia de chaves roteirizada, com testemunha e ata para cada operação administrativa."
+      ]
+    },
+    {
+      "id": "cofre-unico",
+      "category": "operativo",
+      "severity": "alto",
+      "where": { "nodes": ["cofre"], "edges": [{ "from": "cofre", "to": "hsm" }] },
+      "title": "Tudo o que protege a chave está no mesmo lugar",
+      "signal": "Os três smartcards, <em>os envelopes com os PINs</em> e <em>as mídias de backup</em> do HSM ficam no mesmo cofre, na sede. Quem abre o cofre tem tudo o que precisa.",
+      "abuse": [
+        "Alguém com acesso ao cofre (facilities, segurança patrimonial, um administrador) leva um smartcard, o PIN e um backup e restaura as chaves num HSM do mesmo modelo, fora do banco.",
+        "Um incêndio ou alagamento na sede destrói, de uma vez, os backups e os smartcards necessários para restaurar."
+      ],
+      "impact": "Separar cartão e PIN é o que impede que o furto de um objeto seja suficiente. Juntos, o cofre vira um ponto único de comprometimento — e de perda total, se o local for atingido.",
+      "mitigation": [
+        "Smartcards e PINs sob custódia de pessoas diferentes; PINs nunca em papel junto do cartão.",
+        "Backups do HSM em um segundo local seguro, fisicamente separado da sede.",
+        "Controle de acesso ao cofre com registro e inventário periódico do conteúdo."
+      ]
+    },
+    {
+      "id": "logs-hsm",
+      "category": "regulatório",
+      "severity": "médio",
+      "where": { "nodes": ["hsm"] },
+      "title": "O que é feito com as chaves some em 30 dias",
+      "signal": "Os logs de auditoria do HSM ficam <em>só no próprio equipamento</em>, por <em>30 dias</em>. Não há envio para uma central de logs nem alerta para operações administrativas.",
+      "abuse": [
+        "Uma exportação de chave feita numa madrugada só é percebida meses depois, quando o log já foi sobrescrito.",
+        "Quem faz algo indevido no HSM sabe que basta esperar 30 dias."
+      ],
+      "impact": "As normas do Banco Central e do CMN sobre segurança cibernética exigem rastreabilidade e capacidade de investigar incidentes. Sem os logs, o banco não consegue provar o que aconteceu com a chave que assina o PIX.",
+      "mitigation": [
+        "Envio contínuo dos logs do HSM para a central de logs, com retenção compatível com a regulação.",
+        "Alerta em tempo real para operações administrativas, uso da partição fora do serviço de assinatura e falhas de autenticação.",
+        "Revisão periódica dos logs de administração pela segurança."
+      ]
+    },
+    {
+      "id": "colhe-agora",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["arquivo", "hsm"], "edges": [{ "from": "hsm", "to": "arquivo" }] },
+      "title": "Colhe agora, decifra depois",
+      "signal": "O arquivo guarda contratos e KYC por <em>pelo menos dez anos</em>, e as chaves AES continuam sendo <em>embrulhadas com RSA-2048</em>. O que importa não é quando o computador quântico chega, e sim por quanto tempo o dado precisa continuar secreto.",
+      "abuse": [
+        "Um atacante que hoje copia o arquivo (num vazamento de backup, por exemplo) não consegue ler nada — mas guarda a cópia. Quando existir um computador quântico capaz de quebrar RSA-2048, ele recupera as chaves AES e lê os documentos.",
+        "Documentos de clientes de hoje continuam sensíveis daqui a dez anos: CPF, renda, biometria e assinatura não mudam."
+      ],
+      "impact": "Dados pessoais e sensíveis expostos no futuro por uma decisão tomada hoje, sem nenhuma invasão nova. A regra prática: se o tempo que o dado precisa ficar secreto mais o tempo que a migração leva passa do tempo até existir o computador quântico, a migração já está atrasada.",
+      "mitigation": [
+        "Começar pelo arquivo: embrulhar as novas chaves AES com ML-KEM (ou em modo híbrido RSA + ML-KEM) e re-embrulhar as chaves antigas.",
+        "Manter AES-256 para o conteúdo: é o embrulho que precisa mudar, não a cifra dos documentos.",
+        "Priorizar a migração pelo tempo de sigilo de cada dado, não pela facilidade técnica."
+      ]
+    },
+    {
+      "id": "fallback-classico",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["gateway", "parceiros"], "edges": [{ "from": "parceiros", "to": "gateway" }] },
+      "title": "Fallback automático é um botão de downgrade",
+      "signal": "Se o handshake híbrido falha, o gateway <em>volta sozinho para o TLS clássico</em>. Quem está no meio do caminho decide se a conexão vai ser pós-quântica ou não.",
+      "abuse": [
+        "Um atacante na rede derruba de propósito o handshake híbrido; a conexão cai para o clássico, e o tráfego gravado pode ser lido no futuro.",
+        "Um problema de configuração faz o híbrido falhar sempre, e ninguém percebe: o painel do piloto mostra \"TLS ativo\", e o tráfego segue só com criptografia clássica."
+      ],
+      "impact": "O piloto dá a impressão de proteção pós-quântica sem entregá-la. Dados de Open Finance trafegados hoje ficam expostos ao mesmo \"colhe agora, decifra depois\" do arquivo.",
+      "mitigation": [
+        "Sem fallback silencioso: parceiros que já negociaram o híbrido não aceitam o clássico; exceções são configuradas explicitamente.",
+        "Métrica e alerta para conexões que caíram para o clássico, por parceiro.",
+        "Usar os mecanismos do próprio TLS 1.3 contra downgrade, em vez de uma nova tentativa manual no gateway."
+      ]
+    },
+    {
+      "id": "sem-inventario",
+      "category": "processo",
+      "severity": "médio",
+      "where": { "nodes": ["servicos"], "edges": [{ "from": "servicos", "to": "assinatura" }] },
+      "title": "Não dá para migrar o que ninguém sabe onde está",
+      "signal": "Não existe <em>inventário</em> de onde RSA e curvas elípticas são usados, os algoritmos estão <em>escritos no código de cada serviço</em>, e o plano para as assinaturas é esperar o firmware do fornecedor.",
+      "abuse": [
+        "Quando surgir uma data-limite regulatória ou um avanço quântico, o banco descobre dezenas de lugares que usam RSA e não tem como mudar todos a tempo.",
+        "Um serviço esquecido continua trocando chaves com curvas elípticas por anos depois do fim oficial da migração.",
+        "A mesma falta de agilidade atrapalha qualquer troca urgente de algoritmo, quântica ou não."
+      ],
+      "impact": "A migração pós-quântica vira um projeto de anos, feito às pressas e sem saber quando termina. O risco não é técnico hoje: é de prazo.",
+      "mitigation": [
+        "Inventário criptográfico (algoritmos, chaves, bibliotecas e certificados por sistema), mantido atualizado.",
+        "Agilidade criptográfica: algoritmos configuráveis numa biblioteca central, não espalhados pelo código.",
+        "Roteiro de migração priorizado por tempo de sigilo, com os algoritmos já padronizados pelo NIST (ML-KEM e ML-DSA) e testes em modo híbrido."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Um HSM protege a chave, não o uso da chave",
+      "body": "Se qualquer sistema consegue pedir uma assinatura, o HSM vira um oráculo. Controle quem pode assinar o quê, e prove isso nos logs."
+    },
+    {
+      "title": "Quórum que não trava nada não é quórum",
+      "body": "Controle de duas pessoas desligado por conveniência vale o mesmo que nenhum controle. Resolva a conveniência com escala de plantão, não com o quórum."
+    },
+    {
+      "title": "Na transição quântica, o prazo que importa é o do segredo",
+      "body": "Dados que precisam ficar sigilosos por anos já estão em risco hoje, porque podem ser copiados agora e decifrados depois. Assinaturas de vida curta podem esperar um pouco mais."
+    },
+    {
+      "title": "Fallback automático entrega a decisão a quem ataca",
+      "body": "Toda negociação que volta sozinha para o mais fraco pode ser forçada a voltar. Se voltar for necessário, que seja uma decisão explícita e monitorada."
+    },
+    {
+      "title": "Agilidade criptográfica começa por um inventário",
+      "body": "Antes de escolher algoritmo pós-quântico, saiba onde cada algoritmo atual está. Sem isso, nenhum plano de migração tem data para terminar."
+    }
+  ]
+}
