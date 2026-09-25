@@ -43,16 +43,16 @@
   },
   "flow": {
     "nodes": [
-      { "id": "app", "label": "App Trevo", "kind": "internal", "icon": "app", "x": 60, "y": 40 },
-      { "id": "api", "label": "API da carteira", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
-      { "id": "fila", "label": "Fila de conversões", "kind": "internal", "icon": "queue", "x": 440, "y": 40 },
-      { "id": "motor", "label": "Motor de recompensas", "kind": "internal", "icon": "service", "x": 640, "y": 40 },
-      { "id": "device", "label": "SDK de device fingerprint", "kind": "external", "icon": "partner", "x": 60, "y": 160 },
-      { "id": "kyc", "label": "Provedor de KYC", "kind": "external", "icon": "partner", "x": 240, "y": 160 },
-      { "id": "painel", "label": "Painel de campanhas", "kind": "internal", "icon": "web", "x": 440, "y": 160 },
-      { "id": "ledger", "label": "Ledger de saldos", "kind": "internal", "icon": "database", "x": 640, "y": 160 },
-      { "id": "suporte", "label": "Backoffice do atendimento", "kind": "internal", "icon": "team", "x": 440, "y": 260 },
-      { "id": "psp", "label": "PSP liquidante (PIX)", "kind": "external", "icon": "bank", "x": 640, "y": 260 }
+      { "id": "app", "label": "App Trevo", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "App da Trevo: conta, PIX, cartão e cashback. Na campanha, mostra o código de indicação, o link para compartilhar e as sugestões de amigos para convidar." },
+      { "id": "api", "label": "API da carteira", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "API da carteira: cadastro, KYC, PIX e campanha. Quando o primeiro PIX de um convidado é confirmado, publica o evento de conversão." },
+      { "id": "fila", "label": "Fila de conversões", "kind": "internal", "icon": "queue", "x": 440, "y": 40, "description": "Fila de mensagens que leva os eventos de conversão da API até o motor de recompensas." },
+      { "id": "motor", "label": "Motor de recompensas", "kind": "internal", "icon": "service", "x": 640, "y": 40, "description": "Serviço que consome as conversões, aplica as regras da campanha e credita o bônus do indicador e do convidado no ledger." },
+      { "id": "device", "label": "SDK de device fingerprint", "kind": "external", "icon": "partner", "x": 60, "y": 160, "description": "SDK de um fornecedor embutido no app. Coleta sinais do aparelho e calcula um score de risco do dispositivo." },
+      { "id": "kyc", "label": "Provedor de KYC", "kind": "external", "icon": "partner", "x": 240, "y": 160, "description": "Provedor terceirizado que valida selfie e documento na abertura de conta e devolve a aprovação por callback." },
+      { "id": "painel", "label": "Painel de campanhas", "kind": "internal", "icon": "web", "x": 440, "y": 160, "description": "Ferramenta web do marketing para configurar a campanha: valor do bônus, PIX mínimo para converter e limite de indicações por cliente." },
+      { "id": "ledger", "label": "Ledger de saldos", "kind": "internal", "icon": "database", "x": 640, "y": 160, "description": "Registro dos saldos dos clientes. Recebe os créditos de bônus e de cortesia; o saldo disponível pode ser sacado via PIX." },
+      { "id": "suporte", "label": "Backoffice do atendimento", "kind": "internal", "icon": "team", "x": 440, "y": 260, "description": "Backoffice usado pelos 40 atendentes da empresa terceira para consultar contas, resolver reclamações e conceder bônus de cortesia." },
+      { "id": "psp", "label": "PSP liquidante (PIX)", "kind": "external", "icon": "bank", "x": 640, "y": 260, "description": "PSP parceiro pelo qual a Trevo liquida os PIX, já que é participante indireta. Executa os saques dos clientes." }
     ],
     "edges": [
       { "from": "app", "to": "api", "label": "cadastro + código + agenda" },

@@ -101,7 +101,8 @@
         "kind": "internal",
         "icon": "app",
         "x": 60,
-        "y": 40
+        "y": 40,
+        "description": "App do paciente: agenda e faz a consulta por vídeo, recebe receitas e atestados e envia a receita a uma farmácia parceira."
       },
       {
         "id": "api",
@@ -109,7 +110,8 @@
         "kind": "internal",
         "icon": "api",
         "x": 240,
-        "y": 40
+        "y": 40,
+        "description": "API da Cuidar+: autenticação, agendamento, vídeo, integração com farmácias e relatórios para as empresas clientes."
       },
       {
         "id": "prontuario",
@@ -117,7 +119,8 @@
         "kind": "internal",
         "icon": "database",
         "x": 440,
-        "y": 40
+        "y": 40,
+        "description": "Banco com o prontuário eletrônico: anotações da consulta, diagnóstico, receitas e atestados emitidos."
       },
       {
         "id": "medico",
@@ -125,7 +128,8 @@
         "kind": "internal",
         "icon": "web",
         "x": 640,
-        "y": 40
+        "y": 40,
+        "description": "Aplicação usada pelos 220 médicos plantonistas para atender, registrar a consulta e emitir receita e atestado com o próprio certificado."
       },
       {
         "id": "analytics",
@@ -133,7 +137,8 @@
         "kind": "external",
         "icon": "partner",
         "x": 0,
-        "y": 40
+        "y": 40,
+        "description": "SDK de um fornecedor de analytics e marketing embutido no app, usado para medir o funil e disparar campanhas."
       },
       {
         "id": "gravacoes",
@@ -141,7 +146,8 @@
         "kind": "boundary",
         "icon": "storage",
         "x": 240,
-        "y": 160
+        "y": 160,
+        "description": "Armazenamento das gravações em vídeo das consultas, mantidas por exigência do departamento jurídico."
       },
       {
         "id": "docs",
@@ -149,7 +155,8 @@
         "kind": "boundary",
         "icon": "document",
         "x": 440,
-        "y": 160
+        "y": 160,
+        "description": "Serviço que gera os PDFs assinados de receita e atestado e os entrega ao paciente por um link enviado por SMS."
       },
       {
         "id": "farmacia",
@@ -157,7 +164,8 @@
         "kind": "external",
         "icon": "partner",
         "x": 640,
-        "y": 160
+        "y": 160,
+        "description": "Rede de farmácias parceiras que recebe as receitas enviadas pelo app e entrega os remédios em casa."
       },
       {
         "id": "suporte",
@@ -165,7 +173,8 @@
         "kind": "internal",
         "icon": "team",
         "x": 60,
-        "y": 160
+        "y": 160,
+        "description": "Equipe de 25 pessoas que atende pacientes por WhatsApp, inclusive quem perdeu o acesso à conta."
       },
       {
         "id": "empresa",
@@ -173,7 +182,8 @@
         "kind": "boundary",
         "icon": "spreadsheet",
         "x": 0,
-        "y": 160
+        "y": 160,
+        "description": "Relatório mensal enviado às empresas que contratam a Cuidar+ como benefício, com o uso do serviço por funcionário."
       }
     ],
     "edges": [

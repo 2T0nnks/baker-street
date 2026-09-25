@@ -602,7 +602,38 @@ section.block:first-of-type { border-top: none; }
 .flow-types { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); }
 .flow-types span { display: inline-flex; align-items: center; gap: 6px; }
 .tl-icon { width: 14px; height: 14px; color: var(--muted); }
-.flow-node { flex-direction: column; gap: 3px; cursor: default; transition: opacity 0.2s, box-shadow 0.2s; }
+.flow-node { flex-direction: column; gap: 3px; cursor: pointer; transition: opacity 0.2s, box-shadow 0.2s; }
+.flow-node.selected { box-shadow: 0 0 0 3px color-mix(in oklab, var(--ochre) 55%, transparent) !important; opacity: 1 !important; }
+
+/* Node detail panel */
+.node-detail {
+  margin-top: 14px; padding: 18px 20px;
+  border: 1px solid var(--line); border-left: 3px solid var(--ochre); border-radius: 4px;
+  background: var(--card);
+}
+.nd-head { display: flex; align-items: flex-start; gap: 12px; }
+.nd-icon { width: 22px; height: 22px; flex: none; margin-top: 3px; }
+.nd-icon.kind-internal { color: var(--trail); }
+.nd-icon.kind-boundary { color: var(--ochre); }
+.nd-icon.kind-external { color: var(--rust); }
+.nd-titles { flex: 1; min-width: 0; }
+.nd-name { margin: 0; font-family: "Fraunces", serif; font-size: 20px; font-weight: 500; line-height: 1.2; }
+.nd-kind { display: block; margin-top: 3px; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.nd-kind.kind-boundary { color: var(--ochre); }
+.nd-kind.kind-external { color: var(--rust); }
+.nd-close { flex: none; font-size: 12.5px; padding: 4px 12px; }
+.nd-desc { margin: 12px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink); max-width: 75ch; }
+.nd-section { margin-top: 14px; }
+.nd-section h5 { margin: 0 0 6px; font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.nd-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.nd-links li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 14px; }
+.nd-jump { padding: 2px 10px; font-size: 13.5px; }
+.nd-risk.hit { border-color: var(--trail); color: var(--trail); }
+.nd-risk.missed { border-color: var(--rust); color: var(--rust); }
+.nd-edge { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); }
+.nd-tag { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.nd-tag.boundary { color: var(--ochre); border-color: var(--ochre); }
+.nd-edge-desc { flex-basis: 100%; margin: 2px 0 0; font-size: 13.5px; color: var(--ink-soft); }
 .flow-node.kind-boundary { border-style: dashed; }
 .fn-kind {
   font-family: "JetBrains Mono", monospace;
@@ -1384,7 +1415,7 @@ footer .foot-brand {
             <button class="ghost replay-btn" id="replayFlow" type="button">↻ Rever animação</button>
           </div>
           <div class="flow-types" id="flowTypes" hidden></div>
-          <p class="flow-hint">Passe o mouse (ou navegue com Tab) sobre um sistema para ver com quem ele troca dados.</p>
+          <p class="flow-hint">Clique num sistema (ou use Tab e Enter) para ver o que ele faz e com quem troca dados.</p>
           <div class="nav-actions">
             <button data-prev>← Voltar</button>
             <button class="primary" data-next>Ir para a leitura →</button>
@@ -1428,7 +1459,7 @@ footer .foot-brand {
           <section class="risk-map" id="riskMapBlock" hidden>
             <span class="eyebrow">Mapa de riscos</span>
             <h4 class="display" style="margin-top: 8px; font-size: 22px;">Onde cada risco mora no fluxo</h4>
-            <p class="rm-hint">Clique num número para ir ao risco. Passe o mouse num risco, aqui ou nos cards abaixo, para ver por onde ele passa.</p>
+            <p class="rm-hint">Clique num número para ir ao risco, ou num sistema para ver os riscos que moram nele. Passe o mouse num risco, aqui ou nos cards abaixo, para ver por onde ele passa.</p>
             <div class="flow-wrap" id="riskMap"></div>
             <p class="flow-scroll-hint">↔ Arraste o mapa para o lado para ver todos os riscos.</p>
             <div class="rm-legend">
@@ -1523,7 +1554,7 @@ footer .foot-brand {
               </div>
               <div class="field-def">
                 <code>flow.nodes / edges</code><span class="type-tag">graph</span>
-                <p>Nós e arestas do diagrama. Cada nó tem <code>kind</code> (interno, fronteira, terceiro), que colore o quadro, e <code>icon</code> (API, banco de dados, fila, parceiro…), que mostra o que o sistema é.</p>
+                <p>Nós e arestas do diagrama. Cada nó tem <code>kind</code> (interno, fronteira, terceiro), que colore o quadro, <code>icon</code> (API, banco de dados, fila, parceiro…), que mostra o que o sistema é, e <code>description</code>, o texto que aparece quando a pessoa clica no sistema.</p>
               </div>
               <div class="field-def">
                 <code>candidates</code><span class="type-tag">item[]</span>
@@ -1631,7 +1662,7 @@ footer .foot-brand {
     },
     "flow": {
       "nodes": [
-        { "id": "app", "label": "App", "kind": "internal", "icon": "app", "x": 60, "y": 40 }
+        { "id": "app", "label": "App", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "O que o sistema faz, quem opera e que dados passam por ele" }
       ],
       "edges": [
         { "from": "app", "to": "api", "label": "descrição", "boundary": false, "dashed": false }
@@ -1974,6 +2005,18 @@ footer .foot-brand {
     wrap._played = false;
     wrap._flow = flow || null;
     wrap._opts = opts;
+    wrap._selected = null;
+    if (!wrap._detail) {
+      // Details of the selected node live right under the diagram (works on phones too).
+      const panel = document.createElement("section");
+      panel.className = "node-detail";
+      panel.id = `${wrap.id}-detail`;
+      panel.setAttribute("aria-live", "polite");
+      panel.hidden = true;
+      wrap.after(panel);
+      wrap._detail = panel;
+    }
+    wrap._detail.hidden = true;
     if (!flow) { wrap.innerHTML = ""; return; }
     wrap._levels = flowLevels(flow);
 
@@ -2005,12 +2048,19 @@ footer .foot-brand {
       const type = NODE_ICONS[n.icon] ? `${NODE_ICONS[n.icon][0]}, ` : "";
       el.setAttribute("aria-label", `${el.querySelector(".fn-label").textContent} — ${type}${KIND_LABEL[n.kind] || ""}`);
       if (NODE_ICONS[n.icon]) el.title = NODE_ICONS[n.icon][0];
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-expanded", "false");
+      el.setAttribute("aria-controls", wrap._detail.id);
       const on = () => highlightNode(wrap, n.id);
       const off = () => clearHighlight(wrap);
       el.addEventListener("mouseenter", on);
       el.addEventListener("focus", on);
       el.addEventListener("mouseleave", off);
       el.addEventListener("blur", off);
+      el.addEventListener("click", () => selectNode(wrap, n.id));
+      el.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectNode(wrap, n.id); }
+      });
     });
 
     const legend = opts.typeLegend && document.getElementById(opts.typeLegend);
@@ -2157,6 +2207,7 @@ footer .foot-brand {
     if (wrap._opts.pins) placePins(wrap);
     if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
     if (DEBUG_LAYOUT) reportLayout(wrap);
+    if (wrap._selected) highlightNode(wrap, wrap._selected);
   }
 
   // ---- Authoring aid: ?debug=layout lists anything that overlaps in a diagram ----
@@ -2305,6 +2356,7 @@ footer .foot-brand {
     grid.classList.remove("focus-mode");
     grid.querySelectorAll(".lit").forEach(el => el.classList.remove("lit"));
     grid.querySelectorAll(".pin.active").forEach(el => el.classList.remove("active"));
+    if (wrap._selected) highlightNode(wrap, wrap._selected);
   }
   function highlightNode(wrap, id) {
     const nodeIds = new Set([id]), keys = new Set();
@@ -2318,6 +2370,116 @@ footer .foot-brand {
     highlightFlow(wrap, new Set(where.nodes || []), new Set((where.edges || []).map(edgeKey)));
     wrap.querySelectorAll(`.pin[data-risk="${risk.id}"]`).forEach(p => p.classList.add("active"));
   }
+
+  // ---- Node details: click a system to see what it is and who it talks to ----
+  function selectNode(wrap, id) {
+    if (wrap._selected === id) { closeNodeDetail(wrap); return; } // click again to close
+    wrap._selected = id;
+    wrap.querySelectorAll(".flow-node").forEach(el => {
+      const on = el.dataset.id === id;
+      el.classList.toggle("selected", on);
+      el.setAttribute("aria-expanded", on ? "true" : "false");
+    });
+    highlightNode(wrap, id);
+    renderNodeDetail(wrap, id);
+  }
+  function closeNodeDetail(wrap, returnFocus) {
+    const id = wrap._selected;
+    wrap._selected = null;
+    if (wrap._detail) wrap._detail.hidden = true;
+    wrap.querySelectorAll(".flow-node").forEach(el => {
+      el.classList.remove("selected");
+      el.setAttribute("aria-expanded", "false");
+    });
+    clearHighlight(wrap);
+    if (returnFocus && id) wrap.querySelector(`.flow-node[data-id="${id}"]`)?.focus();
+  }
+  function goToRisk(riskId) {
+    const card = document.getElementById(`risk-${riskId}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "center" });
+    card.classList.remove("flash");
+    void card.offsetWidth;
+    card.classList.add("flash");
+  }
+  function renderNodeDetail(wrap, id) {
+    const flow = wrap._flow;
+    const node = flow.nodes.find(x => x.id === id);
+    const nameOf = k => { const t = document.createElement("span"); t.innerHTML = (flow.nodes.find(x => x.id === k) || {}).label || k; return t.textContent; };
+    const panel = wrap._detail;
+    panel.innerHTML = "";
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+    const head = el("div", "nd-head");
+    head.insertAdjacentHTML("beforeend", iconSvg(node.icon, "nd-icon kind-" + node.kind));
+    const titles = el("div", "nd-titles");
+    const h = el("h4", "nd-name"); h.innerHTML = node.label;
+    const type = NODE_ICONS[node.icon] ? NODE_ICONS[node.icon][0] + " · " : "";
+    titles.append(h, el("span", "nd-kind kind-" + node.kind, type + (KIND_LABEL[node.kind] || "")));
+    const close = el("button", "ghost nd-close", "Fechar");
+    close.type = "button";
+    close.setAttribute("aria-label", "Fechar detalhes do sistema");
+    close.addEventListener("click", () => closeNodeDetail(wrap, true));
+    head.append(titles, close);
+    panel.appendChild(head);
+
+    if (node.description) {
+      const d = el("p", "nd-desc"); d.innerHTML = node.description;
+      panel.appendChild(d);
+    }
+
+    const section = (title, edges, otherEnd) => {
+      if (!edges.length) return;
+      const box = el("div", "nd-section");
+      box.appendChild(el("h5", null, title));
+      const ul = el("ul", "nd-links");
+      edges.forEach(e => {
+        const li = el("li");
+        const other = otherEnd(e);
+        const jump = el("button", "nd-jump", nameOf(other));
+        jump.type = "button";
+        jump.addEventListener("click", () => {
+          selectNode(wrap, other);
+          wrap.querySelector(`.flow-node[data-id="${other}"]`)?.focus({ preventScroll: true });
+        });
+        li.appendChild(jump);
+        if (e.label) li.appendChild(el("span", "nd-edge", e.label));
+        if (e.boundary) li.appendChild(el("span", "nd-tag boundary", "cruza fronteira"));
+        if (e.dashed) li.appendChild(el("span", "nd-tag", "assíncrono"));
+        if (e.description) { const p = el("p", "nd-edge-desc"); p.innerHTML = e.description; li.appendChild(p); }
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      panel.appendChild(box);
+    };
+    section("Recebe de", flow.edges.filter(e => e.to === id), e => e.from);
+    section("Envia para", flow.edges.filter(e => e.from === id), e => e.to);
+
+    // On the reveal map, list the risks that live in this system.
+    const pins = (wrap._opts.pins || []).filter(p => ((p.risk.where && p.risk.where.nodes) || []).includes(id));
+    if (pins.length) {
+      const box = el("div", "nd-section");
+      box.appendChild(el("h5", null, "Riscos neste ponto"));
+      const ul = el("ul", "nd-links");
+      pins.forEach(p => {
+        const li = el("li");
+        const b = el("button", "nd-jump nd-risk " + (p.hit ? "hit" : "missed"), `${p.n} · ${p.title}`);
+        b.type = "button";
+        b.addEventListener("click", () => goToRisk(p.risk.id));
+        li.appendChild(b);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      panel.appendChild(box);
+    }
+    panel.hidden = false;
+    // On phones the panel opens below the fold: bring it into view only if needed.
+    panel.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "nearest" });
+  }
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    document.querySelectorAll(".flow-wrap").forEach(w => { if (w._selected) closeNodeDetail(w, true); });
+  });
 
   // ---- Reveal map pins: one numbered pin per risk, at its first node (or edge) ----
   function placePins(wrap) {
@@ -2357,14 +2519,7 @@ footer .foot-brand {
       b.addEventListener("focus", () => highlightRisk(wrap, pin.risk));
       b.addEventListener("mouseleave", () => clearHighlight(wrap));
       b.addEventListener("blur", () => clearHighlight(wrap));
-      b.addEventListener("click", () => {
-        const card = document.getElementById(`risk-${pin.risk.id}`);
-        if (!card) return;
-        card.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "center" });
-        card.classList.remove("flash");
-        void card.offsetWidth;
-        card.classList.add("flash");
-      });
+      b.addEventListener("click", () => goToRisk(pin.risk.id));
       layer.appendChild(b);
     });
   }
