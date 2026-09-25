@@ -90,7 +90,7 @@
               "kind": { "type": "string", "enum": ["internal", "boundary", "external"] },
               "icon": {
                 "type": "string",
-                "enum": ["user", "app", "web", "api", "service", "database", "storage", "queue", "webhook", "payment", "bank", "partner", "team", "ai", "document", "spreadsheet", "email", "audit"],
+                "enum": ["user", "app", "web", "api", "service", "database", "storage", "queue", "webhook", "payment", "bank", "partner", "team", "ai", "document", "spreadsheet", "email", "audit", "key"],
                 "description": "What the node is (drawn as an icon). Required by validate.mjs for open cases."
               },
               "x": { "type": "integer", "minimum": 0 },
