@@ -624,6 +624,8 @@ section.block:first-of-type { border-top: none; }
 .nd-close { flex: none; font-size: 12.5px; padding: 4px 12px; }
 .nd-desc { margin: 12px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink); max-width: 75ch; }
 .nd-section { margin-top: 14px; }
+.nd-tech { padding: 10px 14px; border-radius: 4px; background: color-mix(in oklab, var(--trail) 7%, var(--card)); }
+.nd-tech p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-soft); max-width: 75ch; }
 .nd-section h5 { margin: 0 0 6px; font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .nd-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .nd-links li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 14px; }
@@ -1971,6 +1973,29 @@ footer .foot-brand {
     audit:       ["log / auditoria", '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>'],
     key:         ["chave / HSM", '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3M16 7l3 3M13.5 9.5l2.5 2.5"/>']
   };
+  // What each node type is, technically. Shown in the node panel when the
+  // case doesn't bring a more specific `tech` text for that node.
+  const NODE_TECH = {
+    user: "Pessoa que usa o sistema diretamente — cliente, operador ou parceiro. As ações dela entram no fluxo por uma interface, como um app, um site ou um atendimento.",
+    app: "Aplicativo instalado no celular do usuário. Roda num aparelho que a empresa não controla: tudo o que ele envia chega ao servidor como requisições pela internet.",
+    web: "Aplicação acessada pelo navegador. A página é entregue pelo servidor e executada no computador de quem acessa; cada ação vira uma requisição HTTP para uma API.",
+    api: "API (interface de programação): um conjunto de endereços, os <em>endpoints</em>, que recebem requisições — geralmente HTTP com JSON — e devolvem respostas. É por onde apps, sites e outros sistemas conversam com o back-end.",
+    service: "Serviço de back-end: um programa que roda nos servidores da empresa e executa uma parte da lógica do negócio, sem interface para o usuário. Conversa com outros sistemas por APIs ou filas.",
+    database: "Banco de dados: onde os registros ficam guardados de forma estruturada (tabelas, linhas e colunas) e são consultados por outros sistemas, geralmente com SQL.",
+    storage: "Armazenamento de objetos (como um <em>bucket</em> S3) ou físico: guarda itens inteiros — arquivos, vídeos, mídias — identificados por um nome. O acesso é controlado por políticas de quem pode ler, gravar ou listar.",
+    queue: "Fila de mensagens: um sistema publica eventos e outro os consome depois, no seu próprio ritmo. Isso desacopla os dois lados; se o consumidor falha, a mensagem pode ser entregue de novo.",
+    webhook: "Webhook: um endereço que um sistema externo chama — normalmente com um POST HTTP — para avisar que algo aconteceu, como um pagamento confirmado. A iniciativa é de quem chama, não de quem recebe.",
+    payment: "Meio de pagamento: o sistema que efetivamente move o dinheiro — cartão, PIX, boleto — e informa se a transação foi aprovada e liquidada.",
+    bank: "Instituição ou infraestrutura do sistema financeiro que guarda saldos e liquida operações, sob regulação do Banco Central.",
+    partner: "Terceiro: sistema de outra empresa integrado ao fluxo por contrato e API. A empresa não controla como ele funciona por dentro — só o que envia a ele e o que recebe de volta.",
+    team: "Pessoas operando o sistema, em geral por um <em>backoffice</em>: uma aplicação interna com permissões para consultar e alterar dados que o cliente não altera sozinho.",
+    ai: "Modelo de inteligência artificial que gera ou classifica conteúdo a partir de uma entrada. O resultado é probabilístico: pode variar de uma execução para outra e pode errar.",
+    document: "Documento gerado pelo sistema — PDF, contrato, comprovante —, muitas vezes com assinatura digital, que prova quem o emitiu e que o conteúdo não foi alterado.",
+    spreadsheet: "Planilha ou arquivo tabular (Excel, Google Sheets, CSV) usado como controle ou troca de dados fora dos sistemas principais.",
+    email: "Canal de mensagem assíncrono — e-mail, SMS, notificação — que leva informação a pessoas ou a outros sistemas.",
+    audit: "Registro de auditoria (log): anota quem fez o quê e quando, para investigação e conformidade.",
+    key: "HSM (<em>Hardware Security Module</em>): equipamento dedicado que gera e guarda chaves criptográficas e faz operações com elas — assinar, cifrar, decifrar — sem que a chave privada saia do hardware. É certificado para resistir a violação física."
+  };
   const iconSvg = (key, cls) => NODE_ICONS[key]
     ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NODE_ICONS[key][1]}</svg>`
     : "";
@@ -2426,6 +2451,15 @@ footer .foot-brand {
     if (node.description) {
       const d = el("p", "nd-desc"); d.innerHTML = node.description;
       panel.appendChild(d);
+    }
+
+    const techText = node.tech || NODE_TECH[node.icon];
+    if (techText) {
+      const box = el("div", "nd-section nd-tech");
+      box.appendChild(el("h5", null, "O que é, tecnicamente"));
+      const t = el("p"); t.innerHTML = techText;
+      box.appendChild(t);
+      panel.appendChild(box);
     }
 
     const section = (title, edges, otherEnd) => {

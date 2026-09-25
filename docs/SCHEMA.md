@@ -50,6 +50,7 @@ Este documento é a leitura humana do schema.
 
 - Node `kind`: `internal` (verde), `boundary` (âmbar), `external` (vermelho).
 - Node `description` (obrigatório em casos `open`, até 400 caracteres): aparece quando a pessoa clica no sistema, no fluxo e no mapa de riscos. Descreva o que o sistema é, quem opera e que dados passam — **sem apontar os riscos**, senão vira gabarito antes da leitura.
+- Node `tech` (opcional, até 600 caracteres): explicação técnica do conceito, na seção "O que é, tecnicamente" do painel. Sem ela, o motor mostra uma explicação genérica do tipo do nó (o que é uma API, um banco de dados, um HSM…). Use quando o termo é específico (KYC, sub-adquirente, SPI, averbação…). Também sem apontar o risco.
 - Edge `description` (opcional, até 300 caracteres): aparece embaixo da conexão, no painel do sistema.
 - Node `icon` (obrigatório em casos `open`): o que o sistema é, desenhado como ícone no nó e listado na legenda do fluxo. Valores: `user`, `app`, `web`, `api`, `service`, `database`, `storage`, `queue`, `webhook`, `payment`, `bank`, `partner`, `team`, `ai`, `document`, `spreadsheet`, `email`, `audit`, `key`.
 - Edge `boundary: true` marca cruzamento de fronteira de confiança.

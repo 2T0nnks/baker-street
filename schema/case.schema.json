@@ -98,6 +98,11 @@
                 "maxLength": 400,
                 "description": "Neutral context shown when the node is clicked: what the system is, who runs it, what data passes through. Must not point at the risks. Required by validate.mjs for open cases."
               },
+              "tech": {
+                "type": "string",
+                "maxLength": 600,
+                "description": "Optional technical explanation of the concept (e.g. what KYC or an acquirer is). Replaces the engine's generic explanation for the node's icon."
+              },
               "x": { "type": "integer", "minimum": 0 },
               "y": { "type": "integer", "minimum": 0 }
             }
