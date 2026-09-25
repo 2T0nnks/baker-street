@@ -42,14 +42,14 @@
   },
   "flow": {
     "nodes": [
-      { "id": "app", "label": "App do motorista", "kind": "internal", "x": 60, "y": 40 },
-      { "id": "api", "label": "API pública", "kind": "internal", "x": 240, "y": 40 },
-      { "id": "kyc", "label": "KYC Provider", "kind": "external", "x": 240, "y": 160 },
-      { "id": "db", "label": "Banco Postgres", "kind": "internal", "x": 440, "y": 40 },
-      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "x": 60, "y": 160 },
-      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "x": 640, "y": 40 },
-      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "x": 640, "y": 160 },
-      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "x": 440, "y": 260 }
+      { "id": "app", "label": "App do motorista", "kind": "internal", "icon": "app", "x": 60, "y": 40 },
+      { "id": "api", "label": "API pública", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
+      { "id": "kyc", "label": "KYC Provider", "kind": "external", "icon": "partner", "x": 240, "y": 160 },
+      { "id": "db", "label": "Banco Postgres", "kind": "internal", "icon": "database", "x": 440, "y": 40 },
+      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "icon": "storage", "x": 60, "y": 160 },
+      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "icon": "team", "x": 640, "y": 40 },
+      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "icon": "payment", "x": 640, "y": 160 },
+      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "icon": "webhook", "x": 440, "y": 260 }
     ],
     "edges": [
       { "from": "app", "to": "api", "label": "cadastro / upload / aceite" },
@@ -153,6 +153,7 @@
       "id": "idor",
       "category": "técnico",
       "severity": "crítico",
+      "where": {"nodes": ["docs", "api"], "edges": [{"from": "api", "to": "docs"}]},
       "title": "IDOR no download de documentos",
       "signal": "O endpoint <code>GET /documentos/{id}</code> foi descrito como validando apenas o token — nenhum filtro de dono. O contexto ainda menciona uploads sensíveis: CNH, selfie, comprovantes.",
       "abuse": [
@@ -171,6 +172,7 @@
       "id": "hmac",
       "category": "técnico",
       "severity": "crítico",
+      "where": {"nodes": ["hook"], "edges": [{"from": "sub", "to": "hook"}, {"from": "hook", "to": "db"}]},
       "title": "Webhook de pagamento sem verificação de assinatura",
       "signal": "A sub-adquirente confirma o PIX chamando <code>POST /pix/callback</code>. O contexto não menciona segredo compartilhado, HMAC nem allowlist — e o endpoint é externo por definição (é o parceiro chamando).",
       "abuse": [
@@ -189,6 +191,7 @@
       "id": "role",
       "category": "processo",
       "severity": "alto",
+      "where": {"nodes": ["bo"], "edges": [{"from": "bo", "to": "sub"}]},
       "title": "Segregação de funções ausente na tesouraria",
       "signal": "\"As três pessoas rodam a operação diária de aprovação\" — e o mesmo cargo mexe em cadastro (chave PIX) e em aprovação (liberação). Sem SoD, uma única credencial comprometida é uma fraude completa.",
       "abuse": [
@@ -207,6 +210,7 @@
       "id": "consent",
       "category": "regulatório",
       "severity": "médio",
+      "where": {"nodes": ["app"], "edges": [{"from": "app", "to": "api"}]},
       "title": "Consentimento agregado viola LGPD",
       "signal": "Um único checkbox cobre \"termos, política e comunicações\". Comunicação de marketing é finalidade distinta — a LGPD exige consentimento livre, informado e para finalidade específica (art. 8º §4º).",
       "abuse": [
@@ -225,6 +229,7 @@
       "id": "kyc-min",
       "category": "privacidade",
       "severity": "médio",
+      "where": {"nodes": ["kyc"], "edges": [{"from": "api", "to": "kyc"}]},
       "title": "Provider externo recebe dados excessivos",
       "signal": "O KYC valida identidade — precisa de CPF, foto do documento e selfie. O contexto diz que enviamos <em>endereço completo, chave PIX e histórico de fretes</em>. Isso é mais que a finalidade.",
       "abuse": [
@@ -243,6 +248,7 @@
       "id": "duplo-canhoto",
       "category": "lógica",
       "severity": "alto",
+      "where": {"nodes": ["api", "docs"], "edges": [{"from": "app", "to": "api"}, {"from": "api", "to": "docs"}]},
       "title": "Duplo canhoto: mesmo comprovante em dois fretes",
       "signal": "O contexto descreve upload de canhoto por entrega, mas não menciona deduplicação. Sem hash ou vínculo obrigatório 1-para-1 entre frete e comprovante, o mesmo arquivo pode ser aceito duas vezes.",
       "abuse": [
@@ -261,6 +267,7 @@
       "id": "reconc-planilha",
       "category": "operativo",
       "severity": "alto",
+      "where": {"nodes": ["bo", "sub"], "edges": [{"from": "db", "to": "bo"}]},
       "title": "Conciliação bancária diária em planilha compartilhada",
       "signal": "A operação diária de conciliação é feita pela tesouraria numa spreadsheet no Drive, editada por três pessoas em turnos. Não há trilha imutável nem versionamento estruturado — é procedimento operacional que assume boa-fé.",
       "abuse": [
@@ -279,6 +286,7 @@
       "id": "cancel-sem-reversao",
       "category": "lógica",
       "severity": "alto",
+      "where": {"nodes": ["api", "db", "sub"], "edges": [{"from": "app", "to": "api"}, {"from": "api", "to": "db"}]},
       "title": "Cancelamento pós-antecipação sem estorno automático",
       "signal": "O contexto descreve o caminho feliz: aceite → entrega → antecipação. Não é dito que cancelamento após antecipação dispare qualquer reversão. Na prática, o sistema pode apenas marcar cancelado — sem retirar o dinheiro já sacado.",
       "abuse": [

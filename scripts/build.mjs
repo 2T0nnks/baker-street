@@ -103,6 +103,14 @@ async function main() {
     })
     .join("\n");
 
+  // Every icon the schema allows must be drawn by the engine.
+  const schema = JSON.parse(await fs.readFile(path.join(ROOT, "schema", "case.schema.json"), "utf-8"));
+  const allowed = schema.properties.flow.properties.nodes.items.properties.icon.enum;
+  const iconsBlock = template.slice(template.indexOf("const NODE_ICONS = {"), template.indexOf("const iconSvg"));
+  const drawn = [...iconsBlock.matchAll(/^\s+(\w+):\s+\["/gm)].map(m => m[1]);
+  const missing = allowed.filter(k => !drawn.includes(k));
+  if (missing.length) throw new Error(`engine/template.html has no NODE_ICONS entry for: ${missing.join(", ")}`);
+
   let output = template.replace(MARKER, injected);
   if (!output.includes("__CSP_SCRIPT_HASHES__")) {
     throw new Error("Template is missing the __CSP_SCRIPT_HASHES__ placeholder");

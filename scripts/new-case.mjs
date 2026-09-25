@@ -68,7 +68,7 @@ async function main() {
     },
     flow: {
       nodes: [
-        { id: "app", label: "App", kind: "internal", x: 60, y: 40 }
+        { id: "app", label: "App", kind: "internal", icon: "app", x: 60, y: 40 }
       ],
       edges: []
     },
@@ -86,6 +86,7 @@ async function main() {
         id: "exemplo",
         category: "técnico",
         severity: "alto",
+        where: { nodes: ["app"] },
         title: "Título do risco real",
         signal: "Pistas no contexto que apontavam para isso",
         abuse: ["Cenário concreto 1", "Cenário concreto 2"],
