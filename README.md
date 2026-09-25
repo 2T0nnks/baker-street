@@ -21,7 +21,7 @@
 
 ## Casos
 
-| | | |
+| Caso | | Cenário |
 |---|---|---|
 | **[Frete Adiantado](https://2t0nnks.github.io/baker-street/?caso=frete-adiantado)** | fintech | antecipação de recebíveis para caminhoneiros |
 | **[Indique e Ganhe](https://2t0nnks.github.io/baker-street/?caso=indique-e-ganhe)** | fintech | campanha de indicação com bônus via PIX |
