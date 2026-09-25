@@ -1,0 +1,327 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "slug": "saque-antecipado",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Saque Antecipado",
+  "subtitle": "Antecipação do saque-aniversário do FGTS vendida por correspondentes bancários",
+  "duration": "~50 min",
+  "difficulty": "Avançado",
+  "tags": ["Fintech", "Crédito", "Correspondentes", "LGPD"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "A Adianta é uma fintech de crédito que antecipa até dez anos do saque-aniversário do FGTS: o cliente autoriza a Adianta no app do FGTS, a Adianta consulta o saldo, calcula a antecipação e paga por PIX; as parcelas são descontadas direto do FGTS, uma por ano. São cerca de R$ 90 milhões desembolsados por mês, em contratos de R$ 1.800 em média.",
+      "Mais de 70% das vendas vêm de 1.200 lojas de correspondentes bancários em todo o país. O correspondente recebe comissão de 12% do valor liberado, paga no momento em que o contrato é averbado. A contratação é digital: o correspondente digita a proposta no portal, o cliente recebe um link por SMS, confere os valores, tira uma selfie e aceita. A tela de aceite já traz marcado o seguro prestamista; o custo efetivo total (CET) aparece no contrato em PDF, enviado depois da assinatura. O cliente pode desistir em até 7 dias.",
+      "O portal do correspondente tem um usuário por loja, compartilhado pelos vendedores. A API de simulação recebe um CPF e devolve o saldo do FGTS e o valor disponível para qualquer CPF que já tenha autorizado a Adianta no app do FGTS. A prova de vida usa um provedor de biometria em modo passivo, que analisa uma única selfie.",
+      "No operacional, os correspondentes montam listas de clientes com CPF, telefone e saldo estimado, e as trocam por WhatsApp para campanhas. O retorno de averbação e bloqueio de parcelas chega do agente operador do FGTS em arquivo, que o time de operações baixa e importa manualmente todas as manhãs."
+    ],
+    "actors": [
+      ["Cliente", "trabalhador com saldo de FGTS"],
+      ["Correspondente bancário", "1.200 lojas, 12% de comissão"],
+      ["Vendedor da loja", "usa o login compartilhado da loja"],
+      ["Provedor de biometria", "terceiro: prova de vida passiva"],
+      ["Agente operador do FGTS", "terceiro: averba e bloqueia parcelas"],
+      ["Operações", "importa arquivos de retorno"]
+    ],
+    "data": [
+      ["CPF e saldo do FGTS", "consulta e simulação"],
+      ["Selfie", "prova de vida no aceite"],
+      ["Chave PIX", "destino do dinheiro liberado"],
+      ["Listas de clientes", "montadas pelos correspondentes"],
+      ["Contrato e CET", "PDF enviado após o aceite"]
+    ],
+    "scale": [
+      ["R$ 90 mi / mês", "desembolso"],
+      ["1.200 lojas", "correspondentes ativos"],
+      ["> 70%", "das vendas via correspondente"],
+      ["12%", "comissão sobre o liberado"],
+      ["7 dias", "prazo de desistência"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "portal", "label": "Portal do correspondente", "kind": "boundary", "icon": "web", "x": 60, "y": 40 },
+      { "id": "api", "label": "API de propostas", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
+      { "id": "fgts", "label": "Consulta de saldo FGTS", "kind": "external", "icon": "bank", "x": 440, "y": 40 },
+      { "id": "pix", "label": "Pagamento via PIX", "kind": "external", "icon": "payment", "x": 640, "y": 40 },
+      { "id": "whatsapp", "label": "Listas no WhatsApp", "kind": "external", "icon": "spreadsheet", "x": 60, "y": 160 },
+      { "id": "aceite", "label": "Link de aceite do cliente", "kind": "boundary", "icon": "app", "x": 240, "y": 160 },
+      { "id": "biometria", "label": "Provedor de biometria", "kind": "external", "icon": "partner", "x": 440, "y": 160 },
+      { "id": "contratos", "label": "Contratos e comissões", "kind": "internal", "icon": "database", "x": 640, "y": 160 },
+      { "id": "retorno", "label": "Arquivo de averbação", "kind": "boundary", "icon": "document", "x": 640, "y": 260 },
+      { "id": "operacoes", "label": "Operações", "kind": "internal", "icon": "team", "x": 440, "y": 260 }
+    ],
+    "edges": [
+      { "from": "portal", "to": "api", "label": "digita proposta" },
+      { "from": "api", "to": "fgts", "label": "saldo por CPF", "boundary": true },
+      { "from": "portal", "to": "whatsapp", "label": "listas de clientes", "boundary": true },
+      { "from": "api", "to": "aceite", "label": "link por SMS" },
+      { "from": "aceite", "to": "biometria", "label": "selfie", "boundary": true },
+      { "from": "biometria", "to": "contratos", "label": "aprovado" },
+      { "from": "contratos", "to": "pix", "label": "libera o valor", "boundary": true },
+      { "from": "retorno", "to": "operacoes", "label": "baixa o arquivo", "dashed": true },
+      { "from": "operacoes", "to": "contratos", "label": "importa averbações" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "proposta-sem-cliente",
+      "truth": true,
+      "category": "fraude",
+      "title": "Correspondente contrata em nome de cliente que não pediu",
+      "sub": "Comissão de 12% paga na averbação, selfie passiva e o correspondente controlando o celular de quem \"só veio simular\"."
+    },
+    {
+      "id": "biometria-passiva",
+      "truth": true,
+      "category": "técnico",
+      "title": "Prova de vida com uma única selfie",
+      "sub": "O modo passivo analisa uma foto; o contexto não fala em desafio, vídeo ou comparação com documento oficial."
+    },
+    {
+      "id": "enumeracao-saldo",
+      "truth": true,
+      "category": "técnico",
+      "title": "Simulação devolve o saldo do FGTS de qualquer CPF autorizado",
+      "sub": "A API recebe um CPF e responde com saldo e valor disponível — para quem consulta, qualquer que seja."
+    },
+    {
+      "id": "comissao-arrependimento",
+      "truth": true,
+      "category": "lógica",
+      "title": "Comissão paga antes do fim do prazo de desistência",
+      "sub": "A comissão sai na averbação, mas o cliente tem 7 dias para desistir; o contexto não fala em estorno de comissão."
+    },
+    {
+      "id": "seguro-cet",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Seguro pré-marcado e CET só depois da assinatura",
+      "sub": "A tela de aceite traz o seguro prestamista marcado; o custo total aparece no PDF, enviado após o aceite."
+    },
+    {
+      "id": "login-compartilhado",
+      "truth": true,
+      "category": "processo",
+      "title": "Um usuário por loja, compartilhado pelos vendedores",
+      "sub": "Não dá para saber qual vendedor digitou qual proposta — nem desligar só quem saiu."
+    },
+    {
+      "id": "listas-whatsapp",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Listas de clientes com CPF e saldo circulam por WhatsApp",
+      "sub": "Os correspondentes montam e trocam listas com dados de clientes para campanhas."
+    },
+    {
+      "id": "arquivo-manual",
+      "truth": true,
+      "category": "operativo",
+      "title": "Retorno de averbação baixado e importado à mão toda manhã",
+      "sub": "O arquivo que confirma a garantia do crédito passa pelas mãos de operações, fora de qualquer integração."
+    },
+    {
+      "id": "juros-altos",
+      "truth": false,
+      "category": "regulatório",
+      "title": "Taxa de juros da antecipação é alta demais",
+      "sub": "A taxa segue o limite definido para a modalidade. O problema regulatório está em como o custo é mostrado, não no valor."
+    },
+    {
+      "id": "dez-anos",
+      "truth": false,
+      "category": "lógica",
+      "title": "Antecipar dez anos de saque-aniversário é arriscado para a Adianta",
+      "sub": "As parcelas ficam bloqueadas no FGTS e são pagas pelo agente operador: é justamente a garantia que torna o produto seguro para quem empresta."
+    },
+    {
+      "id": "sms-interceptado",
+      "truth": false,
+      "category": "técnico",
+      "title": "Link de aceite por SMS pode ser interceptado por troca de chip",
+      "sub": "Possível, mas o atacante ainda precisaria passar a selfie do cliente. O caminho fácil está com quem já está ao lado do cliente."
+    },
+    {
+      "id": "app-fgts",
+      "truth": false,
+      "category": "técnico",
+      "title": "O app do FGTS pode ser invadido",
+      "sub": "Está fora do controle e do escopo da Adianta. O que a Adianta controla é o que faz com a autorização recebida."
+    }
+  ],
+  "risks": [
+    {
+      "id": "proposta-sem-cliente",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["portal", "aceite"], "edges": [{ "from": "portal", "to": "api" }, { "from": "api", "to": "aceite" }] },
+      "title": "Contratação por quem ganha a comissão, não por quem toma o crédito",
+      "signal": "O correspondente <em>digita a proposta</em>, recebe <em>12% na averbação</em> e muitas vezes está com o cliente na loja. O aceite depende de uma selfie passiva e de um link que chega no celular — que o vendedor pode segurar \"para ajudar\".",
+      "abuse": [
+        "Cliente idoso vai à loja \"só para ver quanto tem\"; o vendedor pega o celular, abre o link, tira a selfie \"para a consulta\" e contrata.",
+        "O PIX liberado vai para uma chave indicada pelo vendedor (\"a gente repassa o seu em dinheiro\"), e só parte chega ao cliente.",
+        "Com listas de clientes que já autorizaram a Adianta, a loja contrata em série para quem nunca apareceu."
+      ],
+      "impact": "Contratos contestados, devolução de valores e reclamações em massa no Banco Central, no consumidor.gov.br e no Procon. Crédito para público vulnerável vendido desse jeito é exatamente o que a regulação sobre correspondentes tenta coibir — e a instituição responde pelos atos deles.",
+      "mitigation": [
+        "Aceite só no aparelho do cliente, com prova de vida ativa e confirmação por um canal que o correspondente não controla (ligação ou app próprio).",
+        "Chave PIX de destino obrigatoriamente em nome do CPF do cliente.",
+        "Monitorar correspondentes por taxa de desistência, reclamação e concentração em idosos, com bloqueio de lojas fora do padrão."
+      ]
+    },
+    {
+      "id": "biometria-passiva",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["biometria", "aceite"], "edges": [{ "from": "aceite", "to": "biometria" }] },
+      "title": "Prova de vida que aceita foto de foto",
+      "signal": "O provedor opera em <em>modo passivo</em>, analisando <em>uma única selfie</em>. O contexto não menciona comparação com a foto do documento nem detecção de tela ou máscara.",
+      "abuse": [
+        "Fraudador fotografa a tela de outro celular com a foto do cliente tirada da rede social e passa na verificação.",
+        "Selfies guardadas de contratações anteriores são reutilizadas para aprovar novas.",
+        "Deepfake em tempo real engana a análise de uma imagem só."
+      ],
+      "impact": "Contratos assinados por quem não é o titular, com o dinheiro indo para terceiros. A Adianta perde o valor e ainda precisa desbloquear o FGTS do verdadeiro dono.",
+      "mitigation": [
+        "Prova de vida ativa (movimento ou desafio aleatório) e comparação com a foto de um documento oficial ou de base governamental.",
+        "Detecção de reuso: a mesma selfie, ou selfies quase idênticas, em propostas diferentes.",
+        "Revisão manual quando o score de biometria fica perto do limite."
+      ]
+    },
+    {
+      "id": "enumeracao-saldo",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["api", "fgts"], "edges": [{ "from": "api", "to": "fgts" }] },
+      "title": "API de simulação vira consulta de saldo do FGTS por CPF",
+      "signal": "A simulação <em>recebe um CPF e devolve o saldo</em> de qualquer pessoa que já tenha autorizado a Adianta. Quem chama é o portal com login compartilhado de 1.200 lojas.",
+      "abuse": [
+        "Um vendedor roda uma lista de CPFs vazados contra a simulação e descobre quem tem saldo alto — alvos perfeitos para abordagem ou golpe.",
+        "Uma loja descredenciada que ainda tem o login da loja continua usando a consulta para vender a outra instituição.",
+        "O resultado alimenta as listas que circulam no WhatsApp."
+      ],
+      "impact": "Exposição de dado financeiro de milhões de trabalhadores e ferramenta de prospecção abusiva operada com a infraestrutura da Adianta.",
+      "mitigation": [
+        "Simulação só dentro de uma proposta iniciada pelo cliente, com consentimento registrado para aquela consulta específica.",
+        "Limite de consultas por usuário (individual) e por loja, com alerta para volumes anormais e para CPFs sem proposta.",
+        "Resposta da simulação com o valor disponível, sem o saldo detalhado do FGTS."
+      ]
+    },
+    {
+      "id": "comissao-arrependimento",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["contratos"], "edges": [{ "from": "biometria", "to": "contratos" }, { "from": "operacoes", "to": "contratos" }] },
+      "title": "Comissão que não volta quando o contrato volta",
+      "signal": "A comissão é paga <em>na averbação</em>; o cliente pode desistir <em>em até 7 dias</em>. O contexto não descreve estorno de comissão em desistência ou cancelamento.",
+      "abuse": [
+        "Correspondente fecha contratos que sabe que o cliente vai cancelar e fica com 12% de cada um.",
+        "Loja em conluio com clientes: contrata, recebe a comissão, o cliente desiste e os dois dividem."
+      ],
+      "impact": "Custo de comissão sobre contratos que não geram receita, e incentivo direto à venda empurrada que gera desistência e reclamação.",
+      "mitigation": [
+        "Pagar a comissão depois do prazo de desistência, ou reter e estornar automaticamente quando houver desistência.",
+        "Comissão variável conforme a qualidade da carteira da loja (desistência, reclamação).",
+        "Relatório de desistência por loja com revisão comercial."
+      ]
+    },
+    {
+      "id": "seguro-cet",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["aceite"], "edges": [{ "from": "api", "to": "aceite" }] },
+      "title": "Venda casada e custo escondido até depois do sim",
+      "signal": "A tela de aceite traz o <em>seguro prestamista já marcado</em>, e o <em>CET só aparece no PDF enviado depois</em> da assinatura. O cliente decide sem ver o custo total.",
+      "abuse": [
+        "Correspondentes deixam o seguro marcado porque ele aumenta o valor financiado e, com ele, a comissão.",
+        "Cliente descobre o custo real só no contrato e reclama; a desistência cresce, mas os que não percebem ficam com o seguro."
+      ],
+      "impact": "Venda casada é vedada pelo Código de Defesa do Consumidor, e as normas do Banco Central exigem que o CET seja informado antes da contratação. Risco de sanção, devolução em massa e ação coletiva.",
+      "mitigation": [
+        "Seguro desmarcado por padrão, oferecido como opção separada com preço claro.",
+        "CET, valor total pago e parcelas na tela de aceite, antes da selfie.",
+        "Auditoria da taxa de adesão ao seguro por loja."
+      ]
+    },
+    {
+      "id": "login-compartilhado",
+      "category": "processo",
+      "severity": "médio",
+      "where": { "nodes": ["portal"], "edges": [{ "from": "portal", "to": "api" }] },
+      "title": "Ninguém responde pelo que o login da loja fez",
+      "signal": "O portal tem <em>um usuário por loja, compartilhado</em> pelos vendedores. Não há como atribuir uma proposta a uma pessoa nem revogar o acesso de quem saiu.",
+      "abuse": [
+        "Vendedor demitido continua usando o login da loja de casa, digitando propostas e consultando saldos.",
+        "Proposta fraudulenta investigada: a loja diz que \"foi alguém de lá\", e ninguém consegue provar quem."
+      ],
+      "impact": "Impossibilidade de investigar e responsabilizar, e acessos que sobrevivem ao desligamento. Qualquer controle por usuário (limite, alerta) perde o sentido.",
+      "mitigation": [
+        "Usuário individual por vendedor, cadastrado com CPF, com segundo fator.",
+        "Responsável da loja gerencia a própria equipe, com desativação imediata no desligamento.",
+        "Trilha de auditoria por usuário em todas as ações do portal."
+      ]
+    },
+    {
+      "id": "listas-whatsapp",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["whatsapp", "portal"], "edges": [{ "from": "portal", "to": "whatsapp" }] },
+      "title": "Dados dos clientes da Adianta em listas de WhatsApp",
+      "signal": "Os correspondentes <em>montam listas com CPF, telefone e saldo estimado</em> e as trocam por WhatsApp. A Adianta é controladora desses dados, e eles circulam num canal sem nenhum controle.",
+      "abuse": [
+        "Listas vazam para golpistas, que ligam se passando pela Adianta (\"há um valor liberado, confirme seus dados\").",
+        "Correspondentes vendem as listas a concorrentes ou a outras operações.",
+        "Clientes recebem dezenas de abordagens de lojas que nunca procuraram."
+      ],
+      "impact": "Tratamento sem base legal e sem segurança de dados pessoais e financeiros, com a Adianta como controladora (LGPD). Golpes com o nome da Adianta corroem a marca.",
+      "mitigation": [
+        "Portal sem exportação de dados de clientes; campanhas feitas pela própria Adianta, com consentimento.",
+        "Contrato com correspondentes proibindo o uso de dados fora do portal, com auditoria e descredenciamento.",
+        "Monitorar vazamentos (listas à venda) e rastrear a origem."
+      ]
+    },
+    {
+      "id": "arquivo-manual",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["operacoes", "retorno"], "edges": [{ "from": "retorno", "to": "operacoes" }, { "from": "operacoes", "to": "contratos" }] },
+      "title": "A garantia do crédito depende de alguém importar um arquivo",
+      "signal": "O retorno de averbação e bloqueio de parcelas chega <em>em arquivo</em>, que operações <em>baixa e importa manualmente todas as manhãs</em>. É ele que diz se a garantia existe.",
+      "abuse": [
+        "Um dia sem importação (férias, feriado) e contratos são pagos sem a confirmação de que as parcelas foram bloqueadas.",
+        "Alguém de operações edita o arquivo antes de importar e marca como averbado um contrato que não foi.",
+        "O mesmo arquivo importado duas vezes gera pagamento de comissão em dobro."
+      ],
+      "impact": "Crédito liberado sem garantia e comissões pagas sobre averbações que não existem. O erro só aparece meses depois, quando a parcela anual não é paga.",
+      "mitigation": [
+        "Integração automática com o agente operador, com verificação de integridade do arquivo e registro de cada importação.",
+        "Liberar o PIX só depois da confirmação de bloqueio das parcelas.",
+        "Importação idempotente (o mesmo arquivo não é aplicado duas vezes) e conciliação diária entre averbações e desembolsos."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Quem ganha comissão não pode controlar o aceite",
+      "body": "Quando o intermediário é pago pela venda e opera o dispositivo do cliente, o consentimento vira formalidade. O aceite tem que acontecer num canal que ele não controla."
+    },
+    {
+      "title": "Toda comissão precisa de um caminho de volta",
+      "body": "Se o contrato pode ser desfeito, a comissão também. Pagar antes do fim do prazo de desistência é pagar para vender o que vai ser cancelado."
+    },
+    {
+      "title": "Login compartilhado apaga a responsabilidade",
+      "body": "Sem identidade individual, não há trilha, não há limite por pessoa e não há como desligar quem saiu. É o primeiro controle a exigir de qualquer parceiro."
+    },
+    {
+      "title": "Uma API de simulação também é uma API de consulta",
+      "body": "Todo endpoint que responde algo sobre uma pessoa a partir de um identificador vai ser usado para enumerar. Pergunte \"quem pode perguntar sobre quem?\"."
+    },
+    {
+      "title": "Transparência vem antes do sim",
+      "body": "Custo total, seguros e condições mostrados depois da assinatura não informam: só registram. Regulação e confiança dependem do que o cliente vê antes de decidir."
+    }
+  ]
+}
