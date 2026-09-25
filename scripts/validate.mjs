@@ -55,7 +55,9 @@ async function main() {
     }
 
     // Extra structural checks the schema can't express well
-    const errors = [...checkHtml(data), ...crossCheck(data)];
+    const warnings = [];
+    const errors = [...checkHtml(data), ...crossCheck(data, warnings)];
+    warnings.forEach(w => console.warn(`⚠ cases/${file}: ${w}`));
     if (errors.length) {
       console.error(`✗ cases/${file}:`);
       errors.forEach(e => console.error(`    ${e}`));
@@ -105,9 +107,50 @@ function checkHtml(data) {
   return errors;
 }
 
-function crossCheck(data) {
+// Longest edge label the diagram can place between nodes without covering them.
+const MAX_EDGE_LABEL = 32;
+const MIN_DISTRACTORS = 3;
+
+function crossCheck(data, warnings = []) {
   const errors = [];
   if (data.status !== "open") return errors; // only fully-populated cases
+
+  const nodes = data.flow?.nodes || [];
+  const edges = data.flow?.edges || [];
+  const candidates = data.candidates || [];
+  const risks = data.risks || [];
+
+  // Duplicates the engine can't tell apart
+  const dupes = (values, what) => {
+    const seen = new Set();
+    values.forEach(v => { if (seen.has(v)) errors.push(`duplicate ${what}: ${v}`); seen.add(v); });
+  };
+  dupes(nodes.map(n => `"${n.id}"`), "flow node id");
+  dupes(nodes.map(n => `x=${n.x}, y=${n.y}`), "node position (two nodes would be drawn on top of each other)");
+  dupes(edges.map(e => `${e.from} → ${e.to}`), "edge");
+  dupes(candidates.map(c => `"${c.id}"`), "candidate id");
+  dupes(risks.map(r => `"${r.id}"`), "risk id");
+
+  // Things the diagram can't draw well
+  edges.forEach(e => {
+    if (e.from === e.to) errors.push(`edge ${e.from} → ${e.to} points to itself — the diagram can't draw loops on one node`);
+    const len = (e.label || "").length;
+    if (len > MAX_EDGE_LABEL) errors.push(`edge ${e.from} → ${e.to}: label has ${len} characters (max ${MAX_EDGE_LABEL}) — shorten it so it fits between nodes`);
+  });
+  const connected = new Set(edges.flatMap(e => [e.from, e.to]));
+  nodes.filter(n => !connected.has(n.id)).forEach(n => warnings.push(`flow node "${n.id}" has no edges — is that intended?`));
+
+  // The exercise only works if marking everything costs points
+  const traps = candidates.filter(c => !c.truth).length;
+  if (traps < MIN_DISTRACTORS) {
+    errors.push(`only ${traps} distractor(s) (truth: false) — need at least ${MIN_DISTRACTORS}, otherwise marking everything scores full marks`);
+  }
+
+  // A real candidate and its risk must agree on the category
+  risks.forEach(r => {
+    const c = candidates.find(x => x.id === r.id);
+    if (c && c.category !== r.category) errors.push(`risk "${r.id}" is "${r.category}" but its candidate is "${c.category}"`);
+  });
 
   // Every real candidate has a matching risk with the same id
   const realIds = (data.candidates || []).filter(c => c.truth).map(c => c.id);

@@ -1,4 +1,5 @@
 {
+  "$schema": "../schema/case.schema.json",
   "slug": "consulta-fila",
   "status": "soon",
   "domain": "healthtech",

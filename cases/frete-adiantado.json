@@ -1,4 +1,5 @@
 {
+  "$schema": "../schema/case.schema.json",
   "slug": "frete-adiantado",
   "status": "open",
   "domain": "fintech",

@@ -7,6 +7,10 @@
   "required": ["slug", "status", "title", "subtitle"],
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only (\"../schema/case.schema.json\"), so VS Code and others autocomplete and check the case while you type. Ignored by the engine."
+    },
     "slug": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
