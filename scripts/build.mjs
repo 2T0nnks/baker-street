@@ -110,6 +110,10 @@ async function main() {
   const drawn = [...iconsBlock.matchAll(/^\s+(\w+):\s+\["/gm)].map(m => m[1]);
   const missing = allowed.filter(k => !drawn.includes(k));
   if (missing.length) throw new Error(`engine/template.html has no NODE_ICONS entry for: ${missing.join(", ")}`);
+  const techBlock = template.slice(template.indexOf("const NODE_TECH = {"), template.indexOf("const iconSvg"));
+  const explained = [...techBlock.matchAll(/^\s+(\w+):\s+"/gm)].map(m => m[1]);
+  const unexplained = allowed.filter(k => !explained.includes(k));
+  if (unexplained.length) throw new Error(`engine/template.html has no NODE_TECH explanation for: ${unexplained.join(", ")}`);
 
   let output = template.replace(MARKER, injected);
   if (!output.includes("__CSP_SCRIPT_HASHES__")) {

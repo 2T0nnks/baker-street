@@ -120,7 +120,8 @@
         "icon": "database",
         "x": 440,
         "y": 40,
-        "description": "Banco com o prontuário eletrônico: anotações da consulta, diagnóstico, receitas e atestados emitidos."
+        "description": "Banco com o prontuário eletrônico: anotações da consulta, diagnóstico, receitas e atestados emitidos.",
+        "tech": "Prontuário eletrônico do paciente: registro clínico com o histórico de consultas, diagnósticos, prescrições e exames. A guarda é regulada pelos conselhos de medicina e o conteúdo é dado de saúde."
       },
       {
         "id": "medico",
@@ -138,7 +139,8 @@
         "icon": "partner",
         "x": 0,
         "y": 40,
-        "description": "SDK de um fornecedor de analytics e marketing embutido no app, usado para medir o funil e disparar campanhas."
+        "description": "SDK de um fornecedor de analytics e marketing embutido no app, usado para medir o funil e disparar campanhas.",
+        "tech": "SDK (<em>Software Development Kit</em>) de analytics: biblioteca de um terceiro embutida no app que registra eventos — telas abertas, botões tocados, buscas — e os envia aos servidores do fornecedor para relatórios e campanhas."
       },
       {
         "id": "gravacoes",
@@ -156,7 +158,8 @@
         "icon": "document",
         "x": 440,
         "y": 160,
-        "description": "Serviço que gera os PDFs assinados de receita e atestado e os entrega ao paciente por um link enviado por SMS."
+        "description": "Serviço que gera os PDFs assinados de receita e atestado e os entrega ao paciente por um link enviado por SMS.",
+        "tech": "Receita e atestado digitais: PDFs assinados com o certificado digital ICP-Brasil do médico. A assinatura dá validade jurídica ao documento e permite verificar quem o emitiu."
       },
       {
         "id": "farmacia",

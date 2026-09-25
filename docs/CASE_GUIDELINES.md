@@ -58,6 +58,8 @@ E cada nó diz o que ele *é* com `icon`: `api`, `database`, `storage`, `queue`,
 
 Cada nó também tem uma `description`, que aparece quando a pessoa clica no sistema. Escreva como quem apresenta a arquitetura a alguém que chegou ao time: o que o sistema faz, quem opera, que dados passam, com que frequência. **Não aponte o risco** ("não valida o dono", "sem assinatura"): a descrição aparece antes da leitura e não pode ser o gabarito. Os detalhes que sustentam os riscos devem estar na narrativa, como em qualquer caso.
 
+No mesmo painel aparece a seção "O que é, tecnicamente". O motor já explica os tipos genéricos (API, fila, banco de dados, HSM…); use o campo `tech` quando o sistema for um conceito específico que alguém de produto, compliance ou tesouraria talvez não conheça — KYC, adquirente, PSP liquidante, averbação, prova de vida. Defina o conceito; não aponte o risco.
+
 Os rótulos das arestas ficam flutuando acima da linha; prefira rótulos curtos (até ~30 caracteres), que cabem entre os nós.
 
 Coordenadas `x`, `y` são pra layout. Convenção atual:
