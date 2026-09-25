@@ -46,7 +46,7 @@ Rodou? Ótimo. Vamos escrever.
    ```bash
    npm run dev
    ```
-   Abre `http://localhost:8000/?caso=<slug>&debug=layout`. Roda seu caso do início ao fim. Com `debug=layout`, embaixo do fluxo e do mapa de riscos aparece um painel dizendo se algum rótulo ou pino ficou em cima de outra coisa (verde = tudo certo, vermelho = lista do que ajustar). Se aparecer vermelho, encurte rótulos ou reposicione nós (`x`/`y`).
+   Abre `http://localhost:8000/?caso=<slug>&debug=layout`. Roda seu caso do início ao fim. Com `debug=layout`, embaixo do fluxo e do mapa de riscos aparece um painel verde (tudo certo) ou vermelho, listando o que ajustar: rótulo ou pino em cima de um nó, de outro rótulo ou de outro pino, rótulo sobre a linha de outra seta e seta que atravessa um nó. Se aparecer vermelho, encurte rótulos ou reposicione nós (`x`/`y`) — setas que atravessam nós quase sempre se resolvem mudando um nó de linha ou de coluna.
 
 5. **Promove pra `"open"`:**
    Muda o campo `"status": "draft"` pra `"status": "open"` quando estiver pronto.
