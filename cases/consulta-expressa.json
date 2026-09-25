@@ -1,0 +1,579 @@
+{
+  "$schema": "../schema/case.schema.json",
+  "slug": "consulta-expressa",
+  "status": "open",
+  "domain": "healthtech",
+  "title": "Consulta Expressa",
+  "subtitle": "Telemedicina por assinatura com receita, atestado e entrega de remédios por farmácias parceiras",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": [
+    "Healthtech",
+    "LGPD",
+    "Telemedicina",
+    "IAM"
+  ],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "A Cuidar+ vende telemedicina por assinatura: R$ 39,90 por mês para consultas ilimitadas com clínico geral, 24 horas por dia, por vídeo no app. São 380 mil assinantes, a maioria contratada como benefício por empresas, e cerca de 6 mil consultas por dia.",
+      "Ao fim da consulta, o médico pode emitir receita e atestado digitais, assinados com o certificado do próprio médico. O paciente recebe um link por SMS para baixar os PDFs — o link não exige login, para facilitar a vida de quem é idoso ou está doente. Com um toque, o paciente pode mandar a receita para uma das farmácias parceiras, que entregam em casa. Para agilizar o atendimento da farmácia, a integração envia a receita junto com o resumo da consulta.",
+      "Os 220 médicos são PJ e fazem plantões remotos de seis horas. Cada plantonista tem meta de atendimentos por hora e recebe por consulta concluída. O prontuário eletrônico fica num banco próprio; as gravações das consultas, guardadas por exigência do departamento jurídico, vão para um bucket de armazenamento. O app usa um SDK de analytics e marketing de um fornecedor para medir funil e disparar campanhas.",
+      "O suporte é feito por WhatsApp por uma equipe de 25 pessoas. Quando o paciente perde o acesso, o atendente confirma CPF e data de nascimento e troca o e-mail e o celular da conta. As empresas clientes recebem um relatório mensal de uso do benefício por funcionário."
+    ],
+    "actors": [
+      [
+        "Paciente",
+        "assinante, usa o app"
+      ],
+      [
+        "Médico plantonista",
+        "PJ, meta de consultas por hora"
+      ],
+      [
+        "Farmácia parceira",
+        "terceiro: recebe receita e entrega"
+      ],
+      [
+        "Suporte",
+        "25 pessoas via WhatsApp"
+      ],
+      [
+        "Empresa cliente",
+        "paga o benefício, recebe relatório"
+      ],
+      [
+        "Fornecedor de analytics",
+        "terceiro: SDK no app"
+      ]
+    ],
+    "data": [
+      [
+        "Prontuário e diagnóstico",
+        "dado de saúde, sensível"
+      ],
+      [
+        "Gravação da consulta",
+        "vídeo guardado no bucket"
+      ],
+      [
+        "Receita e atestado",
+        "PDF assinado, link por SMS"
+      ],
+      [
+        "CPF e data de nascimento",
+        "cadastro e recuperação de conta"
+      ],
+      [
+        "Eventos do app",
+        "enviados ao SDK de analytics"
+      ]
+    ],
+    "scale": [
+      [
+        "380 mil",
+        "assinantes"
+      ],
+      [
+        "~6 mil / dia",
+        "consultas"
+      ],
+      [
+        "220 médicos",
+        "PJ, plantões de 6 horas"
+      ],
+      [
+        "25 pessoas",
+        "suporte por WhatsApp"
+      ],
+      [
+        "40+ empresas",
+        "contratam como benefício"
+      ]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      {
+        "id": "app",
+        "label": "App do paciente",
+        "kind": "internal",
+        "icon": "app",
+        "x": 60,
+        "y": 40
+      },
+      {
+        "id": "api",
+        "label": "API Cuidar+",
+        "kind": "internal",
+        "icon": "api",
+        "x": 240,
+        "y": 40
+      },
+      {
+        "id": "prontuario",
+        "label": "Prontuário",
+        "kind": "internal",
+        "icon": "database",
+        "x": 440,
+        "y": 40
+      },
+      {
+        "id": "medico",
+        "label": "Painel do médico",
+        "kind": "internal",
+        "icon": "web",
+        "x": 640,
+        "y": 40
+      },
+      {
+        "id": "analytics",
+        "label": "SDK de analytics",
+        "kind": "external",
+        "icon": "partner",
+        "x": 0,
+        "y": 40
+      },
+      {
+        "id": "gravacoes",
+        "label": "Bucket de gravações",
+        "kind": "boundary",
+        "icon": "storage",
+        "x": 240,
+        "y": 160
+      },
+      {
+        "id": "docs",
+        "label": "Links de receita e atestado",
+        "kind": "boundary",
+        "icon": "document",
+        "x": 440,
+        "y": 160
+      },
+      {
+        "id": "farmacia",
+        "label": "Farmácias parceiras",
+        "kind": "external",
+        "icon": "partner",
+        "x": 640,
+        "y": 160
+      },
+      {
+        "id": "suporte",
+        "label": "Suporte via WhatsApp",
+        "kind": "internal",
+        "icon": "team",
+        "x": 60,
+        "y": 160
+      },
+      {
+        "id": "empresa",
+        "label": "Relatório da empresa",
+        "kind": "boundary",
+        "icon": "spreadsheet",
+        "x": 0,
+        "y": 160
+      }
+    ],
+    "edges": [
+      {
+        "from": "app",
+        "to": "api",
+        "label": "vídeo + agendamento"
+      },
+      {
+        "from": "app",
+        "to": "analytics",
+        "label": "eventos do funil",
+        "boundary": true
+      },
+      {
+        "from": "api",
+        "to": "prontuario",
+        "label": "anotações"
+      },
+      {
+        "from": "medico",
+        "to": "prontuario",
+        "label": "diagnóstico"
+      },
+      {
+        "from": "api",
+        "to": "gravacoes",
+        "label": "grava a consulta"
+      },
+      {
+        "from": "prontuario",
+        "to": "docs",
+        "label": "gera PDF assinado"
+      },
+      {
+        "from": "docs",
+        "to": "farmacia",
+        "label": "receita + resumo",
+        "boundary": true
+      },
+      {
+        "from": "suporte",
+        "to": "app",
+        "label": "troca e-mail e celular"
+      },
+      {
+        "from": "api",
+        "to": "empresa",
+        "label": "uso por funcionário",
+        "dashed": true,
+        "boundary": true
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "link-sem-login",
+      "truth": true,
+      "category": "técnico",
+      "title": "Receita e atestado abertos por link sem login",
+      "sub": "O PDF é entregue por um link no SMS que funciona sem autenticação, para facilitar o acesso."
+    },
+    {
+      "id": "atestado-fabrica",
+      "truth": true,
+      "category": "fraude",
+      "title": "Meta por hora e pagamento por consulta favorecem atestado fácil",
+      "sub": "Plantonista PJ recebe por consulta concluída e tem meta de atendimentos; o atestado sai com um clique."
+    },
+    {
+      "id": "ato-suporte",
+      "truth": true,
+      "category": "operativo",
+      "title": "Suporte troca e-mail e celular com CPF e data de nascimento",
+      "sub": "Dois dados fáceis de obter bastam para o atendente entregar a conta — e o histórico médico — a outra pessoa."
+    },
+    {
+      "id": "analytics-saude",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Eventos do app com dado de saúde vão para o SDK de marketing",
+      "sub": "O mesmo SDK mede o funil e dispara campanhas; o contexto não diz o que fica fora dos eventos."
+    },
+    {
+      "id": "farmacia-resumo",
+      "truth": true,
+      "category": "privacidade",
+      "title": "Farmácia recebe o resumo da consulta junto com a receita",
+      "sub": "Para dispensar o remédio, a farmácia precisa da receita — não do que o paciente contou ao médico."
+    },
+    {
+      "id": "relatorio-empresa",
+      "truth": true,
+      "category": "regulatório",
+      "title": "Empregador recebe uso da telemedicina por funcionário",
+      "sub": "O relatório mensal é individualizado; dado de saúde do empregado chega a quem decide sobre o emprego dele."
+    },
+    {
+      "id": "gravacoes-bucket",
+      "truth": true,
+      "category": "processo",
+      "title": "Gravações de todas as consultas guardadas sem regra de acesso nem prazo",
+      "sub": "O jurídico pediu para gravar; o contexto não diz quem acessa o bucket nem por quanto tempo os vídeos ficam."
+    },
+    {
+      "id": "receita-reuso",
+      "truth": true,
+      "category": "lógica",
+      "title": "A mesma receita pode ser enviada a várias farmácias",
+      "sub": "O envio é um toque no app, farmácia por farmácia; nada indica controle de receita já dispensada."
+    },
+    {
+      "id": "video-sem-e2e",
+      "truth": false,
+      "category": "técnico",
+      "title": "Vídeo da consulta sem criptografia ponta a ponta",
+      "sub": "A consulta é gravada por exigência do jurídico — E2E impediria isso. O problema real é como a gravação é guardada, não o transporte."
+    },
+    {
+      "id": "clinico-geral",
+      "truth": false,
+      "category": "processo",
+      "title": "Só clínico geral atende, sem especialistas",
+      "sub": "É escopo de produto, não risco. O clínico encaminha quando precisa."
+    },
+    {
+      "id": "senha-fraca",
+      "truth": false,
+      "category": "técnico",
+      "title": "Política de senha fraca no app",
+      "sub": "O contexto não descreve a política de senha. O caminho fácil para a conta está no suporte, não na senha."
+    },
+    {
+      "id": "plantao-6h",
+      "truth": false,
+      "category": "operativo",
+      "title": "Plantões de seis horas cansam o médico e geram erro clínico",
+      "sub": "Preocupação legítima de qualidade assistencial, mas não é um vetor de abuso deste fluxo."
+    }
+  ],
+  "risks": [
+    {
+      "id": "link-sem-login",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": {
+        "nodes": [
+          "docs"
+        ],
+        "edges": [
+          {
+            "from": "prontuario",
+            "to": "docs"
+          }
+        ]
+      },
+      "title": "Documento médico acessível por qualquer pessoa com o link",
+      "signal": "Receita e atestado são entregues por um link no SMS que <em>não exige login</em>. O contexto não fala em expiração, uso único nem aleatoriedade do link — e SMS é encaminhado, fica em celular compartilhado e em backup.",
+      "abuse": [
+        "Links com identificador sequencial ou curto são enumerados por um script, que baixa milhares de receitas com nome, CPF e medicamento.",
+        "O SMS chega num celular compartilhado da família ou do trabalho; outra pessoa abre o atestado e descobre o diagnóstico.",
+        "Um link de receita de medicamento controlado vaza num grupo e é usado por outras pessoas."
+      ],
+      "impact": "Exposição de dado de saúde — dado sensível pela LGPD — em escala, com risco de incidente comunicável à ANPD e dano direto a pacientes. Receitas vazadas também alimentam o mercado irregular de medicamentos.",
+      "mitigation": [
+        "Link com token aleatório longo, uso limitado e expiração curta; o documento completo só depois de uma verificação simples (ex.: código enviado ao celular do titular).",
+        "Mostrar no SMS só o aviso de que há um documento no app, sem link direto para o PDF.",
+        "Registrar e alertar acessos ao mesmo documento a partir de muitos IPs ou aparelhos."
+      ]
+    },
+    {
+      "id": "atestado-fabrica",
+      "category": "fraude",
+      "severity": "alto",
+      "where": {
+        "nodes": [
+          "medico",
+          "docs"
+        ],
+        "edges": [
+          {
+            "from": "medico",
+            "to": "prontuario"
+          },
+          {
+            "from": "prontuario",
+            "to": "docs"
+          }
+        ]
+      },
+      "title": "Fábrica de atestados: incentivo e facilidade no mesmo lugar",
+      "signal": "O plantonista é PJ, recebe <em>por consulta concluída</em> e tem meta por hora. O atestado sai com um clique ao final da consulta. O contexto não menciona nenhuma revisão de padrões de emissão.",
+      "abuse": [
+        "Assinantes descobrem que certos plantonistas dão atestado em consultas de três minutos; o nome circula em grupos e a procura se concentra neles.",
+        "Esquema de venda: alguém assina o benefício, marca consultas em nome de terceiros e revende atestados de dois dias.",
+        "Empresas clientes começam a ver picos de afastamento às segundas e sextas ligados à Cuidar+."
+      ],
+      "impact": "Atestados sem lastro clínico expõem os médicos a processo ético no conselho e a Cuidar+ a responsabilização. As empresas que compram o benefício são as primeiras a perceber — e a cancelar o contrato.",
+      "mitigation": [
+        "Painel de padrões de emissão por médico (atestados por consulta, duração média da consulta com atestado, repetição por paciente) com revisão clínica dos desvios.",
+        "Tempo mínimo de consulta e justificativa clínica obrigatória para emitir atestado.",
+        "Tirar o atestado do cálculo de produtividade: meta por hora não pode premiar consulta curta com documento emitido."
+      ]
+    },
+    {
+      "id": "ato-suporte",
+      "category": "operativo",
+      "severity": "crítico",
+      "where": {
+        "nodes": [
+          "suporte",
+          "app"
+        ],
+        "edges": [
+          {
+            "from": "suporte",
+            "to": "app"
+          }
+        ]
+      },
+      "title": "Recuperação de conta por WhatsApp entrega o prontuário a quem pedir",
+      "signal": "Para recuperar o acesso, o atendente confere <em>CPF e data de nascimento</em> e troca e-mail e celular. São dados que circulam em vazamentos e que parentes e colegas conhecem.",
+      "abuse": [
+        "Ex-companheiro com CPF e data de nascimento da vítima pede a troca do celular, entra na conta e lê diagnósticos e receitas.",
+        "Golpista compra listas de CPF e data de nascimento, assume contas e usa o histórico médico para extorsão ou golpes do falso médico.",
+        "Com a conta tomada, o atacante agenda consultas e emite receitas em nome da vítima."
+      ],
+      "impact": "Tomada de conta com acesso a dado de saúde, sem nenhuma falha técnica envolvida. Cada caso é um incidente de segurança com dado sensível; em volume, vira notícia e sanção.",
+      "mitigation": [
+        "Recuperação de conta por fluxo verificado (selfie com prova de vida comparada ao cadastro, ou código no canal antigo), nunca por dados cadastrais.",
+        "Suporte sem permissão para trocar e-mail e celular diretamente; ele abre a solicitação e o cliente conclui no fluxo seguro.",
+        "Aviso no e-mail e no celular antigos sempre que houver troca, com prazo para contestar antes de valer."
+      ]
+    },
+    {
+      "id": "analytics-saude",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": {
+        "nodes": [
+          "analytics",
+          "app"
+        ],
+        "edges": [
+          {
+            "from": "app",
+            "to": "analytics"
+          }
+        ]
+      },
+      "title": "Dado de saúde vazando para o SDK de marketing",
+      "signal": "O mesmo SDK de terceiro <em>mede funil e dispara campanhas</em>. Nomes de tela, buscas e eventos de um app de saúde (\"consulta: ansiedade\", \"receita: antibiótico\") carregam dado de saúde se ninguém filtrar.",
+      "abuse": [
+        "O evento \"receita emitida\" leva o nome do medicamento como parâmetro; o fornecedor passa a ter o histórico de tratamento de 380 mil pessoas.",
+        "O marketing monta um público \"quem consultou por ansiedade\" e dispara campanhas — tratamento de dado sensível para finalidade que o paciente nunca autorizou.",
+        "O fornecedor cruza o identificador do aparelho com outros apps e enriquece perfis de publicidade."
+      ],
+      "impact": "Compartilhamento de dado sensível sem base legal (LGPD, art. 11) e fora da finalidade da coleta. Casos parecidos em saúde já geraram sanções e acordos milionários em outros países.",
+      "mitigation": [
+        "Lista fechada de eventos permitidos no SDK, sem texto livre, sem nome de tela clínica e sem parâmetros de saúde; revisão de privacidade a cada novo evento.",
+        "Separar ferramentas: medição de produto sem identificação pessoal; campanhas só com dados não clínicos e consentimento específico.",
+        "Auditoria periódica do tráfego do app para o fornecedor (o que realmente sai)."
+      ]
+    },
+    {
+      "id": "farmacia-resumo",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": {
+        "nodes": [
+          "farmacia",
+          "docs"
+        ],
+        "edges": [
+          {
+            "from": "docs",
+            "to": "farmacia"
+          }
+        ]
+      },
+      "title": "A farmácia recebe o diagnóstico para entregar um remédio",
+      "signal": "A integração envia <em>a receita junto com o resumo da consulta</em> \"para agilizar o atendimento\". Para dispensar o medicamento, a farmácia precisa da receita e do endereço — não do relato clínico.",
+      "abuse": [
+        "Atendentes de farmácia leem resumos de consulta de vizinhos e conhecidos.",
+        "A rede parceira usa o resumo para montar ofertas personalizadas (\"quem tem enxaqueca, compre também…\").",
+        "Um incidente na farmácia parceira expõe diagnósticos que nunca precisaram sair da Cuidar+."
+      ],
+      "impact": "Violação do princípio da necessidade da LGPD e aumento da superfície de vazamento de dado sensível num terceiro que a Cuidar+ não controla.",
+      "mitigation": [
+        "Enviar só a receita, os dados de entrega e o que a farmácia precisa legalmente; o resumo da consulta nunca sai.",
+        "Contrato com a farmácia proibindo uso secundário, com direito de auditoria.",
+        "Mostrar ao paciente, antes do envio, exatamente o que a farmácia vai receber."
+      ]
+    },
+    {
+      "id": "relatorio-empresa",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": {
+        "nodes": [
+          "empresa",
+          "api"
+        ],
+        "edges": [
+          {
+            "from": "api",
+            "to": "empresa"
+          }
+        ]
+      },
+      "title": "Relatório de uso individualizado entrega dado de saúde ao empregador",
+      "signal": "As empresas clientes recebem <em>uso do benefício por funcionário</em>. Saber quem usou a telemedicina, quantas vezes e quando já é dado de saúde — e está indo para quem decide promoções e demissões.",
+      "abuse": [
+        "O RH percebe que um funcionário consultou dez vezes no trimestre e o inclui no próximo corte.",
+        "Cruzando datas de consulta com atestados, a empresa infere quem está em tratamento de saúde mental.",
+        "O relatório circula por e-mail entre gestores sem nenhum controle."
+      ],
+      "impact": "Tratamento de dado sensível para finalidade discriminatória, vedada pela LGPD (art. 6º, IX, e art. 11). Risco de ações trabalhistas, sanção da ANPD e perda da confiança que faz o benefício ser usado.",
+      "mitigation": [
+        "Relatório para a empresa só agregado e com número mínimo de pessoas por grupo, sem identificar ninguém.",
+        "Contrato que proíbe a empresa de pedir dados individuais; a Cuidar+ recusa pedidos fora disso.",
+        "Deixar claro para o funcionário o que o empregador recebe — e o que não recebe."
+      ]
+    },
+    {
+      "id": "gravacoes-bucket",
+      "category": "processo",
+      "severity": "alto",
+      "where": {
+        "nodes": [
+          "gravacoes",
+          "api"
+        ],
+        "edges": [
+          {
+            "from": "api",
+            "to": "gravacoes"
+          }
+        ]
+      },
+      "title": "Arquivo de vídeos de consultas sem dono, regra de acesso ou prazo",
+      "signal": "As consultas são gravadas <em>por exigência do jurídico</em> e vão para um bucket. O contexto não diz quem acessa, como o acesso é registrado nem quando os vídeos são apagados — 6 mil vídeos por dia se acumulam.",
+      "abuse": [
+        "Um engenheiro com acesso amplo ao armazenamento baixa consultas de uma pessoa pública.",
+        "Uma política de bucket alterada por engano deixa as gravações listáveis na internet.",
+        "Anos de vídeos guardados sem necessidade transformam qualquer incidente num vazamento gigante."
+      ],
+      "impact": "O acervo mais sensível da empresa, crescendo sem controle. Um único erro de configuração ou acesso interno indevido expõe o rosto, a voz e a saúde de milhares de pacientes.",
+      "mitigation": [
+        "Definir com o jurídico a finalidade e o prazo de guarda, com exclusão automática ao fim do prazo.",
+        "Acesso às gravações só por solicitação justificada e aprovada, com registro imutável; ninguém com acesso permanente.",
+        "Bucket com bloqueio de acesso público, criptografia com chave gerenciada e alerta para mudanças de política."
+      ]
+    },
+    {
+      "id": "receita-reuso",
+      "category": "lógica",
+      "severity": "médio",
+      "where": {
+        "nodes": [
+          "docs",
+          "farmacia"
+        ],
+        "edges": [
+          {
+            "from": "docs",
+            "to": "farmacia"
+          }
+        ]
+      },
+      "title": "Uma receita, várias dispensações",
+      "signal": "Enviar a receita a uma farmácia parceira é <em>um toque no app</em>, e nada no contexto indica que a receita fica marcada como usada. O mesmo PDF também continua disponível pelo link.",
+      "abuse": [
+        "Paciente envia a mesma receita de medicamento controlado para três farmácias parceiras e recebe três entregas.",
+        "O PDF baixado pelo link é levado a farmácias fora da rede, além das parceiras que já receberam."
+      ],
+      "impact": "Dispensação acima do prescrito, com risco à saúde do paciente e exposição regulatória para a Cuidar+ e as farmácias parceiras.",
+      "mitigation": [
+        "Estado da receita no servidor (emitida, enviada, dispensada) com bloqueio de envio duplicado para farmácias parceiras.",
+        "Confirmação de dispensação pela farmácia, que marca a receita como usada.",
+        "Usar o padrão de receita digital com validação central de dispensação quando disponível."
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "title": "Facilidade de acesso também vale para quem não devia acessar",
+      "body": "Link sem login, recuperação por dados cadastrais e envio em um toque são decisões de UX que abrem porta para terceiros. Quando o dado é sensível, a pergunta é \"quem mais consegue fazer isso?\"."
+    },
+    {
+      "title": "Incentivo financeiro molda o comportamento clínico",
+      "body": "Meta por hora e pagamento por consulta não são só gestão: são a regra do jogo que o fraudador, e às vezes o profissional, vai otimizar."
+    },
+    {
+      "title": "Dado de saúde está em lugares que ninguém chama de prontuário",
+      "body": "Nome de evento de analytics, relatório de uso, resumo enviado à farmácia: tudo isso é dado sensível. Mapeie para onde a informação clínica vaza, não só onde ela é guardada."
+    },
+    {
+      "title": "Guardar tudo é criar um alvo",
+      "body": "Toda retenção precisa de finalidade, dono, regra de acesso e prazo. Um arquivo que só cresce transforma qualquer erro pequeno num incidente enorme."
+    }
+  ]
+}
