@@ -123,6 +123,11 @@ function crossCheck(data) {
     }
   });
 
+  // Every node says what it is, so the flow shows its type icon
+  (data.flow?.nodes || []).forEach(n => {
+    if (!n.icon) errors.push(`flow node "${n.id}" has no "icon" — see the enum in schema/case.schema.json`);
+  });
+
   // Every edge references existing node ids
   const nodeIds = new Set((data.flow?.nodes || []).map(n => n.id));
   (data.flow?.edges || []).forEach((e, i) => {

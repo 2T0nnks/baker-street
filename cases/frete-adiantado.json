@@ -42,14 +42,14 @@
   },
   "flow": {
     "nodes": [
-      { "id": "app", "label": "App do motorista", "kind": "internal", "x": 60, "y": 40 },
-      { "id": "api", "label": "API pública", "kind": "internal", "x": 240, "y": 40 },
-      { "id": "kyc", "label": "KYC Provider", "kind": "external", "x": 240, "y": 160 },
-      { "id": "db", "label": "Banco Postgres", "kind": "internal", "x": 440, "y": 40 },
-      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "x": 60, "y": 160 },
-      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "x": 640, "y": 40 },
-      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "x": 640, "y": 160 },
-      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "x": 440, "y": 260 }
+      { "id": "app", "label": "App do motorista", "kind": "internal", "icon": "app", "x": 60, "y": 40 },
+      { "id": "api", "label": "API pública", "kind": "internal", "icon": "api", "x": 240, "y": 40 },
+      { "id": "kyc", "label": "KYC Provider", "kind": "external", "icon": "partner", "x": 240, "y": 160 },
+      { "id": "db", "label": "Banco Postgres", "kind": "internal", "icon": "database", "x": 440, "y": 40 },
+      { "id": "docs", "label": "Bucket de documentos", "kind": "boundary", "icon": "storage", "x": 60, "y": 160 },
+      { "id": "bo", "label": "Backoffice Tesouraria", "kind": "internal", "icon": "team", "x": 640, "y": 40 },
+      { "id": "sub", "label": "Sub-adquirente PIX", "kind": "external", "icon": "payment", "x": 640, "y": 160 },
+      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "icon": "webhook", "x": 440, "y": 260 }
     ],
     "edges": [
       { "from": "app", "to": "api", "label": "cadastro / upload / aceite" },

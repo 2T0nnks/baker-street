@@ -40,7 +40,7 @@ Este documento é a leitura humana do schema.
 ```json
 {
   "nodes": [
-    { "id": "app", "label": "App do motorista", "kind": "internal", "x": 60, "y": 40 }
+    { "id": "app", "label": "App do motorista", "kind": "internal", "icon": "app", "x": 60, "y": 40 }
   ],
   "edges": [
     { "from": "app", "to": "api", "label": "cadastro", "boundary": false, "dashed": false }
@@ -49,6 +49,7 @@ Este documento é a leitura humana do schema.
 ```
 
 - Node `kind`: `internal` (verde), `boundary` (âmbar), `external` (vermelho).
+- Node `icon` (obrigatório em casos `open`): o que o sistema é, desenhado como ícone no nó e listado na legenda do fluxo. Valores: `user`, `app`, `web`, `api`, `service`, `database`, `storage`, `queue`, `webhook`, `payment`, `bank`, `partner`, `team`, `ai`, `document`, `spreadsheet`, `email`, `audit`.
 - Edge `boundary: true` marca cruzamento de fronteira de confiança.
 - Edge `dashed: true` marca fluxo assíncrono (callback, event).
 

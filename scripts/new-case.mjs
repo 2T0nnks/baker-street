@@ -68,7 +68,7 @@ async function main() {
     },
     flow: {
       nodes: [
-        { id: "app", label: "App", kind: "internal", x: 60, y: 40 }
+        { id: "app", label: "App", kind: "internal", icon: "app", x: 60, y: 40 }
       ],
       edges: []
     },

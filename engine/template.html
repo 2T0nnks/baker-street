@@ -540,12 +540,15 @@ section.block:first-of-type { border-top: none; }
   overflow: visible;
 }
 .flow-labels { z-index: 2; }
-.flow-labels rect { fill: var(--card); stroke: var(--line); stroke-width: 0.6; }
 .flow-labels text {
   font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
   letter-spacing: 0.02em;
   fill: var(--ink-soft);
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }
 .flow-labels .lbl { transition: opacity 0.2s; }
 .flow-node {
@@ -565,21 +568,15 @@ section.block:first-of-type { border-top: none; }
   align-items: center;
   justify-content: center;
 }
+/* Phones keep the exact desktop layout (so arrows, labels and pins stay where
+   they were laid out) and scroll sideways inside the frame. */
 @media (max-width: 720px) {
-  .flow-wrap { padding: 24px 14px 20px; }
-  .flow-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    column-gap: 28px;
-    row-gap: 52px;
-  }
-  .flow-node {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    font-size: 12px;
-    padding: 8px 10px;
-    min-height: 38px;
-  }
+  .flow-wrap { padding: 24px 14px 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .flow-grid { min-width: calc(var(--cols, 4) * 150px); column-gap: 36px; }
+  .flow-node { font-size: 12px; padding: 8px 10px; min-height: 38px; }
+  .flow-scroll-hint { display: block; }
 }
+.flow-scroll-hint { display: none; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 .flow-legend {
   display: flex; gap: 20px; flex-wrap: wrap;
   margin-top: 20px;
@@ -593,7 +590,15 @@ section.block:first-of-type { border-top: none; }
 .flow-legend .replay-btn { margin-left: auto; font-size: 12.5px; padding: 4px 12px; }
 .flow-hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
 
-/* Nodes: kind tag, hover/focus highlight */
+/* Nodes: type icon, kind tag, hover/focus highlight */
+.fn-main { display: inline-flex; align-items: center; gap: 7px; }
+.fn-icon { width: 16px; height: 16px; flex: none; }
+.flow-node.kind-internal .fn-icon { color: var(--trail); }
+.flow-node.kind-boundary .fn-icon { color: var(--ochre); }
+.flow-node.kind-external .fn-icon { color: var(--rust); }
+.flow-types { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); }
+.flow-types span { display: inline-flex; align-items: center; gap: 6px; }
+.tl-icon { width: 14px; height: 14px; color: var(--muted); }
 .flow-node { flex-direction: column; gap: 3px; cursor: default; transition: opacity 0.2s, box-shadow 0.2s; }
 .flow-node.kind-boundary { border-style: dashed; }
 .fn-kind {
@@ -1355,6 +1360,7 @@ footer .foot-brand {
             <div class="stage-count">02</div>
           </div>
           <div class="flow-wrap" id="flowWrap"></div>
+          <p class="flow-scroll-hint">↔ Arraste o diagrama para o lado para ver o fluxo inteiro.</p>
           <div class="flow-legend">
             <span><i style="background: var(--trail);"></i> Sistema interno</span>
             <span><i style="background: var(--ochre);"></i> Fronteira de confiança</span>
@@ -1362,6 +1368,7 @@ footer .foot-brand {
             <span><i style="background: transparent; border: 1px dashed var(--muted);"></i> Fluxo assíncrono</span>
             <button class="ghost replay-btn" id="replayFlow" type="button">↻ Rever animação</button>
           </div>
+          <div class="flow-types" id="flowTypes" hidden></div>
           <p class="flow-hint">Passe o mouse (ou navegue com Tab) sobre um sistema para ver com quem ele troca dados.</p>
           <div class="nav-actions">
             <button data-prev>← Voltar</button>
@@ -1405,6 +1412,7 @@ footer .foot-brand {
             <h4 class="display" style="margin-top: 8px; font-size: 22px;">Onde cada risco mora no fluxo</h4>
             <p class="rm-hint">Clique num número para ir ao risco. Passe o mouse num risco, aqui ou nos cards abaixo, para ver por onde ele passa.</p>
             <div class="flow-wrap" id="riskMap"></div>
+            <p class="flow-scroll-hint">↔ Arraste o mapa para o lado para ver todos os riscos.</p>
             <div class="rm-legend">
               <span><b class="pin-dot hit"></b> Você pegou</span>
               <span><b class="pin-dot missed"></b> Passou batido</span>
@@ -1497,7 +1505,7 @@ footer .foot-brand {
               </div>
               <div class="field-def">
                 <code>flow.nodes / edges</code><span class="type-tag">graph</span>
-                <p>Nós e arestas do diagrama. Cada nó tem <code>kind</code> (interno, fronteira, terceiro) que colore o quadro.</p>
+                <p>Nós e arestas do diagrama. Cada nó tem <code>kind</code> (interno, fronteira, terceiro), que colore o quadro, e <code>icon</code> (API, banco de dados, fila, parceiro…), que mostra o que o sistema é.</p>
               </div>
               <div class="field-def">
                 <code>candidates</code><span class="type-tag">item[]</span>
@@ -1605,7 +1613,7 @@ footer .foot-brand {
     },
     "flow": {
       "nodes": [
-        { "id": "app", "label": "App", "kind": "internal", "x": 60, "y": 40 }
+        { "id": "app", "label": "App", "kind": "internal", "icon": "app", "x": 60, "y": 40 }
       ],
       "edges": [
         { "from": "app", "to": "api", "label": "descrição", "boundary": false, "dashed": false }
@@ -1827,7 +1835,7 @@ footer .foot-brand {
     fillDL("ctxScaleList", c.context.scale);
 
     // Flow
-    renderFlow(document.getElementById("flowWrap"), c.flow, { animate: true });
+    renderFlow(document.getElementById("flowWrap"), c.flow, { animate: true, typeLegend: "flowTypes" });
 
     // Analysis (checklist)
     renderCheckList(c);
@@ -1891,6 +1899,31 @@ footer .foot-brand {
   const KIND_COLOR = { internal: "var(--trail)", boundary: "var(--ochre)", external: "var(--rust)" };
   const KIND_LABEL = { internal: "sistema interno", boundary: "fronteira de confiança", external: "terceiro / externo" };
   const KIND_TAG = { boundary: "fronteira", external: "terceiro" };
+  // Node type icons (24×24, stroked with currentColor). Drawn for Adler; the
+  // list must match the "icon" enum in schema/case.schema.json.
+  const NODE_ICONS = {
+    user:        ["pessoa", '<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/>'],
+    app:         ["app", '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>'],
+    web:         ["site / web", '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M6 6.5h.01M8.5 6.5h.01"/>'],
+    api:         ["API", '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>'],
+    service:     ["serviço", '<rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><path d="M8 6.5h.01M8 17.5h.01"/>'],
+    database:    ["banco de dados", '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'],
+    storage:     ["armazenamento", '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>'],
+    queue:       ["fila", '<path d="M3 6h12M3 12h12M3 18h12M18 9l3 3-3 3"/>'],
+    webhook:     ["webhook / evento", '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>'],
+    payment:     ["pagamento", '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'],
+    bank:        ["banco / instituição", '<path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/>'],
+    partner:     ["parceiro externo", '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>'],
+    team:        ["equipe / backoffice", '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.8.3 5 2.3 5 5.4"/>'],
+    ai:          ["IA", '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>'],
+    document:    ["documento", '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>'],
+    spreadsheet: ["planilha", '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'],
+    email:       ["e-mail / notificação", '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'],
+    audit:       ["log / auditoria", '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>']
+  };
+  const iconSvg = (key, cls) => NODE_ICONS[key]
+    ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NODE_ICONS[key][1]}</svg>`
+    : "";
   const STEP_MS = 360;   // delay between each "wave" of nodes in the intro
   const edgeKey = e => `${e.from}>${e.to}`;
 
@@ -1937,7 +1970,7 @@ footer .foot-brand {
       const style = `grid-column:${xValues.indexOf(n.x) + 1};grid-row:${yValues.indexOf(n.y) + 1};` +
         `border-color:${KIND_COLOR[n.kind] || "var(--ink)"};--d:${wrap._levels[n.id] * STEP_MS}ms`;
       html += `<div class="flow-node kind-${n.kind}" data-id="${n.id}" tabindex="0" style="${style}">` +
-        `<span class="fn-label">${n.label}</span>` +
+        `<span class="fn-main">${iconSvg(n.icon, "fn-icon")}<span class="fn-label">${n.label}</span></span>` +
         (KIND_TAG[n.kind] ? `<span class="fn-kind">${KIND_TAG[n.kind]}</span>` : "") +
         `</div>`;
     });
@@ -1946,10 +1979,13 @@ footer .foot-brand {
 
     const grid = wrap.querySelector(".flow-grid");
     grid.style.gridTemplateColumns = `repeat(${xValues.length}, minmax(0, 1fr))`;
+    grid.style.setProperty("--cols", xValues.length);
 
     grid.querySelectorAll(".flow-node").forEach(el => {
       const n = flow.nodes.find(x => x.id === el.dataset.id);
-      el.setAttribute("aria-label", `${el.querySelector(".fn-label").textContent} — ${KIND_LABEL[n.kind] || ""}`);
+      const type = NODE_ICONS[n.icon] ? `${NODE_ICONS[n.icon][0]}, ` : "";
+      el.setAttribute("aria-label", `${el.querySelector(".fn-label").textContent} — ${type}${KIND_LABEL[n.kind] || ""}`);
+      if (NODE_ICONS[n.icon]) el.title = NODE_ICONS[n.icon][0];
       const on = () => highlightNode(wrap, n.id);
       const off = () => clearHighlight(wrap);
       el.addEventListener("mouseenter", on);
@@ -1957,6 +1993,13 @@ footer .foot-brand {
       el.addEventListener("mouseleave", off);
       el.addEventListener("blur", off);
     });
+
+    const legend = opts.typeLegend && document.getElementById(opts.typeLegend);
+    if (legend) {
+      const used = [...new Set(flow.nodes.map(n => n.icon))].filter(k => NODE_ICONS[k]);
+      legend.hidden = used.length === 0;
+      legend.innerHTML = used.map(k => `<span>${iconSvg(k, "tl-icon")}${NODE_ICONS[k][0]}</span>`).join("");
+    }
 
     scheduleFlowDraw(wrap);
     if (window.ResizeObserver) {
@@ -2003,7 +2046,6 @@ footer .foot-brand {
     const grid = wrap.querySelector(".flow-grid");
     const svg = wrap.querySelector(".flow-arrows");
     if (!grid || !svg) return;
-    const gridRect = grid.getBoundingClientRect();
     const W = grid.offsetWidth;
     const H = grid.offsetHeight;
     if (W === 0 || H === 0) return;
@@ -2014,16 +2056,18 @@ footer .foot-brand {
       el.setAttribute("height", H);
     });
 
-    // Measure current node positions from the live layout
+    // Measure node layout boxes (offset*), not getBoundingClientRect: during the
+    // intro the nodes are mid-animation (translated and scaled), and measuring
+    // that transient frame left arrows and labels in the wrong place.
     const nodes = {};
     grid.querySelectorAll(".flow-node").forEach(el => {
-      const r = el.getBoundingClientRect();
-      nodes[el.dataset.id] = { x: r.left - gridRect.left, y: r.top - gridRect.top, w: r.width, h: r.height };
+      nodes[el.dataset.id] = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
     });
 
     const mids = {};
     const lengths = {};
-    let out = "", labelsOut = "";
+    let out = "";
+    const labels = [];
     flow.edges.forEach((e, idx) => {
       const a = nodes[e.from], b = nodes[e.to];
       if (!a || !b) return;
@@ -2075,38 +2119,80 @@ footer .foot-brand {
       out += `<path class="head" d="M 0 0 L -8 -4.2 L -8 4.2 Z" fill="${stroke}" transform="translate(${ex} ${ey}) rotate(${angle})"/>`;
 
       if (e.label) {
-        let mx, my, anchor;
-        if (labelPos === "vertical") {
-          my = (aCY + bCY) / 2;
-          if (side < 0) { mx = aCX - 10; anchor = "end"; } else { mx = aCX + 10; anchor = "start"; }
-        } else if (labelPos === "horizontal") {
-          // Above the row, never over nodes; a return edge goes below it.
-          mx = (aCX + bCX) / 2; my = side > 0 ? Math.max(a.y + a.h, b.y + b.h) + 16 : Math.min(a.y, b.y) - 8; anchor = "middle";
-        } else {
-          mx = (aCX + bCX) / 2; my = mids[edgeKey(e)].y - 6 + (side > 0 ? 18 : 0); anchor = "middle";
-        }
-        // The backing rect is resized to the measured text right after insertion.
-        labelsOut += `<g class="lbl" data-key="${edgeKey(e)}" style="--d:${delay}ms">` +
-          `<rect x="${mx}" y="${my - 10}" width="0" height="14" rx="2"/>` +
-          `<text x="${mx}" y="${my}" text-anchor="${anchor}">${e.label}</text></g>`;
+        // Positions are resolved after all edges exist (see layoutLabels).
+        const seg = pts.length === 2 ? [pts[0], pts[1]] : [pts[1], pts[2]];
+        labels.push({ key: edgeKey(e), text: e.label, delay, orient: labelPos, side, seg, a, b });
       }
 
       lengths[edgeKey(e)] = pts.reduce((sum, p, i) => i ? sum + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0, 0);
       out += "</g>";
     });
     svg.innerHTML = out;
-    labelSvg.innerHTML = labelsOut;
-    labelSvg.querySelectorAll(".lbl").forEach(g => {
-      const t = g.querySelector("text").getBBox();
-      const r = g.querySelector("rect");
-      r.setAttribute("x", t.x - 5);
-      r.setAttribute("y", t.y - 2);
-      r.setAttribute("width", t.width + 10);
-      r.setAttribute("height", t.height + 4);
-    });
-    wrap._geom = { nodes, mids, lengths };
+    const labelBoxes = layoutLabels(labelSvg, labels, nodes, W);
+    wrap._geom = { nodes, mids, lengths, labelBoxes };
     if (wrap._opts.pins) placePins(wrap);
     if (wrap._played) addPackets(wrap); // e.g. redraw after a resize
+  }
+
+  // Edge labels float just above their own line segment, like a hand-drawn
+  // diagram. Each label tries a few spots in order and takes the first one
+  // that touches no node and no label already placed; a halo in the card
+  // colour keeps text readable if it crosses another line.
+  function layoutLabels(labelSvg, labels, nodes, W) {
+    labelSvg.innerHTML = labels.map(l =>
+      `<g class="lbl" data-key="${l.key}" style="--d:${l.delay}ms"><text x="0" y="0">${l.text}</text></g>`).join("");
+    const obstacles = Object.values(nodes).map(n => ({ l: n.x - 4, t: n.y - 4, r: n.x + n.w + 4, b: n.y + n.h + 4 }));
+    const overlap = box => obstacles.reduce((sum, o) =>
+      sum + Math.max(0, Math.min(box.r, o.r) - Math.max(box.l, o.l)) * Math.max(0, Math.min(box.b, o.b) - Math.max(box.t, o.t)), 0);
+    const GAP = 7;
+    const placed = [];
+    labelSvg.querySelectorAll(".lbl").forEach((g, i) => {
+      const l = labels[i];
+      const text = g.querySelector("text");
+      const bb = text.getBBox();                 // measured at (0,0): bb.y is the ascent offset
+      const w = bb.width, h = bb.height, asc = -bb.y;
+      const [[x1, y1], [x2, y2]] = l.seg;
+      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+      // Candidate spots, best first: next to the middle of the segment, then
+      // sliding along it (as someone drawing by hand would), then fallbacks.
+      const along = [0.5, 0.35, 0.65, 0.2, 0.8];
+      let spots = [];                            // [x, baseline, anchor]
+      if (l.orient === "vertical") {
+        along.forEach(t => {
+          const y = y1 + (y2 - y1) * t + asc / 2;
+          const right = [cx + GAP + 2, y, "start"], left = [cx - GAP - 2, y, "end"];
+          spots.push(...(l.side < 0 ? [left, right] : [right, left]));
+        });
+      } else {
+        const top = Math.min(l.a.y, l.b.y), bottom = Math.max(l.a.y + l.a.h, l.b.y + l.b.h);
+        along.forEach((t, i) => {
+          const x = x1 + (x2 - x1) * t;
+          const above = [x, cy - GAP, "middle"], below = [x, cy + GAP + asc, "middle"];
+          spots.push(...(l.side > 0 ? [below, above] : [above, below]));
+          // Too wide for the gap between nodes: float just above the row, like a caption.
+          if (i === 0 && l.orient === "horizontal") spots.push([cx, top - GAP - 4, "middle"], [cx, bottom + GAP + asc + 4, "middle"]);
+        });
+      }
+      // Keep every spot inside the frame horizontally.
+      spots = spots.map(([x, y, anchor]) => {
+        const left = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
+        const shift = Math.max(0, 2 - left) - Math.max(0, left + w - (W - 2));
+        return [x + shift, y, anchor];
+      });
+      const boxOf = ([x, y, anchor]) => {
+        const left = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
+        return { l: left - 2, t: y - asc - 1, r: left + w + 2, b: y - asc + h + 1 };
+      };
+      // First spot that touches nothing; otherwise the one that overlaps least.
+      const pick = spots.find(sp => overlap(boxOf(sp)) === 0)
+        || spots.reduce((best, sp) => overlap(boxOf(sp)) < overlap(boxOf(best)) ? sp : best);
+      text.setAttribute("x", pick[0]);
+      text.setAttribute("y", pick[1]);
+      text.setAttribute("text-anchor", pick[2]);
+      obstacles.push(boxOf(pick));
+      placed.push(boxOf(pick));
+    });
+    return placed;
   }
 
   // Data packets looping along each edge: ochre when crossing a trust boundary,
@@ -2166,26 +2252,30 @@ footer .foot-brand {
   // ---- Reveal map pins: one numbered pin per risk, at its first node (or edge) ----
   function placePins(wrap) {
     const layer = wrap.querySelector(".flow-pins");
-    const { nodes, mids } = wrap._geom;
+    const { nodes, mids, labelBoxes } = wrap._geom;
+    const R = 13; // pin radius + margin
+    const onLabel = (x, y) => labelBoxes.some(b => x + R > b.l && x - R < b.r && y + R > b.t && y - R < b.b);
     layer.innerHTML = "";
-    const perSpot = {};
+    const W = wrap.querySelector(".flow-grid").offsetWidth;
+    const placedPins = [];
+    const clash = (x, y) => onLabel(x, y) || placedPins.some(p => Math.abs(p.x - x) < 25 && Math.abs(p.y - y) < 25);
     wrap._opts.pins.forEach(pin => {
       const where = pin.risk.where || {};
-      let x, y, spot;
+      let x, y, step;
       if (where.nodes && where.nodes.length && nodes[where.nodes[0]]) {
+        // Bottom-right corner of the node, stacking leftwards.
         const n = nodes[where.nodes[0]];
-        spot = "n:" + where.nodes[0];
-        const k = perSpot[spot] = (perSpot[spot] || 0) + 1;
-        // Bottom-right corner: horizontal edge labels sit above the row, so the top is taken.
-        x = n.x + n.w - 4 - (k - 1) * 26; y = n.y + n.h + 1;
+        x = Math.min(n.x + n.w - 4, W - R); y = n.y + n.h + 1; step = -26;
       } else if (where.edges && where.edges.length && mids[edgeKey(where.edges[0])]) {
+        // Middle of the edge, stacking towards the centre of the diagram.
         const m = mids[edgeKey(where.edges[0])];
-        spot = "e:" + edgeKey(where.edges[0]);
-        const k = perSpot[spot] = (perSpot[spot] || 0) + 1;
-        x = m.x + (k - 1) * 26; y = m.y;
+        x = Math.min(Math.max(m.x, R), W - R); y = m.y; step = m.x > W / 2 ? -26 : 26;
       } else {
         return;
       }
+      for (let tries = 0; tries < 8 && clash(x, y); tries++) x += step;
+      x = Math.min(Math.max(x, R), W - R);
+      placedPins.push({ x, y });
       const b = document.createElement("button");
       b.className = "pin " + (pin.hit ? "hit" : "missed");
       b.dataset.risk = pin.risk.id;

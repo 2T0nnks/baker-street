@@ -54,6 +54,10 @@ Nós (`nodes`) e arestas (`edges`). Cada nó marca `kind`:
 - `boundary` — sua fronteira externa (bucket, webhook, endpoint público)
 - `external` — terceiro (KYC, adquirente, provider)
 
+E cada nó diz o que ele *é* com `icon`: `api`, `database`, `storage`, `queue`, `webhook`, `payment`, `partner`, `team`… (lista completa em `docs/SCHEMA.md`). `kind` responde "de quem é"; `icon` responde "o que é". Um bucket pode ser `boundary` + `storage`; um provedor de KYC, `external` + `partner`.
+
+Os rótulos das arestas ficam flutuando acima da linha; prefira rótulos curtos (até ~30 caracteres), que cabem entre os nós.
+
 Coordenadas `x`, `y` são pra layout. Convenção atual:
 - Colunas: `x` = 60, 240, 440, 640
 - Linhas: `y` = 40, 160, 260
