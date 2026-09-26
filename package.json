@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "validate": "node scripts/validate.mjs",
     "new": "node scripts/new-case.mjs",
-    "dev": "npm run build && node scripts/serve.mjs"
+    "dev": "npm run build && node scripts/serve.mjs",
+    "check:layout": "node scripts/check-layout.mjs"
   },
   "repository": {
     "type": "git",

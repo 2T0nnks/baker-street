@@ -1,0 +1,53 @@
+name: Erro em um caso
+description: Algo no conteúdo de um caso está errado, confuso ou pouco realista.
+title: "[caso] "
+labels: ["conteúdo"]
+body:
+  - type: dropdown
+    id: caso
+    attributes:
+      label: Caso
+      options:
+        - Frete Adiantado
+        - Indique e Ganhe
+        - Link de Pagamento
+        - Saque Antecipado
+        - Cofre de Chaves
+        - Consulta Expressa
+        - Outro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: onde
+    attributes:
+      label: Onde
+      options:
+        - Contexto
+        - Fluxo (sistemas, setas, descrições)
+        - Leitura (itens para marcar)
+        - Revelação (risco, abuso, impacto, mitigação)
+        - Placar / takeaways
+        - Visual (algo sobreposto, cortado, ilegível)
+    validations:
+      required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: O que está errado
+      description: Cite o trecho, se puder.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sugestao
+    attributes:
+      label: Como deveria ser
+      description: Opcional. Se envolve regulação ou prática de mercado, uma referência ajuda.
+
+  - type: input
+    id: navegador
+    attributes:
+      label: Navegador e tela (só para problemas visuais)
+      placeholder: "Ex.: Chrome no Android, Safari no iPhone, Firefox 1280px"
