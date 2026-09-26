@@ -1,0 +1,237 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "cofre-de-chaves",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Key Vault",
+  "subtitle": "The HSM that signs a digital bank's PIX messages, and a rushed post-quantum plan",
+  "duration": "~50 min",
+  "difficulty": "Avançado",
+  "tags": ["Fintech", "HSM", "Cryptography", "Post-quantum"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Banco Âncora is a digital bank with 4 million customers and a direct participant in PIX, Brazil's instant payment system: every message it sends to the Central Bank's system is signed with the private key of an ICP-Brasil certificate (Brazil's public key infrastructure), kept in a cluster of two HSMs in the bank's own datacenter. The same HSM holds the RSA-2048 key that protects the document archive — contracts and KYC —, kept for at least ten years: each document is encrypted with AES-256, and the AES key is wrapped with the RSA key.",
+      "The bank's 40 microservices ask a central signing service for signatures. They authenticate over mTLS with a single client certificate, the same for all of them, issued by the platform team. The service signs the payload it receives and returns it to the PIX gateway, which sends it to the Central Bank. The service talks to the HSM over PKCS#11; the partition PIN sits in the team's password vault and is available to the 12 SREs, who also use it to troubleshoot directly on the HSM.",
+      "HSM administration — creating and exporting keys, changing policies, restoring backups — was configured with a quorum of 1 out of 3 administrators, \"so operations don't get stuck in the middle of the night\". The three administrator smartcards, the envelopes with the PINs and the HSM backup media are kept in the same safe, at headquarters. The HSM audit logs stay only on the device itself, for 30 days.",
+      "Last year, the board asked for a post-quantum plan. The platform team started a hybrid TLS pilot (X25519 + ML-KEM) with Open Finance partners; if the hybrid handshake fails, the gateway automatically falls back to classic TLS, \"so we don't take a partner down\". The plan for signatures is to migrate when the HSM vendor releases firmware with ML-DSA. There's no inventory of where RSA and elliptic curves are used: the algorithms are written into each service's code. Meanwhile, the document archive is still wrapped with RSA-2048."
+    ],
+    "actors": [
+      ["Microservices", "40 services that request signatures"],
+      ["SREs", "12 people with the partition PIN"],
+      ["HSM administrators", "3 people, quorum of 1"],
+      ["Central Bank (SPI)", "receives the signed PIX messages"],
+      ["Open Finance partners", "third parties: hybrid TLS pilot"],
+      ["HSM vendor", "third party: ML-DSA firmware"]
+    ],
+    "data": [
+      ["PIX signing key", "ICP-Brasil certificate in the HSM"],
+      ["Archive RSA-2048 key", "wraps the AES keys"],
+      ["Contracts and KYC", "archive of at least 10 years"],
+      ["Partition PIN", "team password vault"],
+      ["Smartcards and backups", "same physical safe"]
+    ],
+    "scale": [
+      ["4 million", "customers"],
+      ["40", "microservices with the same certificate"],
+      ["12 SREs", "with the partition PIN"],
+      ["1 of 3", "administration quorum"],
+      ["10 years", "archive retention"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "parceiros", "label": "Open Finance partners", "kind": "external", "icon": "partner", "x": 60, "y": 40, "description": "Open Finance institutions that exchange data with Banco Âncora through APIs. Some of them take part in the hybrid TLS pilot.", "tech": "Open Finance: a Central Bank-regulated system in which institutions share data and services through standard APIs, with the customer's consent. Hybrid TLS combines, in the key exchange, a classic algorithm (X25519) with a post-quantum one (ML-KEM)." },
+      { "id": "gateway", "label": "PIX and API gateway", "kind": "boundary", "icon": "api", "x": 240, "y": 40, "description": "The bank's way in and out: receives partner calls and sends the already-signed PIX messages to the Central Bank.", "tech": "API gateway: the single point through which calls between the bank and the outside world pass, applying authentication, TLS and routing before they reach internal services." },
+      { "id": "spi", "label": "Central Bank SPI", "kind": "external", "icon": "bank", "x": 440, "y": 40, "description": "The Central Bank's Instant Payment System, which receives and settles the PIX messages signed by the bank.", "tech": "SPI (Instant Payment System): the Central Bank infrastructure that settles PIX. Direct participants exchange messages with it, digitally signed with ICP-Brasil certificates." },
+      { "id": "sre", "label": "On-call SREs", "kind": "internal", "icon": "team", "x": 640, "y": 40, "description": "The 12 reliability engineers who run the infrastructure, including the HSM cluster, and handle on-call incidents.", "tech": "SRE (<em>Site Reliability Engineering</em>): the engineering discipline responsible for keeping systems up — infrastructure, monitoring and incident response." },
+      { "id": "servicos", "label": "40 microservices", "kind": "internal", "icon": "service", "x": 60, "y": 160, "description": "The bank's 40 microservices (PIX, cards, credit, notifications…) that need digital signatures.", "tech": "Microservices: an application split into many small services, each with one responsibility, calling each other over the network. Authentication between them usually uses mTLS — mutual TLS, in which both sides present a certificate." },
+      { "id": "assinatura", "label": "Signing service", "kind": "internal", "icon": "service", "x": 240, "y": 160, "description": "Central service that receives signing requests from the microservices, uses the key kept in the HSM and returns the signed payload.", "tech": "Signing service: a facade that receives requests from other systems and uses the HSM to sign. It talks to the HSM over PKCS#11, the standard interface for cryptographic devices; access to an HSM partition is unlocked with a PIN." },
+      { "id": "hsm", "label": "HSM cluster", "kind": "internal", "icon": "key", "x": 440, "y": 160, "description": "A cluster of two hardware security modules in the datacenter. It holds the PIX signing key and the document archive's RSA key." },
+      { "id": "arquivo", "label": "Document archive", "kind": "internal", "icon": "storage", "x": 640, "y": 160, "description": "Archive of contracts and KYC documents, encrypted with AES-256 and kept for at least ten years.", "tech": "Envelope encryption: each document is encrypted with its own symmetric key (AES-256), and that key is wrapped — encrypted — by an asymmetric key (RSA) kept in the HSM. To read a document, its AES key must be unwrapped." },
+      { "id": "cofre", "label": "Physical safe", "kind": "internal", "icon": "storage", "x": 440, "y": 260, "description": "Physical safe at headquarters, holding the HSM administrators' smartcards, the envelopes with PINs and the backup media.", "tech": "Key ceremony: a formal procedure for HSM administrative operations, carried out with the administrators' smartcards and PINs. The \"M of N\" quorum sets how many administrators must take part in each operation." }
+    ],
+    "edges": [
+      { "from": "parceiros", "to": "gateway", "label": "hybrid TLS (pilot)", "boundary": true },
+      { "from": "gateway", "to": "spi", "label": "signed message", "boundary": true },
+      { "from": "servicos", "to": "assinatura", "label": "shared mTLS" },
+      { "from": "assinatura", "to": "gateway", "label": "signed payload" },
+      { "from": "assinatura", "to": "hsm", "label": "PKCS#11" },
+      { "from": "hsm", "to": "arquivo", "label": "wraps with RSA" },
+      { "from": "sre", "to": "hsm", "label": "partition PIN" },
+      { "from": "cofre", "to": "hsm", "label": "smartcards and backup" }
+    ]
+  },
+  "candidates": [
+    { "id": "oraculo-assinatura", "truth": true, "category": "técnico", "title": "The signing service signs any payload from any service", "sub": "All 40 microservices use the same mTLS certificate, and the service signs whatever it receives." },
+    { "id": "pin-particao", "truth": true, "category": "fraude", "title": "Twelve SREs can use the PIX key directly on the HSM", "sub": "The partition PIN is in the team's password vault and is used for troubleshooting." },
+    { "id": "quorum-um", "truth": true, "category": "processo", "title": "A single person exports keys and changes HSM policies", "sub": "The administration quorum was set to 1 of 3 so night-time operations don't get stuck." },
+    { "id": "cofre-unico", "truth": true, "category": "operativo", "title": "Smartcards, PINs and backups kept together", "sub": "Everything needed to restore and administer the HSM is in the same physical safe." },
+    { "id": "logs-hsm", "truth": true, "category": "regulatório", "title": "HSM logs stay on the device only, for 30 days", "sub": "Nobody exports or watches what is done with the keys." },
+    { "id": "colhe-agora", "truth": true, "category": "privacidade", "title": "A ten-year archive still protected by RSA-2048", "sub": "Documents that must stay confidential into the next decade are still wrapped with RSA." },
+    { "id": "fallback-classico", "truth": true, "category": "lógica", "title": "Hybrid TLS falls back to classic on its own when it fails", "sub": "The gateway falls back automatically \"so we don't take a partner down\"." },
+    { "id": "sem-inventario", "truth": true, "category": "processo", "title": "There's no inventory of where RSA and elliptic curves are used", "sub": "The algorithms are written into the code of each of the 40 services; the plan is to wait for the firmware." },
+    { "id": "assinatura-forjada-hoje", "truth": false, "category": "técnico", "title": "A quantum computer could forge the RSA-2048 PIX signatures today", "sub": "Forging needs the quantum computer at the time of the attack, and a PIX message is worth seconds. Migration is needed, but what's urgent is whatever must stay secret for years." },
+    { "id": "aes-quebrado", "truth": false, "category": "técnico", "title": "The archive's AES-256 will be broken by a quantum computer", "sub": "Grover's algorithm halves the effective strength: AES-256 keeps a margin. The weak link is the RSA key that wraps the AES key." },
+    { "id": "qkd", "truth": false, "category": "processo", "title": "The bank should adopt quantum key distribution (QKD)", "sub": "QKD needs dedicated hardware and links and doesn't solve this flow's problems. The recommended path is post-quantum cryptography in software." },
+    { "id": "hsm-nuvem", "truth": false, "category": "operativo", "title": "An on-premises HSM is less secure than a cloud HSM", "sub": "It's an architecture choice. The risk is in how the HSM is operated, not where it sits." }
+  ],
+  "risks": [
+    {
+      "id": "oraculo-assinatura",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["assinatura", "servicos"], "edges": [{ "from": "servicos", "to": "assinatura" }, { "from": "assinatura", "to": "gateway" }] },
+      "title": "Signing oracle: the HSM protects the key, not its use",
+      "signal": "All 40 microservices use <em>the same mTLS certificate</em> and the service <em>signs the payload it receives</em>. The key never leaves the HSM — but any compromised service can get it to sign whatever it wants.",
+      "abuse": [
+        "A vulnerability in a secondary service (notifications, say) gives the attacker access to the internal network and the shared certificate; they ask the signing service for PIX transfer messages to their own accounts.",
+        "A developer with access to the certificate in the staging environment notices it also works in production.",
+        "Since everyone uses the same identity, the service's logs don't show which system requested each signature."
+      ],
+      "impact": "PIX messages that look legitimate to the Central Bank, signed with the bank's official key, moving customers' money. A direct loss, an incident reportable to the regulator and an investigation with no trail of who requested each signature.",
+      "mitigation": [
+        "One identity per service (its own mTLS certificate) and a policy in the signing service stating who may sign which type of message.",
+        "The signing service validates the content before signing: message type, limits and a link to a transaction recorded in the core banking system.",
+        "An audit trail per signature (who asked, what, which transaction), reconciled against what was settled in PIX."
+      ]
+    },
+    {
+      "id": "pin-particao",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["hsm", "sre"], "edges": [{ "from": "sre", "to": "hsm" }] },
+      "title": "The PIN that gives direct access to the PIX key is held by twelve people",
+      "signal": "The partition PIN is <em>in the team's password vault</em>, available to the <em>12 SREs</em>, who use it for troubleshooting. With it, anyone talks directly to the HSM, bypassing the signing service.",
+      "abuse": [
+        "An SRE, from home, opens a PKCS#11 session with the partition and signs transfer messages to mule accounts.",
+        "The team's password vault is compromised by phishing one of the twelve; the attacker gets the PIN.",
+        "An SRE who left months ago still knows the PIN, which was never changed."
+      ],
+      "impact": "Insider fraud with the bank's official key and little chance of attribution. A single shared PIN cancels out the whole investment in the HSM.",
+      "mitigation": [
+        "The production partition PIN held only by the signing service (injected at runtime), never by people.",
+        "Troubleshooting on a separate partition without the production keys; emergency access to production with a quorum and logging.",
+        "Change the PIN whenever someone leaves the team and after any emergency use."
+      ]
+    },
+    {
+      "id": "quorum-um",
+      "category": "processo",
+      "severity": "crítico",
+      "where": { "nodes": ["hsm", "cofre"], "edges": [{ "from": "cofre", "to": "hsm" }] },
+      "title": "A quorum of 1 of 3 isn't a quorum",
+      "signal": "Creating and exporting keys, changing policies and restoring backups needs <em>1 of 3</em> administrators. The two-person control, which is the reason a quorum exists, was switched off for convenience.",
+      "abuse": [
+        "An administrator exports the PIX signing key, wrapped with a key they control, and takes it out of the bank.",
+        "An administrator changes the partition policy to allow export, makes the copy and sets the policy back as it was.",
+        "An administrator's smartcard is stolen along with the PIN: on its own, it's enough."
+      ],
+      "impact": "The bank's most sensitive key can leave the HSM through a single person's action. After that, the bank must revoke the certificate with the Central Bank and replace the key in a hurry, with PIX at risk of stopping.",
+      "mitigation": [
+        "A quorum of at least 2 of 3 for every administrative operation, with an on-call rota that guarantees two administrators are available.",
+        "The PIX signing key marked as non-exportable.",
+        "A scripted key ceremony, with a witness and minutes for every administrative operation."
+      ]
+    },
+    {
+      "id": "cofre-unico",
+      "category": "operativo",
+      "severity": "alto",
+      "where": { "nodes": ["cofre"], "edges": [{ "from": "cofre", "to": "hsm" }] },
+      "title": "Everything that protects the key is in the same place",
+      "signal": "The three smartcards, <em>the envelopes with the PINs</em> and <em>the HSM backup media</em> are kept in the same safe, at headquarters. Whoever opens the safe has everything they need.",
+      "abuse": [
+        "Someone with access to the safe (facilities, physical security, an administrator) takes a smartcard, the PIN and a backup and restores the keys on an HSM of the same model, outside the bank.",
+        "A fire or flood at headquarters destroys, all at once, the backups and the smartcards needed to restore them."
+      ],
+      "impact": "Separating card and PIN is what stops the theft of one object from being enough. Together, the safe becomes a single point of compromise — and of total loss, if the site is hit.",
+      "mitigation": [
+        "Smartcards and PINs in the custody of different people; PINs never on paper next to the card.",
+        "HSM backups at a second secure site, physically separate from headquarters.",
+        "Access control on the safe with logging and a periodic inventory of its contents."
+      ]
+    },
+    {
+      "id": "logs-hsm",
+      "category": "regulatório",
+      "severity": "médio",
+      "where": { "nodes": ["hsm"] },
+      "title": "What's done with the keys disappears in 30 days",
+      "signal": "The HSM audit logs stay <em>only on the device itself</em>, for <em>30 days</em>. There's no forwarding to a central log store and no alert on administrative operations.",
+      "abuse": [
+        "A key export carried out in the middle of the night is only noticed months later, when the log has already been overwritten.",
+        "Whoever does something improper on the HSM knows they just need to wait 30 days."
+      ],
+      "impact": "Brazilian Central Bank and National Monetary Council cybersecurity rules require traceability and the ability to investigate incidents. Without the logs, the bank can't prove what happened to the key that signs PIX.",
+      "mitigation": [
+        "Continuous forwarding of HSM logs to the central log store, with retention in line with regulation.",
+        "Real-time alerts for administrative operations, partition use outside the signing service and authentication failures.",
+        "Periodic review of administration logs by security."
+      ]
+    },
+    {
+      "id": "colhe-agora",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["arquivo", "hsm"], "edges": [{ "from": "hsm", "to": "arquivo" }] },
+      "title": "Harvest now, decrypt later",
+      "signal": "The archive keeps contracts and KYC for <em>at least ten years</em>, and the AES keys are still <em>wrapped with RSA-2048</em>. What matters isn't when the quantum computer arrives, but how long the data must stay secret.",
+      "abuse": [
+        "An attacker who copies the archive today (through a leaked backup, for example) can't read anything — but keeps the copy. Once a quantum computer able to break RSA-2048 exists, they recover the AES keys and read the documents.",
+        "Today's customer documents are still sensitive ten years from now: CPF, income, biometrics and signatures don't change."
+      ],
+      "impact": "Personal and sensitive data exposed in the future by a decision made today, with no new break-in. The rule of thumb: if the time the data must stay secret plus the time the migration takes exceeds the time until a quantum computer exists, the migration is already late.",
+      "mitigation": [
+        "Start with the archive: wrap new AES keys with ML-KEM (or in hybrid RSA + ML-KEM mode) and re-wrap the old keys.",
+        "Keep AES-256 for the content: it's the wrapping that has to change, not the documents' cipher.",
+        "Prioritize the migration by how long each piece of data must stay secret, not by technical ease."
+      ]
+    },
+    {
+      "id": "fallback-classico",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["gateway", "parceiros"], "edges": [{ "from": "parceiros", "to": "gateway" }] },
+      "title": "Automatic fallback is a downgrade button",
+      "signal": "If the hybrid handshake fails, the gateway <em>falls back to classic TLS on its own</em>. Whoever sits in the middle decides whether the connection will be post-quantum or not.",
+      "abuse": [
+        "An attacker on the network deliberately breaks the hybrid handshake; the connection drops to classic, and recorded traffic can be read in the future.",
+        "A configuration problem makes the hybrid handshake fail every time, and nobody notices: the pilot dashboard shows \"TLS active\", and traffic runs on classic cryptography only."
+      ],
+      "impact": "The pilot gives the impression of post-quantum protection without delivering it. Open Finance data in transit today is exposed to the same \"harvest now, decrypt later\" as the archive.",
+      "mitigation": [
+        "No silent fallback: partners that have already negotiated hybrid don't accept classic; exceptions are configured explicitly.",
+        "A metric and alert for connections that fell back to classic, per partner.",
+        "Use TLS 1.3's own downgrade protections instead of a manual retry in the gateway."
+      ]
+    },
+    {
+      "id": "sem-inventario",
+      "category": "processo",
+      "severity": "médio",
+      "where": { "nodes": ["servicos"], "edges": [{ "from": "servicos", "to": "assinatura" }] },
+      "title": "You can't migrate what nobody knows the location of",
+      "signal": "There's no <em>inventory</em> of where RSA and elliptic curves are used, the algorithms are <em>written into each service's code</em>, and the plan for signatures is to wait for the vendor's firmware.",
+      "abuse": [
+        "When a regulatory deadline or a quantum breakthrough comes, the bank discovers dozens of places using RSA and can't change them all in time.",
+        "A forgotten service keeps exchanging keys with elliptic curves for years after the migration officially ended.",
+        "The same lack of agility hampers any urgent algorithm change, quantum or not."
+      ],
+      "impact": "The post-quantum migration becomes a years-long project, done in a hurry with no idea when it ends. The risk isn't technical today: it's about time.",
+      "mitigation": [
+        "A cryptographic inventory (algorithms, keys, libraries and certificates per system), kept up to date.",
+        "Crypto agility: algorithms configurable in a central library, not scattered across the code.",
+        "A migration roadmap prioritized by secrecy lifetime, using the algorithms already standardized by NIST (ML-KEM and ML-DSA) and testing in hybrid mode."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "An HSM protects the key, not the use of the key", "body": "If any system can ask for a signature, the HSM becomes an oracle. Control who can sign what, and prove it in the logs." },
+    { "title": "A quorum that blocks nothing isn't a quorum", "body": "Two-person control switched off for convenience is worth the same as no control. Solve the convenience with an on-call rota, not with the quorum." },
+    { "title": "In the quantum transition, the deadline that matters is the secret's", "body": "Data that must stay confidential for years is already at risk today, because it can be copied now and decrypted later. Short-lived signatures can wait a little longer." },
+    { "title": "Automatic fallback hands the decision to the attacker", "body": "Any negotiation that falls back to the weaker option on its own can be forced to fall back. If falling back is needed, make it an explicit, monitored decision." },
+    { "title": "Crypto agility starts with an inventory", "body": "Before choosing a post-quantum algorithm, know where each current algorithm lives. Without that, no migration plan has an end date." }
+  ]
+}

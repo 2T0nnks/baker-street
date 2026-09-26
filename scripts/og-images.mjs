@@ -6,18 +6,27 @@
  * For each open case it photographs the case's own flow diagram from the
  * built site and composes it into a 1200×630 card with the title, subtitle,
  * sector, difficulty and duration. Output: dist/og/<slug>.png, plus
- * dist/og/adler.png for the home page.
+ * dist/og/adler.png for the home page — and the same under dist/<lang>/og/
+ * for each translated build.
  *
  * Uses the installed Chrome or Edge; set CHROME_PATH if it isn't found.
  */
 
 import fs from "node:fs";
 import path from "node:path";
-import { DIST, openCases, serveDist, openBrowser, waitFor, sleep } from "./lib/browser.mjs";
+import { DIST, sites, serveDist, openBrowser, waitFor, sleep } from "./lib/browser.mjs";
 
-const OUT = path.join(DIST, "og");
 const W = 1200, H = 630;
-const SECTOR = { fintech: "Fintech", healthtech: "Saúde", edtech: "Educação", govtech: "Serviço público" };
+// Card texts in Portuguese; other languages bring theirs in engine/i18n/<lang>.json ("og").
+const TEXT = {
+  caseEyebrow: "Adler · caso de abuso",
+  homeEyebrow: "Adler · open source",
+  homeTitle: "Onde a segurança começa.",
+  homeSubtitle: "Treino de leitura de casos de abuso em fluxos reais, antes do primeiro commit.",
+  cases: "casos",
+  sectors: { fintech: "Fintech", healthtech: "Saúde", edtech: "Educação", govtech: "Serviço público" },
+  levels: {},
+};
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const strip = s => String(s).replace(/<[^>]+>/g, "");
@@ -60,56 +69,61 @@ async function shoot(page, selector, pad = 0) {
   return `data:image/png;base64,${r.result.data}`;
 }
 
-async function compose(page, base, file, data) {
+async function compose(page, base, out, file, data) {
   await page.send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: false });
   await page.goto(`${base}og/__card__`); // any same-origin URL, so the fonts load
   const { result } = await page.send("Page.getFrameTree");
   await page.send("Page.setDocumentContent", { frameId: result.frameTree.frame.id, html: card(base, data) });
   await page.js(`document.fonts.ready.then(() => Promise.all([...document.images].map(i => i.decode()))).then(() => true)`);
   const r = await page.send("Page.captureScreenshot", { format: "png", clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
-  fs.writeFileSync(path.join(OUT, file), Buffer.from(r.result.data, "base64"));
-  console.log(`og: ${file}`);
+  fs.writeFileSync(path.join(out, file), Buffer.from(r.result.data, "base64"));
+  console.log(`og: ${path.relative(DIST, path.join(out, file)).replaceAll("\\", "/")}`);
 }
 
 async function run() {
-  const cases = openCases();
-  fs.mkdirSync(OUT, { recursive: true });
   const { server, base } = await serveDist();
   const page = await openBrowser();
 
   // Photos are taken at 2× so they stay sharp when scaled into the card.
   const site = () => page.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 2, mobile: false });
 
-  await site();
-  await page.goto(base);
-  await page.js(`localStorage.clear(); localStorage.setItem("adler_theme", "dark"); true`);
-  await page.goto(base);
-  await sleep(2600); // the hero illustration draws itself
-  const hero = await shoot(page, "#view-landing .trail-illo");
-  await compose(page, base, "adler.png", {
-    eyebrow: "Adler · open source",
-    title: "Onde a segurança começa.",
-    subtitle: "Treino de leitura de casos de abuso em fluxos reais, antes do primeiro commit.",
-    chips: [`${cases.length} casos`, "threat model"],
-    image: { src: hero, bare: true },
-  });
+  for (const s of sites()) {
+    const t = { ...TEXT, ...(s.i18n?.og || {}) };
+    const out = path.join(DIST, s.path, "og");
+    fs.mkdirSync(out, { recursive: true });
+    const url = base + s.path;
 
-  for (const c of cases) {
     await site();
-    await page.goto(`${base}?caso=${c.slug}`);
-    await page.js(`document.querySelectorAll(".progress-cell")[1].click(); true`);
-    if (!await page.js(waitFor(`document.getElementById("flowWrap")._played`, 20000))) throw new Error(`${c.slug}: flow did not finish drawing`);
-    // No moving packets in a still image.
-    await page.js(`document.querySelectorAll("#flowWrap .packet, #flowWrap animateMotion").forEach(e => e.remove()); true`);
-    await sleep(200);
-    const flow = await shoot(page, "#flowWrap", 12);
-    await compose(page, base, `${c.slug}.png`, {
-      eyebrow: "Adler · caso de abuso",
-      title: strip(c.title),
-      subtitle: strip(c.subtitle),
-      chips: [SECTOR[c.domain] || c.domain, c.difficulty, c.duration],
-      image: { src: flow },
+    await page.goto(url);
+    await page.js(`localStorage.clear(); localStorage.setItem("adler_theme", "dark"); true`);
+    await page.goto(url);
+    await sleep(2600); // the hero illustration draws itself
+    const hero = await shoot(page, "#view-landing .trail-illo");
+    await compose(page, base, out, "adler.png", {
+      eyebrow: t.homeEyebrow,
+      title: t.homeTitle,
+      subtitle: t.homeSubtitle,
+      chips: [`${s.cases.length} ${t.cases}`, "threat model"],
+      image: { src: hero, bare: true },
     });
+
+    for (const c of s.cases) {
+      await site();
+      await page.goto(`${url}?caso=${c.slug}`);
+      await page.js(`document.querySelectorAll(".progress-cell")[1].click(); true`);
+      if (!await page.js(waitFor(`document.getElementById("flowWrap")._played`, 20000))) throw new Error(`${c.slug}: flow did not finish drawing`);
+      // No moving packets in a still image.
+      await page.js(`document.querySelectorAll("#flowWrap .packet, #flowWrap animateMotion").forEach(e => e.remove()); true`);
+      await sleep(200);
+      const flow = await shoot(page, "#flowWrap", 12);
+      await compose(page, base, out, `${c.slug}.png`, {
+        eyebrow: t.caseEyebrow,
+        title: strip(c.title),
+        subtitle: strip(c.subtitle),
+        chips: [t.sectors[c.domain] || c.domain, t.levels[c.difficulty] || c.difficulty, c.duration],
+        image: { src: flow },
+      });
+    }
   }
 
   await page.close();

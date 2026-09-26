@@ -1,0 +1,240 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "indique-e-ganhe",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Refer and Earn",
+  "subtitle": "A cash-bonus referral campaign in a digital wallet with PIX instant payments",
+  "duration": "~45 min",
+  "difficulty": "Iniciante",
+  "tags": ["Fintech", "PIX", "Fraud prevention", "AML"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Trevo is a digital wallet with 2.1 million accounts: payment account, PIX (Brazil's instant payment system), prepaid card and cashback on QR code purchases. The company is an indirect PIX participant — transfers settle through a partner PSP — and grows mostly through referrals.",
+      "The product in focus is \"Refer and Earn\". Each customer has an 8-character random code and shares a link on WhatsApp. When the invitee opens an account, passes KYC and makes a first PIX of at least R$ 20, both get R$ 30 in available balance, which can be withdrawn via PIX right away. Each customer can refer up to 50 people. To make it easier, the app asks for access to contacts and sends the address book to the server, which shows which friends already use Trevo and suggests who to invite. The budget is R$ 2 million per quarter.",
+      "The Growth team — three developers — shipped the campaign in three sprints. When the invitee's first PIX is confirmed, the API publishes a conversion event to a queue; the rewards engine consumes the queue and credits both bonuses in the ledger. The queue delivers each message at least once, and after incidents the SRE reprocesses pending messages. Marketing adjusts the bonus amount, the minimum PIX and the referral limit in a campaign panel, with no deploy; finance tracks spending in a spreadsheet, once a week. A vendor's device fingerprint SDK is in the app in \"observation mode\": the score is only logged for 60 days before it becomes a rule.",
+      "KYC (selfie and ID) is outsourced; the provider returns the approval via callback. Customer support is run by a third-party company, with 40 agents in two shifts, who can grant a \"goodwill bonus\" through the back office to calm complaints — the amount field is free text. PIX payments can be returned through the Special Refund Mechanism (MED) up to 80 days later, in case of scams."
+    ],
+    "actors": [
+      ["Referring customer", "shares the code and earns R$ 30"],
+      ["Invitee", "opens the account and makes the first PIX"],
+      ["Marketing", "configures the campaign in the panel"],
+      ["Outsourced support", "40 people, grant goodwill bonuses"],
+      ["SRE", "reprocesses the queue after incidents"],
+      ["KYC provider", "third party: checks selfie and ID"],
+      ["Settlement PSP", "third party: settles Trevo's PIX"]
+    ],
+    "data": [
+      ["CPF, selfie and ID", "KYC at sign-up"],
+      ["Address book", "sent to the server for suggestions"],
+      ["Device signals", "fingerprint SDK, logged only"],
+      ["PIX key and balance", "bonus withdrawal"],
+      ["Referral code", "links invitee to referrer"]
+    ],
+    "scale": [
+      ["2.1 M", "accounts opened"],
+      ["~9 k / day", "converted referrals"],
+      ["R$ 2 M / quarter", "campaign budget"],
+      ["3 devs", "Growth team"],
+      ["40 agents", "outsourced, two shifts"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "app", "label": "Trevo app", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "Trevo's app: account, PIX, card and cashback. In the campaign, it shows the referral code, the link to share and the suggested friends to invite." },
+      { "id": "api", "label": "Wallet API", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "The wallet API: sign-up, KYC, PIX and the campaign. When an invitee's first PIX is confirmed, it publishes the conversion event." },
+      { "id": "fila", "label": "Conversion queue", "kind": "internal", "icon": "queue", "x": 440, "y": 40, "description": "Message queue that carries conversion events from the API to the rewards engine." },
+      { "id": "motor", "label": "Rewards engine", "kind": "internal", "icon": "service", "x": 640, "y": 40, "description": "Service that consumes conversions, applies the campaign rules and credits the referrer's and the invitee's bonus in the ledger." },
+      { "id": "device", "label": "Device fingerprint SDK", "kind": "external", "icon": "partner", "x": 60, "y": 160, "description": "A vendor's SDK embedded in the app. It collects device signals and computes a device risk score.", "tech": "Device fingerprint: a technique that combines device characteristics — model, OS, settings, sensors — to recognize it even without a login and to estimate whether it has shown up tied to other accounts." },
+      { "id": "kyc", "label": "KYC provider", "kind": "external", "icon": "partner", "x": 240, "y": 160, "description": "Outsourced provider that checks the selfie and ID at account opening and returns the approval via callback.", "tech": "KYC (<em>Know Your Customer</em>): the process of verifying someone's identity, usually by comparing a selfie with the photo on an ID. Payment institutions must do it when an account is opened." },
+      { "id": "painel", "label": "Campaign panel", "kind": "internal", "icon": "web", "x": 440, "y": 160, "description": "Marketing's web tool to configure the campaign: bonus amount, minimum PIX to convert and referral limit per customer." },
+      { "id": "ledger", "label": "Balance ledger", "kind": "internal", "icon": "database", "x": 640, "y": 160, "description": "Record of customer balances. It receives bonus and goodwill credits; the available balance can be withdrawn via PIX.", "tech": "Ledger: an accounting record in which every balance credit and debit is an entry. A customer's balance is the sum of their entries; nothing is overwritten, only appended." },
+      { "id": "suporte", "label": "Support back office", "kind": "internal", "icon": "team", "x": 440, "y": 260, "description": "Back office used by the third-party company's 40 agents to look up accounts, handle complaints and grant goodwill bonuses." },
+      { "id": "psp", "label": "Settlement PSP (PIX)", "kind": "external", "icon": "bank", "x": 640, "y": 260, "description": "Partner PSP through which Trevo settles PIX payments, since it is an indirect participant. It executes customer withdrawals.", "tech": "Settlement PSP: a direct PIX participant, with an account at the Central Bank, that settles transactions for indirect participants — like Trevo, which has no account of its own in the PIX system." }
+    ],
+    "edges": [
+      { "from": "app", "to": "api", "label": "sign-up + code + contacts" },
+      { "from": "app", "to": "device", "label": "signals · score logged only", "boundary": true },
+      { "from": "api", "to": "kyc", "label": "selfie + ID", "boundary": true },
+      { "from": "kyc", "to": "api", "label": "approval", "dashed": true, "boundary": true },
+      { "from": "api", "to": "fila", "label": "1st PIX confirmed" },
+      { "from": "fila", "to": "motor", "label": "conversion" },
+      { "from": "painel", "to": "motor", "label": "campaign rules" },
+      { "from": "motor", "to": "ledger", "label": "credits 2 × R$ 30" },
+      { "from": "suporte", "to": "ledger", "label": "goodwill bonus" },
+      { "from": "ledger", "to": "psp", "label": "PIX withdrawal", "boundary": true }
+    ]
+  },
+  "candidates": [
+    { "id": "fazenda-contas", "truth": true, "category": "fraude", "title": "Device fingerprint only logs, it doesn't block", "sub": "The SDK is in \"observation mode\" for 60 days while the campaign already pays R$ 30 per new account." },
+    { "id": "pix-circular", "truth": true, "category": "lógica", "title": "The invitee's first PIX can go to the referrer", "sub": "The condition is \"first PIX of at least R$ 20\" — to any destination." },
+    { "id": "estorno-sem-reversao", "truth": true, "category": "lógica", "title": "Returning the qualifying PIX doesn't undo the bonus", "sub": "The conversion event fires when the payment is confirmed; nothing is said about what happens if it comes back." },
+    { "id": "credito-duplicado", "truth": true, "category": "técnico", "title": "Reprocessing the queue credits the bonus again", "sub": "The queue delivers at least once and the SRE reprocesses messages after incidents." },
+    { "id": "painel-sem-controle", "truth": true, "category": "processo", "title": "Marketing changes the bonus amount with no second approval", "sub": "The panel changes amount, minimum PIX and limit with no deploy; spending only shows in the weekly spreadsheet." },
+    { "id": "bonus-cortesia", "truth": true, "category": "operativo", "title": "Outsourced support grants bonuses of any amount", "sub": "40 agents from another company, in two shifts, with an open amount field in the back office." },
+    { "id": "agenda-contatos", "truth": true, "category": "privacidade", "title": "The customer's whole address book is sent to the server", "sub": "To suggest invites, the app uploads contacts — including people who never dealt with Trevo." },
+    { "id": "contas-mula", "truth": true, "category": "regulatório", "title": "Accounts opened by the campaign become pass-through accounts", "sub": "Thousands of new accounts a day, instant withdrawal and no monitoring of incoming payments mentioned." },
+    { "id": "codigo-previsivel", "truth": false, "category": "técnico", "title": "The referral code can be brute-forced", "sub": "It's 8 random characters — and even if guessed, the bonus would go to the code's owner, not to whoever guessed it." },
+    { "id": "selfie-sem-cripto", "truth": false, "category": "privacidade", "title": "KYC selfies stored unencrypted", "sub": "The context doesn't say how selfies are stored. The practice is reading what is described, not assuming the worst." },
+    { "id": "limite-50", "truth": false, "category": "lógica", "title": "A 50-referral limit per customer is too low", "sub": "It's a product decision — and a cap per referrer still limits the damage from a compromised account." },
+    { "id": "sem-pinning", "truth": false, "category": "técnico", "title": "App without certificate pinning", "sub": "It may be worth it as app hardening, but nothing in this flow depends on intercepting the user's own traffic." }
+  ],
+  "risks": [
+    {
+      "id": "fazenda-contas",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["device", "app"], "edges": [{ "from": "app", "to": "device" }] },
+      "title": "Account farm: the signal that would catch farming only goes to a log",
+      "signal": "The campaign pays R$ 30 per new account with instant withdrawal, and the only control able to tie several accounts to the same device is in <em>observation mode</em>: the score is recorded, but nobody acts on it for 60 days. KYC checks that the ID is real — not that the person didn't lend their CPF.",
+      "abuse": [
+        "A ring rents third parties' CPFs and selfies (\"mules\") for R$ 10 each, opens 300 accounts on five phones, has each one refer the next and withdraws the bonuses the same day.",
+        "Emulators that reset their identifier produce \"new devices\" one after another; the fingerprint sees the repetition, writes it to the log and the conversion goes through.",
+        "When someone finally looks at the observation data, the quarter's budget has already left as PIX to accounts that no longer exist."
+      ],
+      "impact": "An R$ 2 million budget drained by fake accounts within weeks, an inflated growth metric and product decisions made about users who don't exist. The customer base ends up carrying thousands of accounts opened with borrowed data.",
+      "mitigation": [
+        "Turn the fingerprint into a rule from the campaign's first day: a device with more than N accounts blocks the bonus (not the sign-up) and sends it to review.",
+        "Hold the invitee's bonus for a waiting period (e.g. 7 days or until a second legitimate transaction) before allowing withdrawal.",
+        "A referral graph with alerts for chains (A refers B refers C…) and for referrers with abnormally high conversion."
+      ]
+    },
+    {
+      "id": "pix-circular",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["api", "fila"], "edges": [{ "from": "api", "to": "fila" }] },
+      "title": "Circular PIX: the invitee pays the referrer and both profit",
+      "signal": "The conversion rule is \"first PIX of at least R$ 20\" — the context doesn't restrict the destination. Nothing stops the qualifying PIX from going precisely to the person who made the referral.",
+      "abuse": [
+        "The referrer creates the invitee's account, receives an R$ 20 PIX from it and, with both bonuses, walks away with R$ 80 against R$ 20 that merely changed accounts.",
+        "A network of one's own accounts in which each new account sends the qualifying PIX to the previous one: money goes round in circles and each lap produces R$ 60 in bonuses."
+      ],
+      "impact": "Each fraudulent conversion costs R$ 60 with no real use of the product, and the event looks legitimate in every system: a real PIX, between two accounts with approved KYC.",
+      "mitigation": [
+        "Exclude from conversion any PIX to the referrer, to accounts of the same holder and to accounts that share a device or key.",
+        "Require real use to convert: a payment to a merchant (QR code) or a PIX to an account at another institution.",
+        "Monitor referrer–invitee pairs with money flowing between them right after the account opens."
+      ]
+    },
+    {
+      "id": "estorno-sem-reversao",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["fila", "motor"], "edges": [{ "from": "api", "to": "fila" }, { "from": "fila", "to": "motor" }] },
+      "title": "There's a conversion event, but no un-conversion event",
+      "signal": "The bonus fires when the first PIX is <em>confirmed</em>. The context notes that PIX can be returned through MED up to 80 days later — and doesn't mention any way back for the bonus.",
+      "abuse": [
+        "The invitee sends the qualifying PIX to an accomplice, the bonuses land, and then they request a refund claiming a scam: the money comes back, the R$ 60 stays.",
+        "The same pattern at scale, combined with instant withdrawal: by the time the refund happens, the bonus balance has already left Trevo."
+      ],
+      "impact": "Bonuses paid on transactions that no longer exist. The loss is spread across the campaign account and the refunds account, and nobody sees it as a single thing.",
+      "mitigation": [
+        "Emit an un-conversion event when the qualifying PIX is returned and reverse the bonus (or take the balance negative) automatically.",
+        "Only release the bonus for withdrawal after the highest-risk refund window, or require a second transaction.",
+        "A joint campaign × refunds report to see the pattern."
+      ]
+    },
+    {
+      "id": "credito-duplicado",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["motor", "ledger"], "edges": [{ "from": "fila", "to": "motor" }, { "from": "motor", "to": "ledger" }] },
+      "title": "A rewards engine without idempotency credits twice",
+      "signal": "The queue delivers each message <em>at least once</em> and the SRE reprocesses pending ones after incidents. The context says nothing about an idempotency key on the credit — so every redelivery is a new credit.",
+      "abuse": [
+        "After the engine goes down, the SRE reprocesses 40,000 messages; those already consumed credit again, and customers withdraw before anyone notices.",
+        "Someone who understands the behaviour provokes it: they send the qualifying PIX at peak time, when timeouts and redeliveries are more likely."
+      ],
+      "impact": "Duplicate credit proportional to the incident's volume — tens of thousands of reais in a single night — and a ledger that doesn't reconcile with the conversion events.",
+      "mitigation": [
+        "An idempotency key per conversion (invitee id + campaign) with a uniqueness constraint in the ledger: the second credit fails in the database, not in the code.",
+        "Reprocessing only through a tool that skips messages already applied, never by re-queuing everything.",
+        "Daily reconciliation between conversions and credits, with alerts for differences."
+      ]
+    },
+    {
+      "id": "painel-sem-controle",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["painel", "motor"], "edges": [{ "from": "painel", "to": "motor" }] },
+      "title": "A rule that moves money changes without dual approval",
+      "signal": "Marketing adjusts the bonus amount, minimum PIX and referral limit <em>with no deploy</em>, and spending is only tracked in a weekly spreadsheet. No hard cap or second approval is described.",
+      "abuse": [
+        "A typo changes the bonus from R$ 30 to R$ 300 on a Friday night; the spreadsheet only shows the damage on Monday.",
+        "A compromised panel credential, or an insider, sets the minimum PIX to zero and raises the limit before switching on an account farm."
+      ],
+      "impact": "A configuration change turns into an immediate financial loss, with no clear trail of who changed what. At scale, the whole quarter can be spent in one weekend.",
+      "mitigation": [
+        "Maker-checker in the panel: a change to amount, minimum or limit only takes effect after a second person approves it.",
+        "A spending cap per day and per campaign enforced by the engine, which pauses the campaign when the cap is reached.",
+        "An immutable log of rule changes with real-time alerts to finance."
+      ]
+    },
+    {
+      "id": "bonus-cortesia",
+      "category": "operativo",
+      "severity": "alto",
+      "where": { "nodes": ["suporte", "ledger"], "edges": [{ "from": "suporte", "to": "ledger" }] },
+      "title": "Goodwill bonus: money released through a free-text field",
+      "signal": "Forty agents from a third-party company, in two shifts, can credit a \"goodwill bonus\" of <em>any amount</em>. The context mentions no cap, approval or review.",
+      "abuse": [
+        "An agent colludes with acquaintances: they open generic complaints and receive R$ 200 goodwill bonuses that they withdraw on the spot.",
+        "Social engineering against support: a fraudster insists, threatens to complain on social media and walks away with a large bonus.",
+        "A leaked agent credential gives an outside attacker a button that issues money."
+      ],
+      "impact": "An ongoing leakage channel, hard to tell apart from legitimate goodwill, run by people outside the company. Trevo is left with the loss and with the difficulty of holding the third party accountable.",
+      "mitigation": [
+        "A table of amounts per reason and a cap per agent and per shift; above that, approval by a Trevo supervisor.",
+        "Goodwill only as non-withdrawable balance (e.g. cashback on purchases), never as balance available for PIX.",
+        "A daily report of goodwill bonuses per agent, with alerts for concentration."
+      ]
+    },
+    {
+      "id": "agenda-contatos",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["app", "api"], "edges": [{ "from": "app", "to": "api" }] },
+      "title": "Address book collected far beyond what's needed",
+      "signal": "To suggest invites, the app sends the whole address book to the server. That's third-party data — people who never dealt with Trevo — collected for a marketing purpose.",
+      "abuse": [
+        "A database leak exposes the names and phone numbers of millions of non-customers, linked to the people who know them.",
+        "The list becomes fuel for acquisition campaigns without consent, and Trevo starts messaging people who never sought it out.",
+        "Scammers with access to the data know who is close to whom and build more convincing \"fake relative\" scams."
+      ],
+      "impact": "Processing of third parties' data without a clear legal basis and against the purpose and necessity principles of the LGPD, Brazil's data protection law (art. 6). Risk of sanctions from the ANPD, the data protection authority, and reputational damage out of proportion to the feature's value.",
+      "mitigation": [
+        "Do the matching on the device, comparing salted hashes of the numbers against a customer list, without sending the address book.",
+        "If anything is sent, only what the matching needs, discarded right after and never reused for marketing.",
+        "Make suggestions optional, with a clear explanation before the permission prompt."
+      ]
+    },
+    {
+      "id": "contas-mula",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["ledger", "psp"], "edges": [{ "from": "ledger", "to": "psp" }] },
+      "title": "The campaign manufactures pass-through accounts for scams",
+      "signal": "Around 9,000 converted accounts a day, opened with a cash incentive and instant withdrawal. The context doesn't mention monitoring of accounts that start receiving and forwarding money right after opening.",
+      "abuse": [
+        "Accounts opened with rented CPFs in the referral farm are resold to PIX scam rings, which use them to receive and scatter victims' money.",
+        "Scam money comes in, leaves within minutes to other institutions and the account is abandoned; when the MED request arrives, there's no balance to return."
+      ],
+      "impact": "As a payment institution, Trevo must monitor and report suspicious transactions (Central Bank Circular 3,978/2020) and answers for its accounts' role in PIX scams. There's risk of findings from the Central Bank, restrictions from the settlement PSP and a high volume of MED refunds with no recovery.",
+      "mitigation": [
+        "Transaction monitoring for new accounts: incoming payments from many payers followed by immediate forwarding trigger a precautionary block.",
+        "Lower PIX limits in an account's first days, raised as it builds history.",
+        "Feed the campaign's fraud data (device, referral chain) into the AML process, reporting to COAF, Brazil's financial intelligence unit, when applicable."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Every cash incentive becomes an API for fraudsters", "body": "A rule that pays for a behaviour will be optimized by people who don't want the product, only the payout. Design the campaign by asking \"what's the cheapest way to meet this condition without being a customer?\"." },
+    { "title": "Every conversion event needs an un-conversion event", "body": "If a benefit depends on a payment, cancelling or returning that payment must undo the benefit automatically. If there's no way back, the fraudster uses the way in." },
+    { "title": "An at-least-once queue requires idempotent credit", "body": "Redelivery isn't an exception, it's the contract. Any consumer that moves money needs a unique key enforced in the database, not care at reprocessing time." },
+    { "title": "A signal that only observes doesn't protect", "body": "A control in log mode produces a nice dashboard about the loss. If the risk is already in production, decide from day one what the signal blocks or holds." },
+    { "title": "Whoever configures money without a deploy needs dual approval", "body": "Business panels, back offices and free-amount fields are production. Treating them as harmless configuration is like leaving a payment endpoint without authentication." }
+  ]
+}

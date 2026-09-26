@@ -1,0 +1,241 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "consulta-expressa",
+  "status": "open",
+  "domain": "healthtech",
+  "title": "Express Consultation",
+  "subtitle": "Subscription telemedicine with prescriptions, sick notes and medicine delivery by partner pharmacies",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Healthtech", "LGPD", "Telemedicine", "IAM"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Cuidar+ sells telemedicine by subscription: R$ 39.90 a month for unlimited video consultations with a general practitioner, 24 hours a day, in the app. There are 380,000 subscribers, most of them enrolled as an employee benefit by companies, and about 6,000 consultations a day.",
+      "At the end of the consultation, the doctor can issue a digital prescription and sick note, signed with the doctor's own certificate. The patient gets a link by SMS to download the PDFs — the link doesn't require a login, to make life easier for the elderly and the unwell. With one tap, the patient can send the prescription to one of the partner pharmacies, which deliver to the door. To speed up the pharmacy's service, the integration sends the prescription along with the consultation summary.",
+      "The 220 doctors are contractors working six-hour remote shifts. Each doctor on shift has a target of consultations per hour and is paid per completed consultation. The electronic health record lives in the company's own database; consultation recordings, kept at the legal department's request, go to a storage bucket. The app uses a vendor's analytics and marketing SDK to measure the funnel and trigger campaigns.",
+      "Support is handled on WhatsApp by a team of 25. When a patient loses access, the agent confirms the CPF (Brazil's tax ID) and date of birth and changes the account's email and phone number. Client companies receive a monthly report of benefit usage per employee."
+    ],
+    "actors": [
+      ["Patient", "subscriber, uses the app"],
+      ["Doctor on shift", "contractor, hourly consultation target"],
+      ["Partner pharmacy", "third party: receives prescriptions and delivers"],
+      ["Support", "25 people on WhatsApp"],
+      ["Client company", "pays for the benefit, receives a report"],
+      ["Analytics vendor", "third party: SDK in the app"]
+    ],
+    "data": [
+      ["Health record and diagnosis", "health data, sensitive"],
+      ["Consultation recording", "video kept in the bucket"],
+      ["Prescription and sick note", "signed PDF, link by SMS"],
+      ["CPF and date of birth", "sign-up and account recovery"],
+      ["App events", "sent to the analytics SDK"]
+    ],
+    "scale": [
+      ["380 k", "subscribers"],
+      ["~6 k / day", "consultations"],
+      ["220 doctors", "contractors, 6-hour shifts"],
+      ["25 people", "support on WhatsApp"],
+      ["40+ companies", "buy it as a benefit"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "app", "label": "Patient app", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "The patient's app: books and holds the video consultation, receives prescriptions and sick notes, and sends the prescription to a partner pharmacy." },
+      { "id": "api", "label": "Cuidar+ API", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "Cuidar+'s API: authentication, scheduling, video, pharmacy integration and reports for client companies." },
+      { "id": "prontuario", "label": "Health record", "kind": "internal", "icon": "database", "x": 440, "y": 40, "description": "Database with the electronic health record: consultation notes, diagnosis, and prescriptions and sick notes issued.", "tech": "Electronic health record: the clinical record with the history of consultations, diagnoses, prescriptions and tests. Its keeping is regulated by the medical councils and its content is health data." },
+      { "id": "medico", "label": "Doctor's panel", "kind": "internal", "icon": "web", "x": 640, "y": 40, "description": "Application the 220 doctors on shift use to see patients, record the consultation and issue prescriptions and sick notes with their own certificate." },
+      { "id": "analytics", "label": "Analytics SDK", "kind": "external", "icon": "partner", "x": 0, "y": 40, "description": "An analytics and marketing vendor's SDK embedded in the app, used to measure the funnel and trigger campaigns.", "tech": "Analytics SDK (<em>Software Development Kit</em>): a third-party library embedded in the app that records events — screens opened, buttons tapped, searches — and sends them to the vendor's servers for reports and campaigns." },
+      { "id": "gravacoes", "label": "Recordings bucket", "kind": "boundary", "icon": "storage", "x": 240, "y": 160, "description": "Storage for the video recordings of consultations, kept at the legal department's request." },
+      { "id": "docs", "label": "Prescription and sick-note links", "kind": "boundary", "icon": "document", "x": 440, "y": 160, "description": "Service that generates the signed prescription and sick-note PDFs and delivers them to the patient through a link sent by SMS.", "tech": "Digital prescription and sick note: PDFs signed with the doctor's ICP-Brasil digital certificate (Brazil's public key infrastructure). The signature gives the document legal validity and shows who issued it." },
+      { "id": "farmacia", "label": "Partner pharmacies", "kind": "external", "icon": "partner", "x": 640, "y": 160, "description": "Network of partner pharmacies that receives the prescriptions sent from the app and delivers the medicine to the door." },
+      { "id": "suporte", "label": "WhatsApp support", "kind": "internal", "icon": "team", "x": 60, "y": 160, "description": "Team of 25 people who serve patients on WhatsApp, including those who lost access to their account." },
+      { "id": "empresa", "label": "Company report", "kind": "boundary", "icon": "spreadsheet", "x": 0, "y": 160, "description": "Monthly report sent to the companies that buy Cuidar+ as a benefit, with service usage per employee." }
+    ],
+    "edges": [
+      { "from": "app", "to": "api", "label": "video + booking" },
+      { "from": "app", "to": "analytics", "label": "funnel events", "boundary": true },
+      { "from": "api", "to": "prontuario", "label": "notes" },
+      { "from": "medico", "to": "prontuario", "label": "diagnosis" },
+      { "from": "api", "to": "gravacoes", "label": "records the visit" },
+      { "from": "prontuario", "to": "docs", "label": "creates signed PDF" },
+      { "from": "docs", "to": "farmacia", "label": "prescription + summary", "boundary": true },
+      { "from": "suporte", "to": "app", "label": "changes email and phone" },
+      { "from": "api", "to": "empresa", "label": "usage per employee", "dashed": true, "boundary": true }
+    ]
+  },
+  "candidates": [
+    { "id": "link-sem-login", "truth": true, "category": "técnico", "title": "Prescriptions and sick notes opened through a link with no login", "sub": "The PDF is delivered through an SMS link that works without authentication, to make access easier." },
+    { "id": "atestado-fabrica", "truth": true, "category": "fraude", "title": "An hourly target and pay per consultation favour easy sick notes", "sub": "Contractor doctors are paid per completed consultation and have a throughput target; the sick note is one click away." },
+    { "id": "ato-suporte", "truth": true, "category": "operativo", "title": "Support changes email and phone with CPF and date of birth", "sub": "Two easy-to-get facts are enough for the agent to hand the account — and the medical history — to someone else." },
+    { "id": "analytics-saude", "truth": true, "category": "privacidade", "title": "App events with health data go to the marketing SDK", "sub": "The same SDK measures the funnel and triggers campaigns; the context doesn't say what's kept out of the events." },
+    { "id": "farmacia-resumo", "truth": true, "category": "privacidade", "title": "The pharmacy receives the consultation summary with the prescription", "sub": "To dispense the medicine, the pharmacy needs the prescription — not what the patient told the doctor." },
+    { "id": "relatorio-empresa", "truth": true, "category": "regulatório", "title": "The employer receives telemedicine usage per employee", "sub": "The monthly report is individual; employees' health data reaches whoever decides on their job." },
+    { "id": "gravacoes-bucket", "truth": true, "category": "processo", "title": "Recordings of every consultation kept with no access rule or retention period", "sub": "Legal asked for recordings; the context doesn't say who accesses the bucket or how long the videos stay." },
+    { "id": "receita-reuso", "truth": true, "category": "lógica", "title": "The same prescription can be sent to several pharmacies", "sub": "Sending is one tap in the app, pharmacy by pharmacy; nothing indicates a check for prescriptions already dispensed." },
+    { "id": "video-sem-e2e", "truth": false, "category": "técnico", "title": "Consultation video without end-to-end encryption", "sub": "Consultations are recorded at legal's request — E2E would prevent that. The real problem is how the recording is stored, not the transport." },
+    { "id": "clinico-geral", "truth": false, "category": "processo", "title": "Only general practitioners, no specialists", "sub": "It's product scope, not a risk. The GP refers the patient when needed." },
+    { "id": "senha-fraca", "truth": false, "category": "técnico", "title": "Weak password policy in the app", "sub": "The context doesn't describe the password policy. The easy way into an account is through support, not the password." },
+    { "id": "plantao-6h", "truth": false, "category": "operativo", "title": "Six-hour shifts tire doctors and cause clinical errors", "sub": "A legitimate quality-of-care concern, but not an abuse vector in this flow." }
+  ],
+  "risks": [
+    {
+      "id": "link-sem-login",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["docs"], "edges": [{ "from": "prontuario", "to": "docs" }] },
+      "title": "A medical document anyone with the link can open",
+      "signal": "Prescriptions and sick notes are delivered through an SMS link that <em>doesn't require a login</em>. The context mentions no expiry, single use or randomness for the link — and SMS messages get forwarded, sit on shared phones and in backups.",
+      "abuse": [
+        "Links with sequential or short identifiers are enumerated by a script that downloads thousands of prescriptions with name, CPF and medicine.",
+        "The SMS lands on a phone shared by the family or at work; someone else opens the sick note and learns the diagnosis.",
+        "A link to a controlled-drug prescription leaks into a group chat and is used by other people."
+      ],
+      "impact": "Exposure of health data — sensitive data under the LGPD, Brazil's data protection law — at scale, with the risk of an incident reportable to the ANPD and direct harm to patients. Leaked prescriptions also feed the illegal medicine market.",
+      "mitigation": [
+        "A link with a long random token, limited use and short expiry; the full document only after a simple check (e.g. a code sent to the holder's phone).",
+        "Say in the SMS only that a document is waiting in the app, with no direct link to the PDF.",
+        "Log and alert on access to the same document from many IPs or devices."
+      ]
+    },
+    {
+      "id": "atestado-fabrica",
+      "category": "fraude",
+      "severity": "alto",
+      "where": { "nodes": ["medico", "docs"], "edges": [{ "from": "medico", "to": "prontuario" }, { "from": "prontuario", "to": "docs" }] },
+      "title": "A sick-note factory: incentive and ease in the same place",
+      "signal": "The doctor on shift is a contractor, paid <em>per completed consultation</em>, with an hourly target. The sick note comes out with one click at the end of the consultation. The context mentions no review of issuing patterns.",
+      "abuse": [
+        "Subscribers find out that certain doctors give sick notes in three-minute consultations; the names circulate in group chats and demand concentrates on them.",
+        "A resale scheme: someone subscribes to the benefit, books consultations on behalf of others and sells two-day sick notes.",
+        "Client companies start seeing spikes of absences on Mondays and Fridays tied to Cuidar+."
+      ],
+      "impact": "Sick notes without clinical grounds expose doctors to ethics proceedings at the medical council and Cuidar+ to liability. The companies that buy the benefit are the first to notice — and to cancel the contract.",
+      "mitigation": [
+        "A dashboard of issuing patterns per doctor (sick notes per consultation, average length of consultations with a sick note, repetition per patient) with clinical review of outliers.",
+        "A minimum consultation time and a mandatory clinical justification to issue a sick note.",
+        "Take sick notes out of the productivity calculation: an hourly target can't reward short consultations that end with a document."
+      ]
+    },
+    {
+      "id": "ato-suporte",
+      "category": "operativo",
+      "severity": "crítico",
+      "where": { "nodes": ["suporte", "app"], "edges": [{ "from": "suporte", "to": "app" }] },
+      "title": "Account recovery over WhatsApp hands the health record to whoever asks",
+      "signal": "To restore access, the agent checks the <em>CPF and date of birth</em> and changes the email and phone. That's data that circulates in leaks and that relatives and colleagues know.",
+      "abuse": [
+        "An ex-partner with the victim's CPF and date of birth asks for a phone change, gets into the account and reads diagnoses and prescriptions.",
+        "A scammer buys lists of CPFs and dates of birth, takes over accounts and uses the medical history for extortion or \"fake doctor\" scams.",
+        "With the account taken over, the attacker books consultations and gets prescriptions in the victim's name."
+      ],
+      "impact": "Account takeover with access to health data, with no technical flaw involved. Each case is a security incident with sensitive data; at volume, it makes the news and draws sanctions.",
+      "mitigation": [
+        "Account recovery through a verified flow (a selfie with liveness compared to sign-up, or a code on the old channel), never through registration data.",
+        "Support without permission to change email and phone directly; the agent opens the request and the customer completes it in the secure flow.",
+        "A notice on the old email and phone whenever there's a change, with time to dispute it before it takes effect."
+      ]
+    },
+    {
+      "id": "analytics-saude",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["analytics", "app"], "edges": [{ "from": "app", "to": "analytics" }] },
+      "title": "Health data leaking to the marketing SDK",
+      "signal": "The same third-party SDK <em>measures the funnel and triggers campaigns</em>. Screen names, searches and events in a health app (\"consultation: anxiety\", \"prescription: antibiotic\") carry health data if nobody filters them.",
+      "abuse": [
+        "The \"prescription issued\" event carries the medicine's name as a parameter; the vendor ends up with the treatment history of 380,000 people.",
+        "Marketing builds a \"consulted for anxiety\" audience and runs campaigns — processing sensitive data for a purpose the patient never authorized.",
+        "The vendor matches the device identifier with other apps and enriches advertising profiles."
+      ],
+      "impact": "Sharing of sensitive data without a legal basis (LGPD, art. 11) and outside the purpose of collection. Similar cases in health have already led to sanctions and multi-million settlements in other countries.",
+      "mitigation": [
+        "A closed list of events allowed in the SDK, with no free text, no clinical screen names and no health parameters; a privacy review for every new event.",
+        "Separate tools: product measurement without personal identification; campaigns only with non-clinical data and specific consent.",
+        "Periodic audit of the app's traffic to the vendor (what actually leaves)."
+      ]
+    },
+    {
+      "id": "farmacia-resumo",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["farmacia", "docs"], "edges": [{ "from": "docs", "to": "farmacia" }] },
+      "title": "The pharmacy gets the diagnosis to deliver a medicine",
+      "signal": "The integration sends <em>the prescription along with the consultation summary</em> \"to speed up service\". To dispense the medicine, the pharmacy needs the prescription and the address — not the clinical account.",
+      "abuse": [
+        "Pharmacy staff read the consultation summaries of neighbours and acquaintances.",
+        "The partner chain uses the summary to build personalized offers (\"if you have migraines, also buy…\").",
+        "An incident at the partner pharmacy exposes diagnoses that never needed to leave Cuidar+."
+      ],
+      "impact": "A breach of the LGPD's necessity principle and a larger leak surface for sensitive data at a third party Cuidar+ doesn't control.",
+      "mitigation": [
+        "Send only the prescription, the delivery details and what the pharmacy legally needs; the consultation summary never leaves.",
+        "A pharmacy contract that forbids secondary use, with audit rights.",
+        "Show the patient, before sending, exactly what the pharmacy will receive."
+      ]
+    },
+    {
+      "id": "relatorio-empresa",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["empresa", "api"], "edges": [{ "from": "api", "to": "empresa" }] },
+      "title": "An individual usage report hands health data to the employer",
+      "signal": "Client companies receive <em>benefit usage per employee</em>. Knowing who used telemedicine, how often and when is already health data — and it's going to the people who decide promotions and dismissals.",
+      "abuse": [
+        "HR notices an employee had ten consultations in the quarter and puts them on the next layoff list.",
+        "By matching consultation dates with sick notes, the company infers who is being treated for mental health.",
+        "The report circulates by email among managers with no control at all."
+      ],
+      "impact": "Processing of sensitive data for a discriminatory purpose, prohibited by the LGPD (art. 6, IX, and art. 11). Risk of labour lawsuits, ANPD sanctions and loss of the trust that makes people use the benefit.",
+      "mitigation": [
+        "Company reports only aggregated, with a minimum group size, identifying no one.",
+        "A contract that forbids the company from asking for individual data; Cuidar+ refuses requests beyond that.",
+        "Make clear to employees what the employer receives — and what it doesn't."
+      ]
+    },
+    {
+      "id": "gravacoes-bucket",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["gravacoes", "api"], "edges": [{ "from": "api", "to": "gravacoes" }] },
+      "title": "A video archive of consultations with no owner, access rule or retention period",
+      "signal": "Consultations are recorded <em>at the legal department's request</em> and go to a bucket. The context doesn't say who accesses it, how access is logged or when the videos are deleted — 6,000 videos a day pile up.",
+      "abuse": [
+        "An engineer with broad storage access downloads a public figure's consultations.",
+        "A bucket policy changed by mistake makes the recordings listable on the internet.",
+        "Years of videos kept without need turn any incident into a massive leak."
+      ],
+      "impact": "The company's most sensitive collection, growing without control. A single misconfiguration or improper internal access exposes the faces, voices and health of thousands of patients.",
+      "mitigation": [
+        "Agree with legal on the purpose and retention period, with automatic deletion at the end of it.",
+        "Access to recordings only by justified, approved request, with an immutable log; nobody with standing access.",
+        "A bucket with public access blocked, encryption with a managed key and alerts on policy changes."
+      ]
+    },
+    {
+      "id": "receita-reuso",
+      "category": "lógica",
+      "severity": "médio",
+      "where": { "nodes": ["docs", "farmacia"], "edges": [{ "from": "docs", "to": "farmacia" }] },
+      "title": "One prescription, several dispensings",
+      "signal": "Sending the prescription to a partner pharmacy is <em>one tap in the app</em>, and nothing in the context indicates the prescription gets marked as used. The same PDF also remains available through the link.",
+      "abuse": [
+        "A patient sends the same controlled-drug prescription to three partner pharmacies and receives three deliveries.",
+        "The PDF downloaded through the link is taken to pharmacies outside the network, on top of the partners that already received it."
+      ],
+      "impact": "Dispensing beyond what was prescribed, with a risk to the patient's health and regulatory exposure for Cuidar+ and the partner pharmacies.",
+      "mitigation": [
+        "Prescription state on the server (issued, sent, dispensed), blocking duplicate sends to partner pharmacies.",
+        "Dispensing confirmation by the pharmacy, which marks the prescription as used.",
+        "Use the digital prescription standard with central dispensing validation where available."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Easy access also works for people who shouldn't have it", "body": "A link without login, recovery through registration data and one-tap sending are UX decisions that open the door to third parties. When the data is sensitive, the question is \"who else can do this?\"." },
+    { "title": "Financial incentives shape clinical behaviour", "body": "An hourly target and pay per consultation aren't just management: they're the rules of the game the fraudster, and sometimes the professional, will optimize." },
+    { "title": "Health data lives in places nobody calls a health record", "body": "An analytics event name, a usage report, a summary sent to the pharmacy: all of that is sensitive data. Map where clinical information leaks to, not just where it's stored." },
+    { "title": "Keeping everything creates a target", "body": "Every retention needs a purpose, an owner, an access rule and a deadline. An archive that only grows turns any small mistake into a huge incident." }
+  ]
+}

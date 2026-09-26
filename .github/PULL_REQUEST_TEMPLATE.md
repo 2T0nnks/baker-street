@@ -31,6 +31,7 @@ Preencha o que se aplica e apague o que não se aplica.
 - [ ] Takeaways generalizam — não só resumem o caso
 - [ ] Fluxo tem nós, arestas e fronteiras de confiança marcadas
 - [ ] Autor está preenchido em `"author"`
+- [ ] (Opcional) Tradução em `cases/en/<slug>.json` — veja "Traduções" no CONTRIBUTING
 
 ## Se é ajuste em caso existente
 

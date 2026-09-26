@@ -1,0 +1,239 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "link-de-pagamento",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Payment Link",
+  "subtitle": "A payment facilitator that sells through links for small merchants and pays out in two days",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Fintech", "Chargeback", "Fraud prevention", "AML"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Vitrine Pay is a payment facilitator (sub-acquirer) for people who sell on Instagram and WhatsApp: the merchant creates a payment link in the dashboard, sends it to the customer, and the customer pays by credit card in up to 12 instalments. There are 64,000 active merchants and R$ 180 million a month in sales. Vitrine settles transactions through a partner acquirer.",
+      "Sign-up is the commercial edge: the merchant joins with just a CPF or CNPJ (Brazil's personal and company tax IDs), an email and a PIX key to get paid, and can start selling the same day. Payouts are automatic two days later (D+2) to the registered PIX key, with no reserve — instalment sales are advanced by default. Cardholders can dispute purchases (chargeback) for up to 120 days.",
+      "The checkout builds the amount from the link's parameters, and the payment API takes the amount the checkout sends. The merchant can change the payout PIX key in the dashboard with a logged-in session; sessions last 30 days. The dashboard also exports, as CSV, all of the merchant's buyers with full name, CPF, phone and address.",
+      "The risk team has two analysts. The acquirer's alerts about merchants with many chargebacks arrive by email and are tracked in a spreadsheet. Refunds requested by buyers are made through the back office, which allows the amount to be returned by PIX to whatever key the support agent enters."
+    ],
+    "actors": [
+      ["Merchant", "creates links and gets paid in D+2"],
+      ["Buyer", "pays by card through the link"],
+      ["Risk analysts", "2 people, alerts by email"],
+      ["Support", "processes refunds in the back office"],
+      ["Partner acquirer", "third party: settles and passes on chargebacks"],
+      ["PIX PSP", "third party: pays out"]
+    ],
+    "data": [
+      ["CPF/CNPJ and PIX key", "merchant sign-up"],
+      ["Card data", "tokenized at checkout"],
+      ["Buyer data", "name, CPF, phone, address"],
+      ["Amount and instalments", "come from the link's parameters"],
+      ["Chargebacks", "acquirer alerts by email"]
+    ],
+    "scale": [
+      ["64 k", "active merchants"],
+      ["R$ 180 M / month", "processed volume"],
+      ["D+2", "payout, no reserve"],
+      ["120 days", "dispute window"],
+      ["2 analysts", "risk team"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "painel", "label": "Merchant dashboard", "kind": "internal", "icon": "web", "x": 60, "y": 40, "description": "The merchant's web dashboard: creates payment links, tracks sales and payouts, registers the payout PIX key and exports the buyer list." },
+      { "id": "checkout", "label": "Link checkout", "kind": "boundary", "icon": "web", "x": 240, "y": 40, "description": "Public page the buyer opens through the link. It shows the product, amount and instalments and collects the card data, which is tokenized.", "tech": "Checkout: the payment page. Tokenization swaps the card data for an identifier (token) right at entry, so the card number doesn't travel through the other systems." },
+      { "id": "api", "label": "Payment API", "kind": "internal", "icon": "api", "x": 440, "y": 40, "description": "Vitrine's payment API: receives the order from the checkout, sends it for authorization at the acquirer and records approved sales." },
+      { "id": "adquirente", "label": "Partner acquirer", "kind": "external", "icon": "payment", "x": 640, "y": 40, "description": "Partner acquirer that authorizes transactions with the card networks, settles sales and passes on chargebacks.", "tech": "Acquirer: a company that processes card payments for merchants, talking to the card networks and issuing banks. It settles sales and passes on chargebacks — disputes raised by the cardholder." },
+      { "id": "cadastro", "label": "Merchant registry", "kind": "internal", "icon": "database", "x": 60, "y": 160, "description": "Merchant base: CPF or CNPJ, email and the PIX key where sales money goes." },
+      { "id": "repasse", "label": "D+2 payout engine", "kind": "internal", "icon": "service", "x": 440, "y": 160, "description": "Service that advances approved sales and sends, two days later, each merchant's amount to the registered PIX key.", "tech": "Payout and advance: in an instalment sale, the acquirer pays one instalment per month. Advancing means paying today, at a discount, money that would only come in the future — in practice, a credit operation." },
+      { "id": "risco", "label": "Risk spreadsheet", "kind": "internal", "icon": "spreadsheet", "x": 640, "y": 160, "description": "Spreadsheet where the two risk analysts track the chargeback alerts the acquirer sends by email." },
+      { "id": "backoffice", "label": "Refund back office", "kind": "internal", "icon": "team", "x": 240, "y": 260, "description": "Support's tool for processing buyers' refund requests." },
+      { "id": "pix", "label": "PIX PSP", "kind": "external", "icon": "bank", "x": 440, "y": 260, "description": "PSP that executes Vitrine's PIX transfers: payouts to merchants and refunds.", "tech": "PSP (Payment Service Provider): an institution that gives access to PIX and executes transfers on behalf of companies that aren't direct participants in the system." }
+    ],
+    "edges": [
+      { "from": "painel", "to": "checkout", "label": "creates link" },
+      { "from": "checkout", "to": "api", "label": "amount + card" },
+      { "from": "api", "to": "adquirente", "label": "authorization", "boundary": true },
+      { "from": "painel", "to": "cadastro", "label": "changes PIX key" },
+      { "from": "cadastro", "to": "repasse", "label": "destination key" },
+      { "from": "api", "to": "repasse", "label": "approved sales" },
+      { "from": "adquirente", "to": "risco", "label": "alerts by email", "dashed": true, "boundary": true },
+      { "from": "repasse", "to": "pix", "label": "D+2 payout", "boundary": true },
+      { "from": "backoffice", "to": "pix", "label": "refund to any key", "boundary": true }
+    ]
+  },
+  "candidates": [
+    { "id": "autovenda", "truth": true, "category": "fraude", "title": "Merchant pays their own links with stolen cards", "sub": "Same-day sign-up, D+2 payout with no reserve and 120 days for the chargeback to show up." },
+    { "id": "valor-cliente", "truth": true, "category": "técnico", "title": "The amount charged comes from the checkout, not from the saved link", "sub": "The payment API accepts the amount the checkout sends, built from the link's parameters." },
+    { "id": "troca-chave", "truth": true, "category": "técnico", "title": "Changing the payout PIX key needs only a logged-in session", "sub": "A 30-day session and no extra confirmation to change where the money goes." },
+    { "id": "cadastro-laranja", "truth": true, "category": "regulatório", "title": "A merchant joins with just a CPF, email and PIX key", "sub": "The context doesn't mention checking that the PIX key belongs to the merchant, or any check beyond that." },
+    { "id": "reembolso-qualquer-chave", "truth": true, "category": "lógica", "title": "Refund by PIX to any key entered", "sub": "The back office returns money to whatever key the agent types, not to the original payment method." },
+    { "id": "sem-reserva", "truth": true, "category": "processo", "title": "Automatic advance with no chargeback reserve", "sub": "Instalment sales are advanced by default and paid out in D+2, holding nothing back." },
+    { "id": "alerta-planilha", "truth": true, "category": "operativo", "title": "Chargeback alerts by email in a two-analyst spreadsheet", "sub": "The suspicious merchant keeps getting paid while the alert waits in the inbox." },
+    { "id": "export-compradores", "truth": true, "category": "privacidade", "title": "Export with the CPF, phone and address of every buyer", "sub": "Any merchant — including a fraudster who just signed up — downloads the full base of people who bought from them." },
+    { "id": "doze-vezes", "truth": false, "category": "lógica", "title": "Allowing 12 instalments increases defaults", "sub": "The card issuer carries the instalment credit risk, not Vitrine. It's not this flow's problem." },
+    { "id": "pan-armazenado", "truth": false, "category": "técnico", "title": "Card number stored in plain text in the database", "sub": "The context says the card is tokenized at checkout. There's no sign of the number being stored." },
+    { "id": "instagram-canal", "truth": false, "category": "operativo", "title": "Selling on Instagram and WhatsApp is insecure", "sub": "It's the customer's sales channel, not a flaw in Vitrine. The risk is in who sells, not where they sell." },
+    { "id": "ddos-checkout", "truth": false, "category": "técnico", "title": "The checkout could go down under a denial-of-service attack", "sub": "Availability matters, but nothing in the context points to it — and it's not abuse of the product's logic." }
+  ],
+  "risks": [
+    {
+      "id": "autovenda",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["checkout", "repasse", "api"], "edges": [{ "from": "checkout", "to": "api" }, { "from": "repasse", "to": "pix" }] },
+      "title": "Self-dealing: stolen cards become PIX in two days",
+      "signal": "The merchant sells <em>on the day</em> they sign up, gets paid <em>in D+2</em>, with no reserve, and the cardholder has <em>120 days</em> to dispute. The whole chargeback window comes after the money has already left.",
+      "abuse": [
+        "A fraudster registers a front store, creates R$ 900 links and pays with cards bought on a forum; two days later, everything arrives by PIX.",
+        "A network of stores created with different CPFs splits the cards so none of them draws attention.",
+        "When the chargebacks arrive, weeks later, the destination PIX keys have been emptied and the stores abandoned."
+      ],
+      "impact": "The acquirer debits the chargebacks from Vitrine, which has no one to collect from. A direct cash loss, plus the risk of the acquirer cutting the partnership or demanding guarantees once the chargeback rate passes the card networks' limits.",
+      "mitigation": [
+        "Longer payout terms and a rolling reserve for new merchants, shrinking as they build history.",
+        "Volume limits in the first days, raised by behaviour: average ticket, card dispersion and approval rate.",
+        "Self-dealing rules: the same device, IP or data shared by merchant and buyer, many different cards in a short time."
+      ]
+    },
+    {
+      "id": "valor-cliente",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["api", "checkout"], "edges": [{ "from": "checkout", "to": "api" }] },
+      "title": "The price is set by whoever pays",
+      "signal": "The checkout <em>builds the amount from the link's parameters</em> and the API accepts the amount the checkout sends. Nothing ensures the amount charged is the one the merchant set.",
+      "abuse": [
+        "A buyer edits the amount parameter in the URL and pays R$ 1.00 for an R$ 400 product; the merchant sees \"paid\" and ships the goods.",
+        "An automated script buys from many merchants with altered amounts and resells the products."
+      ],
+      "impact": "Direct losses for merchants, who turn to Vitrine. Loss of trust in the company's core product.",
+      "mitigation": [
+        "The link stores amount and instalments on the server; the checkout sends only the link identifier and the API looks up the amount.",
+        "Reject a payment whose amount doesn't match the link's, with an alert.",
+        "Show the merchant, in the order confirmation, the amount actually charged."
+      ]
+    },
+    {
+      "id": "troca-chave",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["cadastro", "painel"], "edges": [{ "from": "painel", "to": "cadastro" }, { "from": "cadastro", "to": "repasse" }] },
+      "title": "Whoever holds the session decides where the money goes",
+      "signal": "The payout PIX key changes <em>with the logged-in session</em>, and the session lasts <em>30 days</em>. No second factor, notice or waiting period is described for changing where the money goes.",
+      "abuse": [
+        "Cookie-stealing malware grabs a large merchant's session, swaps the key and diverts the next day's payout.",
+        "A fired employee who still has the dashboard open on a store computer changes the key before leaving.",
+        "A \"your account will be blocked\" phishing lures the merchant into logging in on a fake page; the attacker reuses the session."
+      ],
+      "impact": "Payouts diverted to third parties; the merchant claims from Vitrine, which pays again. Each case is a direct loss and friction with customers, precisely among the highest-volume merchants.",
+      "mitigation": [
+        "Changing the payout key requires a second factor and confirmation on the email and phone already on file.",
+        "A 24 to 72-hour waiting period before the new key takes effect, with a notice on the old channels and an option to cancel.",
+        "Payout keys only in the merchant's own CPF/CNPJ (verify ownership with the PSP)."
+      ]
+    },
+    {
+      "id": "cadastro-laranja",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["cadastro"], "edges": [{ "from": "painel", "to": "cadastro" }] },
+      "title": "Onboarding without knowing the merchant",
+      "signal": "Sign-up asks for <em>only a CPF or CNPJ, an email and a PIX key</em> — it's the commercial edge. The context says nothing about verifying identity, business activity or whether the PIX key belongs to the merchant.",
+      "abuse": [
+        "Leaked CPFs become merchants; the sales money lands in third parties' PIX keys.",
+        "Front stores take payments for scams (products never delivered) and vanish within a week.",
+        "Criminal groups use payment links to make illicit money look like sales."
+      ],
+      "impact": "Payment facilitators must know their customers and monitor suspicious transactions (Central Bank Circular 3,978/2020), on top of the card networks' and the acquirer's onboarding rules. Failing at this brings regulatory risk, card network fines and loss of accreditation.",
+      "mitigation": [
+        "Proportional KYC: identity verification with liveness and confirmation that the PIX key belongs to the holder.",
+        "CNPJ checks (status, activity) and sanctions lists before releasing volume.",
+        "Gradual release: sell on day one, but with a cap until sign-up is complete."
+      ]
+    },
+    {
+      "id": "reembolso-qualquer-chave",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["backoffice", "pix"], "edges": [{ "from": "backoffice", "to": "pix" }] },
+      "title": "A refund becomes a cash-out: returns to any key",
+      "signal": "The back office returns the amount <em>by PIX to whatever key the agent enters</em>. A card payment can come back as cash to someone else.",
+      "abuse": [
+        "A fraudster pays with a stolen card, asks for a refund and gives their own PIX key: the stolen card becomes clean cash, and the chargeback still comes later.",
+        "An agent colludes with accomplices and processes refunds of real purchases to their keys.",
+        "Social engineering: \"I switched banks, send it to this other key\"."
+      ],
+      "impact": "A double loss — the refund goes out and the original card's chargeback arrives — and a laundering channel that turns stolen credit into PIX.",
+      "mitigation": [
+        "Always refund through the original method (card reversal); PIX only as an exception, to the payer's own key.",
+        "A second person's approval for any refund outside the original method.",
+        "A report of refunds per agent and per destination key, with alerts for repetition."
+      ]
+    },
+    {
+      "id": "sem-reserva",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["repasse"], "edges": [{ "from": "api", "to": "repasse" }, { "from": "repasse", "to": "pix" }] },
+      "title": "A credit policy that advances everything to everyone",
+      "signal": "Instalment sales are <em>advanced by default</em> and paid out in D+2, <em>with no reserve</em>. Vitrine pays now money the acquirer will pay over up to 12 months — and that can come back as a chargeback.",
+      "abuse": [
+        "A legitimate merchant goes bust or closes with future instalment sales outstanding; chargebacks and cancellations arrive and there's no balance to offset them.",
+        "Fraudsters pick Vitrine precisely because it pays fastest and holds nothing back."
+      ],
+      "impact": "A concentrated, unsecured credit exposure. Every instalment sale is a loan to the merchant with no assessment at all.",
+      "mitigation": [
+        "Advances as a product with merchant risk assessment, not a default for everyone.",
+        "A percentage reserve on instalment volume, calibrated by chargeback history.",
+        "A contractual right to hold future payouts to cover losses."
+      ]
+    },
+    {
+      "id": "alerta-planilha",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["risco", "adquirente"], "edges": [{ "from": "adquirente", "to": "risco" }] },
+      "title": "The alert arrives, but nobody can act in time",
+      "signal": "Chargeback alerts <em>arrive by email</em> and are tracked <em>in a spreadsheet</em> by two analysts, for 64,000 merchants. Nothing ties the alert to an automatic action on payouts.",
+      "abuse": [
+        "A merchant with soaring chargebacks keeps getting payouts for days while the email waits in the queue.",
+        "A fraudster who knows the team's rhythm concentrates sales on the weekend."
+      ],
+      "impact": "Losses that could be contained keep growing. The card networks' chargeback threshold is crossed before anyone sees it.",
+      "mitigation": [
+        "Integrate the acquirer's alerts with an automatic payout hold above a threshold.",
+        "A case queue prioritized by amount at risk, instead of a spreadsheet.",
+        "Daily chargeback indicators per merchant and per sign-up cohort."
+      ]
+    },
+    {
+      "id": "export-compradores",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["painel"] },
+      "title": "The buyer base handed out as CSV to any merchant",
+      "signal": "The dashboard exports <em>all of the merchant's buyers</em> with full name, CPF, phone and address. And the merchant can be anyone, registered the same day.",
+      "abuse": [
+        "A fraudster creates a store, sells a little and downloads the full buyer list for scams (\"your order was held, pay the fee\").",
+        "A legitimate merchant sells its customer base to third parties.",
+        "A stolen dashboard session is used just to export data."
+      ],
+      "impact": "Exposure of personal data beyond what's needed to deliver the purchase (the LGPD's necessity principle), with Vitrine as the controller that made the export available.",
+      "mitigation": [
+        "Show and export only what delivery needs; mask the CPF.",
+        "Bulk export only for verified merchants, with a second factor and logging.",
+        "Limits and alerts for unusual export volumes."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Whoever sets where the money goes holds the most valuable credential", "body": "Changing a payout key, a payout account or a refund destination has to be harder than selling. If it isn't, the attacker doesn't need to fake any sale." },
+    { "title": "Short settlement and a long dispute window add up to credit", "body": "Paying in two days for something that can come back in 120 is lending money. Treat it as credit: assessment, limits and collateral." },
+    { "title": "Never trust an amount that came from the client", "body": "Price, instalments and discounts are server state. The client sends an identifier; the server knows how much to charge." },
+    { "title": "A refund is a payment method — and a cash-out", "body": "Every refund through a method other than the original is a door for turning stolen credit into cash." },
+    { "title": "Fast onboarding needs fast limits", "body": "If onboarding is light to drive growth, control moves to the initial limits and to monitoring. Lightness without limits is an invitation." }
+  ]
+}

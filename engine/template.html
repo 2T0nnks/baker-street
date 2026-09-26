@@ -7,6 +7,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src __CSP_SCRIPT_HASHES__; style-src 'unsafe-inline'; font-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>Adler</title>
 <link rel="canonical" href="__SITE_URL__">
+<link rel="alternate" hreflang="pt-BR" href="__SITE_ROOT__">
+<link rel="alternate" hreflang="en" href="__SITE_ROOT__en/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Adler">
 <meta property="og:locale" content="pt_BR">
@@ -172,6 +174,8 @@ button.ghost:hover { background: var(--tag); color: var(--ink); }
 button[disabled] { opacity: 0.4; cursor: not-allowed; }
 
 /* Nav */
+.lang-link { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.08em; color: var(--ink-soft); text-decoration: none; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; margin-right: 8px; }
+.lang-link:hover { border-color: var(--trail); color: var(--trail); }
 .nav {
   position: sticky;
   top: env(safe-area-inset-top, 0px);
@@ -1223,6 +1227,7 @@ footer .foot-brand {
         <button class="nav-tab" data-nav="contribute">Contribuir</button>
         <button class="nav-tab" data-nav="about">Sobre</button>
       </nav>
+      <a class="lang-link" id="langLink" href="__ALT_HREF__" hreflang="__ALT_LANG__" lang="__ALT_LANG__" title="__ALT_TITLE__">__ALT_LABEL__</a>
       <button class="theme-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema claro/escuro">
         <span id="themeLabel">Claro</span>
       </button>
@@ -1247,7 +1252,7 @@ footer .foot-brand {
                 Adler é um utilitário open source de treinamento, pensado para ensinar os casos de abuso de um fluxo sob diferentes perspectivas &mdash; para os times de ideação e desenvolvimento de produtos, processos e fluxos. Cada caso é um fluxo de negócio real: você analisa o contexto, marca o que considera arriscado e depois compara com os riscos reais &mdash; técnicos, de lógica de negócio, operacionais e regulatórios &mdash;, cada um com o caso de abuso, o impacto e a mitigação.
               </p>
               <div class="hero-cta">
-                <button class="primary" data-goto-case="frete-adiantado">Começar pelo primeiro caso</button>
+                <button class="primary" id="startTrail" data-goto-case="">Começar pelo primeiro caso</button>
                 <button data-nav="cases">Ver casos disponíveis</button>
               </div>
             </div>
@@ -1672,6 +1677,20 @@ footer .foot-brand {
   const LEVELS = ["Iniciante", "Intermediário", "Avançado"];
   const levelOf = c => { const i = LEVELS.indexOf(c.difficulty); return i < 0 ? 1 : i; };
   const SECTOR_LABEL = { fintech: "Fintech", healthtech: "Saúde", edtech: "Educação", govtech: "Serviço público" };
+  // How the case data's fixed values (always in Portuguese, as the schema
+  // defines them) are shown on screen. Translations replace these labels.
+  const CATEGORY_LABEL = {
+    "técnico": "Técnico",
+    "lógica": "Lógica",
+    "operativo": "Operativo",
+    "processo": "Processo",
+    "regulatório": "Regulatório",
+    "privacidade": "Privacidade",
+    "fraude": "Fraude"
+  };
+  const SEVERITY_LABEL = { "crítico": "crítico", "alto": "alto", "médio": "médio", "baixo": "baixo" };
+  const LEVEL_LABEL = { "Iniciante": "Iniciante", "Intermediário": "Intermediário", "Avançado": "Avançado" };
+  const catName = cat => CATEGORY_LABEL[cat] || (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : "—");
   const sectorOf = c => SECTOR_LABEL[c.domain] || (c.domain ? c.domain[0].toUpperCase() + c.domain.slice(1) : "Outros");
 
   function loadCases() {
@@ -1889,7 +1908,7 @@ footer .foot-brand {
       </div>
       <p>${c.subtitle}</p>
       <div class="cc-foot">
-        <span class="cc-level">${c.difficulty ? `<span class="meter" data-level="${level}" aria-hidden="true"><i></i><i></i><i></i></span>${c.difficulty}` : ""}</span>
+        <span class="cc-level">${c.difficulty ? `<span class="meter" data-level="${level}" aria-hidden="true"><i></i><i></i><i></i></span>${LEVEL_LABEL[c.difficulty] || c.difficulty}` : ""}</span>
         <span>${c.status === "soon" ? "" : (c.duration || "")}</span>
       </div>
     `;
@@ -1926,6 +1945,9 @@ footer .foot-brand {
       grid.innerHTML = "";
       shown.forEach(c => grid.appendChild(renderCaseCard(c, c.status === "soon" ? 0 : open.indexOf(c) + 1)));
     });
+
+    const start = document.getElementById("startTrail");
+    if (start) { start.dataset.gotoCase = open[0] ? open[0].slug : ""; start.hidden = !open[0]; }
 
     const done = open.filter(c => isRevealed(c.slug)).length;
     document.querySelectorAll(".trail-progress").forEach(p => {
@@ -2693,7 +2715,7 @@ footer .foot-brand {
         const b = document.createElement("button");
         b.className = "lens-tab" + ((state.cat || "all") === cat ? " on" : "");
         b.dataset.cat = cat;
-        b.textContent = cat === "all" ? "Tudo" : (cat.charAt(0).toUpperCase() + cat.slice(1));
+        b.textContent = cat === "all" ? "Tudo" : catName(cat);
         b.addEventListener("click", () => {
           state.cat = cat;
           renderCheckList(c);
@@ -2791,7 +2813,7 @@ footer .foot-brand {
         card.addEventListener("mouseenter", () => highlightRisk(map, r));
         card.addEventListener("mouseleave", () => clearHighlight(map));
       }
-      const catLabel = r.category ? (r.category.charAt(0).toUpperCase() + r.category.slice(1)) : "—";
+      const catLabel = catName(r.category);
       const sevClass = r.severity === "crítico" ? "rust" : (r.severity === "alto" ? "ochre" : "");
       card.innerHTML = `
         <div class="rc-head">
@@ -2799,7 +2821,7 @@ footer .foot-brand {
           <span class="rc-status ${hit ? "hit" : "missed"}">${hit ? "Você pegou" : "Passou batido"}</span>
         </div>
         <div class="rc-tags">
-          <span class="chip ${sevClass}">${r.severity}</span>
+          <span class="chip ${sevClass}">${SEVERITY_LABEL[r.severity] || r.severity}</span>
           <span class="chip line">${catLabel}</span>
         </div>
         <div class="rc-body">
@@ -3011,6 +3033,12 @@ footer .foot-brand {
     document.getElementById("themeBtn").addEventListener("click", toggleTheme);
     document.getElementById("copyTemplate").addEventListener("click", copyTemplate);
     document.getElementById("shareBtn").addEventListener("click", copyCaseLink);
+    document.getElementById("langLink").addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const url = new URL(ev.currentTarget.getAttribute("href"), location.href);
+      if (state.view === "case" && state.caseSlug) url.searchParams.set("caso", state.caseSlug);
+      location.href = url.href;
+    });
     document.getElementById("revealBtn").addEventListener("click", revealReading);
     const replay = document.getElementById("replayFlow");
     if (REDUCED_MOTION) replay.hidden = true;

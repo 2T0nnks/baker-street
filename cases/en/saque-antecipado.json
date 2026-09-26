@@ -1,0 +1,240 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "saque-antecipado",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Early Withdrawal",
+  "subtitle": "Advances on Brazil's FGTS anniversary withdrawal, sold through banking agents",
+  "duration": "~50 min",
+  "difficulty": "Avançado",
+  "tags": ["Fintech", "Credit", "Banking agents", "LGPD"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Adianta is a credit fintech that advances up to ten years of the FGTS anniversary withdrawal (FGTS is Brazil's mandatory severance fund for workers): the customer authorizes Adianta in the FGTS app, Adianta checks the balance, calculates the advance and pays by PIX; the instalments are taken straight from the FGTS, one per year. About R$ 90 million is disbursed per month, in contracts averaging R$ 1,800.",
+      "Over 70% of sales come from 1,200 banking agent stores across the country. The agent earns a 12% commission on the amount released, paid when the contract is registered against the FGTS. Contracting is digital: the agent keys the proposal into the portal, the customer gets a link by SMS, checks the figures, takes a selfie and accepts. The acceptance screen comes with credit life insurance already ticked; the total effective cost (CET) appears in the PDF contract, sent after signing. The customer can withdraw within 7 days.",
+      "The agent portal has one user per store, shared by the sales staff. The simulation API takes a CPF and returns the FGTS balance and the amount available for any CPF that has already authorized Adianta in the FGTS app. Liveness uses a biometrics provider in passive mode, which analyses a single selfie.",
+      "Operationally, agents build customer lists with CPF, phone and estimated balance, and swap them on WhatsApp for campaigns. The return file confirming the registration and blocking of instalments comes from the FGTS operating agent as a file, which the operations team downloads and imports by hand every morning."
+    ],
+    "actors": [
+      ["Customer", "worker with an FGTS balance"],
+      ["Banking agent", "1,200 stores, 12% commission"],
+      ["Store salesperson", "uses the store's shared login"],
+      ["Biometrics provider", "third party: passive liveness"],
+      ["FGTS operating agent", "third party: registers and blocks instalments"],
+      ["Operations", "imports return files"]
+    ],
+    "data": [
+      ["CPF and FGTS balance", "lookup and simulation"],
+      ["Selfie", "liveness at acceptance"],
+      ["PIX key", "destination of the money released"],
+      ["Customer lists", "built by the agents"],
+      ["Contract and CET", "PDF sent after acceptance"]
+    ],
+    "scale": [
+      ["R$ 90 M / month", "disbursed"],
+      ["1,200 stores", "active agents"],
+      ["> 70%", "of sales through agents"],
+      ["12%", "commission on the amount released"],
+      ["7 days", "withdrawal period"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "portal", "label": "Agent portal", "kind": "boundary", "icon": "web", "x": 60, "y": 40, "description": "Web portal the agent stores use to simulate, key in proposals and track commissions.", "tech": "Banking agent (correspondente bancário): a company hired by a financial institution to offer its products to the public, earning a commission. The portal is the tool through which these stores act on the institution's behalf." },
+      { "id": "api", "label": "Proposal API", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "Adianta's API that simulates the advance from a CPF, creates the proposal and sends the customer the acceptance link." },
+      { "id": "fgts", "label": "FGTS balance lookup", "kind": "external", "icon": "bank", "x": 440, "y": 40, "description": "Lookup of the worker's FGTS balance, available to institutions the customer has authorized in the FGTS app.", "tech": "FGTS anniversary withdrawal: an option in which workers withdraw, once a year, part of their FGTS balance. In an advance, those yearly instalments are blocked as collateral for a loan and paid straight to the institution." },
+      { "id": "pix", "label": "PIX payment", "kind": "external", "icon": "payment", "x": 640, "y": 40, "description": "Payment of the released amount to the customer by PIX, after the contract is approved." },
+      { "id": "whatsapp", "label": "WhatsApp lists", "kind": "external", "icon": "spreadsheet", "x": 60, "y": 160, "description": "Customer lists the agents build and swap on WhatsApp to run sales campaigns." },
+      { "id": "aceite", "label": "Customer acceptance link", "kind": "boundary", "icon": "app", "x": 240, "y": 160, "description": "Page opened from the SMS link, where the customer checks the figures, takes the selfie and accepts the contract.", "tech": "Electronic acceptance: a way of contracting digitally that records evidence — device, time, IP, selfie — that the holder is the one who agreed to the contract." },
+      { "id": "biometria", "label": "Biometrics provider", "kind": "external", "icon": "partner", "x": 440, "y": 160, "description": "Outsourced liveness provider that analyses the selfie taken at acceptance.", "tech": "Liveness check: verifying that a real person is in front of the camera, not a photo, video or mask. In passive mode, the analysis runs on a single image; in active mode, the person is asked for a movement or gesture." },
+      { "id": "contratos", "label": "Contracts and commissions", "kind": "internal", "icon": "database", "x": 640, "y": 160, "description": "Contracts and commissions base: records approved proposals, registrations and what each agent is owed." },
+      { "id": "retorno", "label": "Registration file", "kind": "boundary", "icon": "document", "x": 640, "y": 260, "description": "File with the result of the registration and blocking of instalments, produced by the FGTS operating agent.", "tech": "Registration (averbação): the official record that anniversary-withdrawal instalments are reserved to repay a contract. The return file says which registrations were accepted and which instalments were blocked." },
+      { "id": "operacoes", "label": "Operations", "kind": "internal", "icon": "team", "x": 440, "y": 260, "description": "Team that downloads the return file every morning and imports the registrations into the contracts base." }
+    ],
+    "edges": [
+      { "from": "portal", "to": "api", "label": "keys in proposal" },
+      { "from": "api", "to": "fgts", "label": "balance by CPF", "boundary": true },
+      { "from": "portal", "to": "whatsapp", "label": "customer lists", "boundary": true },
+      { "from": "api", "to": "aceite", "label": "link by SMS" },
+      { "from": "aceite", "to": "biometria", "label": "selfie", "boundary": true },
+      { "from": "biometria", "to": "contratos", "label": "approved" },
+      { "from": "contratos", "to": "pix", "label": "releases the amount", "boundary": true },
+      { "from": "retorno", "to": "operacoes", "label": "downloads the file", "dashed": true },
+      { "from": "operacoes", "to": "contratos", "label": "imports registrations" }
+    ]
+  },
+  "candidates": [
+    { "id": "proposta-sem-cliente", "truth": true, "category": "fraude", "title": "An agent contracts on behalf of a customer who didn't ask", "sub": "12% commission paid at registration, a passive selfie and the agent holding the phone of someone who \"just came to simulate\"." },
+    { "id": "biometria-passiva", "truth": true, "category": "técnico", "title": "Liveness with a single selfie", "sub": "Passive mode analyses one photo; the context mentions no challenge, video or comparison with an official ID." },
+    { "id": "enumeracao-saldo", "truth": true, "category": "técnico", "title": "The simulation returns the FGTS balance of any authorized CPF", "sub": "The API takes a CPF and answers with the balance and available amount — to whoever is asking." },
+    { "id": "comissao-arrependimento", "truth": true, "category": "lógica", "title": "Commission paid before the withdrawal period ends", "sub": "The commission goes out at registration, but the customer has 7 days to withdraw; the context mentions no commission clawback." },
+    { "id": "seguro-cet", "truth": true, "category": "regulatório", "title": "Insurance pre-ticked and total cost only after signing", "sub": "The acceptance screen comes with credit life insurance ticked; the total cost shows in the PDF, sent after acceptance." },
+    { "id": "login-compartilhado", "truth": true, "category": "processo", "title": "One user per store, shared by the salespeople", "sub": "There's no way to know which salesperson keyed which proposal — or to cut off just the one who left." },
+    { "id": "listas-whatsapp", "truth": true, "category": "privacidade", "title": "Customer lists with CPF and balance circulate on WhatsApp", "sub": "Agents build and swap lists of customer data for campaigns." },
+    { "id": "arquivo-manual", "truth": true, "category": "operativo", "title": "Registration return downloaded and imported by hand every morning", "sub": "The file that confirms the loan's collateral passes through operations' hands, outside any integration." },
+    { "id": "juros-altos", "truth": false, "category": "regulatório", "title": "The advance's interest rate is too high", "sub": "The rate follows the cap set for this product. The regulatory problem is in how the cost is shown, not in its size." },
+    { "id": "dez-anos", "truth": false, "category": "lógica", "title": "Advancing ten years of withdrawals is risky for Adianta", "sub": "The instalments are blocked in the FGTS and paid by the operating agent: that's exactly the collateral that makes the product safe for the lender." },
+    { "id": "sms-interceptado", "truth": false, "category": "técnico", "title": "The SMS acceptance link could be intercepted through a SIM swap", "sub": "Possible, but the attacker would still have to pass the customer's selfie. The easy path is with whoever is already next to the customer." },
+    { "id": "app-fgts", "truth": false, "category": "técnico", "title": "The FGTS app could be hacked", "sub": "It's outside Adianta's control and scope. What Adianta controls is what it does with the authorization it receives." }
+  ],
+  "risks": [
+    {
+      "id": "proposta-sem-cliente",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["portal", "aceite"], "edges": [{ "from": "portal", "to": "api" }, { "from": "api", "to": "aceite" }] },
+      "title": "Contracted by whoever earns the commission, not by whoever takes the loan",
+      "signal": "The agent <em>keys in the proposal</em>, earns <em>12% at registration</em> and is often with the customer in the store. Acceptance depends on a passive selfie and a link that arrives on a phone — which the salesperson can hold \"to help\".",
+      "abuse": [
+        "An elderly customer goes to the store \"just to see how much there is\"; the salesperson takes the phone, opens the link, takes the selfie \"for the lookup\" and signs the contract.",
+        "The released PIX goes to a key the salesperson provides (\"we'll hand you yours in cash\"), and only part of it reaches the customer.",
+        "With lists of customers who have already authorized Adianta, the store contracts in series for people who never showed up."
+      ],
+      "impact": "Disputed contracts, refunds and mass complaints to the Central Bank, consumer.gov.br and consumer protection agencies. Credit for a vulnerable public sold this way is exactly what the rules on banking agents try to curb — and the institution answers for its agents' acts.",
+      "mitigation": [
+        "Acceptance only on the customer's own device, with active liveness and confirmation through a channel the agent doesn't control (a call or Adianta's own app).",
+        "The destination PIX key must be in the customer's own CPF.",
+        "Monitor agents by withdrawal rate, complaints and concentration on elderly customers, blocking stores outside the norm."
+      ]
+    },
+    {
+      "id": "biometria-passiva",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["biometria", "aceite"], "edges": [{ "from": "aceite", "to": "biometria" }] },
+      "title": "A liveness check that accepts a photo of a photo",
+      "signal": "The provider runs in <em>passive mode</em>, analysing <em>a single selfie</em>. The context mentions no comparison with the ID photo nor screen or mask detection.",
+      "abuse": [
+        "A fraudster photographs another phone's screen showing the customer's picture taken from social media and passes the check.",
+        "Selfies stored from earlier contracts are reused to approve new ones.",
+        "A real-time deepfake fools the single-image analysis."
+      ],
+      "impact": "Contracts signed by someone other than the holder, with the money going to third parties. Adianta loses the amount and still has to unblock the real owner's FGTS.",
+      "mitigation": [
+        "Active liveness (movement or a random challenge) and comparison with the photo on an official ID or a government database.",
+        "Reuse detection: the same, or nearly identical, selfies across different proposals.",
+        "Manual review when the biometric score is close to the threshold."
+      ]
+    },
+    {
+      "id": "enumeracao-saldo",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["api", "fgts"], "edges": [{ "from": "api", "to": "fgts" }] },
+      "title": "The simulation API becomes an FGTS balance lookup by CPF",
+      "signal": "The simulation <em>takes a CPF and returns the balance</em> of anyone who has authorized Adianta. The caller is the portal, with a shared login across 1,200 stores.",
+      "abuse": [
+        "A salesperson runs a list of leaked CPFs through the simulation and finds out who has a high balance — perfect targets for a pitch or a scam.",
+        "A de-accredited store that still has its login keeps using the lookup to sell for another institution.",
+        "The results feed the lists that circulate on WhatsApp."
+      ],
+      "impact": "Exposure of millions of workers' financial data, and an abusive prospecting tool running on Adianta's infrastructure.",
+      "mitigation": [
+        "Simulation only inside a proposal started by the customer, with consent recorded for that specific lookup.",
+        "Lookup limits per (individual) user and per store, with alerts for abnormal volumes and for CPFs with no proposal.",
+        "A simulation response with the available amount, without the detailed FGTS balance."
+      ]
+    },
+    {
+      "id": "comissao-arrependimento",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["contratos"], "edges": [{ "from": "biometria", "to": "contratos" }, { "from": "operacoes", "to": "contratos" }] },
+      "title": "A commission that doesn't come back when the contract does",
+      "signal": "The commission is paid <em>at registration</em>; the customer can withdraw <em>within 7 days</em>. The context describes no commission clawback on withdrawal or cancellation.",
+      "abuse": [
+        "An agent closes contracts they know the customer will cancel and keeps 12% of each.",
+        "A store colludes with customers: it contracts, collects the commission, the customer withdraws and they split it."
+      ],
+      "impact": "Commission cost on contracts that produce no revenue, and a direct incentive for pushy selling that leads to withdrawals and complaints.",
+      "mitigation": [
+        "Pay the commission after the withdrawal period, or hold it and claw it back automatically when there's a withdrawal.",
+        "Variable commission based on the quality of the store's book (withdrawals, complaints).",
+        "A withdrawal report per store with commercial review."
+      ]
+    },
+    {
+      "id": "seguro-cet",
+      "category": "regulatório",
+      "severity": "alto",
+      "where": { "nodes": ["aceite"], "edges": [{ "from": "api", "to": "aceite" }] },
+      "title": "Tied selling and a cost hidden until after the yes",
+      "signal": "The acceptance screen comes with <em>credit life insurance already ticked</em>, and the <em>total effective cost only appears in the PDF sent after</em> signing. The customer decides without seeing the total cost.",
+      "abuse": [
+        "Agents leave the insurance ticked because it increases the financed amount and, with it, the commission.",
+        "A customer only finds the real cost in the contract and complains; withdrawals grow, but those who don't notice keep the insurance."
+      ],
+      "impact": "Tied selling is prohibited by Brazil's Consumer Protection Code, and Central Bank rules require the total effective cost to be disclosed before contracting. Risk of sanctions, mass refunds and class actions.",
+      "mitigation": [
+        "Insurance unticked by default, offered as a separate option with a clear price.",
+        "Total effective cost, total amount paid and instalments on the acceptance screen, before the selfie.",
+        "Audit the insurance take-up rate per store."
+      ]
+    },
+    {
+      "id": "login-compartilhado",
+      "category": "processo",
+      "severity": "médio",
+      "where": { "nodes": ["portal"], "edges": [{ "from": "portal", "to": "api" }] },
+      "title": "Nobody answers for what the store login did",
+      "signal": "The portal has <em>one user per store, shared</em> by the salespeople. There's no way to attribute a proposal to a person or to revoke access for someone who left.",
+      "abuse": [
+        "A fired salesperson keeps using the store login from home, keying in proposals and looking up balances.",
+        "A fraudulent proposal is investigated: the store says \"it was someone there\", and nobody can prove who."
+      ],
+      "impact": "No way to investigate or hold anyone accountable, and access that outlives employment. Any per-user control (limits, alerts) becomes meaningless.",
+      "mitigation": [
+        "An individual user per salesperson, registered with a CPF, with a second factor.",
+        "The store manager administers their own team, with immediate deactivation on termination.",
+        "A per-user audit trail for every action in the portal."
+      ]
+    },
+    {
+      "id": "listas-whatsapp",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["whatsapp", "portal"], "edges": [{ "from": "portal", "to": "whatsapp" }] },
+      "title": "Adianta's customer data in WhatsApp lists",
+      "signal": "Agents <em>build lists with CPF, phone and estimated balance</em> and swap them on WhatsApp. Adianta is the controller of this data, and it circulates in a channel with no control at all.",
+      "abuse": [
+        "Lists leak to scammers, who call pretending to be Adianta (\"there's money released for you, confirm your details\").",
+        "Agents sell the lists to competitors or other operations.",
+        "Customers get dozens of pitches from stores they never contacted."
+      ],
+      "impact": "Processing of personal and financial data with no legal basis and no security, with Adianta as the controller (LGPD, Brazil's data protection law). Scams using Adianta's name erode the brand.",
+      "mitigation": [
+        "A portal with no customer data export; campaigns run by Adianta itself, with consent.",
+        "An agent contract that forbids using data outside the portal, with audits and de-accreditation.",
+        "Monitor leaks (lists for sale) and trace their origin."
+      ]
+    },
+    {
+      "id": "arquivo-manual",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["operacoes", "retorno"], "edges": [{ "from": "retorno", "to": "operacoes" }, { "from": "operacoes", "to": "contratos" }] },
+      "title": "The loan's collateral depends on someone importing a file",
+      "signal": "The registration and instalment-blocking result arrives <em>as a file</em>, which operations <em>downloads and imports by hand every morning</em>. It's what says whether the collateral exists.",
+      "abuse": [
+        "A day without an import (holidays, a day off) and contracts get paid without confirmation that the instalments were blocked.",
+        "Someone in operations edits the file before importing it and marks as registered a contract that wasn't.",
+        "The same file imported twice pays commissions twice."
+      ],
+      "impact": "Credit released without collateral and commissions paid on registrations that don't exist. The error only shows up months later, when the yearly instalment isn't paid.",
+      "mitigation": [
+        "Automatic integration with the operating agent, with file integrity checks and a record of every import.",
+        "Release the PIX only after the instalment block is confirmed.",
+        "Idempotent imports (the same file is never applied twice) and daily reconciliation between registrations and disbursements."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Whoever earns the commission can't control the acceptance", "body": "When the intermediary is paid per sale and operates the customer's device, consent becomes a formality. Acceptance has to happen in a channel they don't control." },
+    { "title": "Every commission needs a way back", "body": "If the contract can be undone, so can the commission. Paying before the withdrawal period ends is paying to sell what will be cancelled." },
+    { "title": "A shared login erases accountability", "body": "Without individual identity there's no trail, no per-person limit and no way to cut off whoever left. It's the first control to require from any partner." },
+    { "title": "A simulation API is also a lookup API", "body": "Every endpoint that answers something about a person from an identifier will be used to enumerate. Ask \"who can ask about whom?\"." },
+    { "title": "Transparency comes before the yes", "body": "Total cost, insurance and terms shown after signing don't inform: they only record. Regulation and trust depend on what the customer sees before deciding." }
+  ]
+}
