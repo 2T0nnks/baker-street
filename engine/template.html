@@ -93,6 +93,10 @@
 }
 
 * { box-sizing: border-box; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 14px; background: var(--ink); color: var(--paper); border-radius: 4px; text-decoration: none; }
+.skip-link:focus { top: 12px; }
+main:focus { outline: none; }
 html, body { margin: 0; }
 body {
   background: var(--paper);
@@ -321,7 +325,7 @@ section.block:first-of-type { border-top: none; }
   display: block;
   margin-bottom: 8px;
 }
-.step h4 {
+.step h3 {
   margin: 0 0 6px;
   font-family: "Fraunces", serif;
   font-variation-settings: "opsz" 32, "SOFT" 50;
@@ -371,8 +375,8 @@ section.block:first-of-type { border-top: none; }
   color: var(--trail);
   border: 1px solid transparent;
 }
-.chip.rust { background: color-mix(in oklab, var(--rust) 14%, transparent); color: var(--rust); }
-.chip.ochre { background: color-mix(in oklab, var(--ochre) 16%, transparent); color: var(--ochre); }
+.chip.rust { background: color-mix(in oklab, var(--rust) 14%, transparent); color: color-mix(in oklab, var(--rust) 80%, var(--ink)); }
+.chip.ochre { background: color-mix(in oklab, var(--ochre) 16%, transparent); color: color-mix(in oklab, var(--ochre) 62%, var(--ink)); }
 .chip.line { background: transparent; border-color: var(--line); color: var(--muted); }
 .case-card h3 {
   margin: 0;
@@ -450,7 +454,7 @@ section.block:first-of-type { border-top: none; }
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   display: flex; flex-direction: column; gap: 4px;
 }
-.progress-cell .pc-num { color: var(--muted); font-size: 10px; opacity: 0.8; }
+.progress-cell .pc-num { color: var(--muted); font-size: 10px; }
 .progress-cell .pc-label { color: var(--ink-soft); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; }
 .progress-cell.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 .progress-cell.on .pc-num,
@@ -518,7 +522,7 @@ section.block:first-of-type { border-top: none; }
   border-top: 1px solid var(--ink);
   padding-top: 16px;
 }
-.ctx-side h5 {
+.ctx-side h4 {
   font-family: "JetBrains Mono", monospace;
   font-size: 11.5px;
   letter-spacing: 0.14em;
@@ -609,6 +613,10 @@ section.block:first-of-type { border-top: none; }
 .layout-debug.bad { background: color-mix(in oklab, var(--rust) 16%, var(--card)); }
 .layout-debug ul { margin: 6px 0 0; padding-left: 18px; }
 .flow-scroll-hint { display: none; margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.flow-text { margin-top: 14px; font-size: 14px; color: var(--ink-soft); }
+.flow-text summary { cursor: pointer; color: var(--ink); width: fit-content; }
+.flow-text ol { margin: 10px 0 0; padding-left: 22px; line-height: 1.6; }
+.flow-text .ft-note { color: var(--muted); }
 .flow-legend {
   display: flex; gap: 20px; flex-wrap: wrap;
   margin-top: 20px;
@@ -656,6 +664,7 @@ section.block:first-of-type { border-top: none; }
 .nd-tech { padding: 10px 14px; border-radius: 4px; background: color-mix(in oklab, var(--trail) 7%, var(--card)); }
 .nd-tech p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-soft); max-width: 75ch; }
 .nd-section h5 { margin: 0 0 6px; font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.nd-tech h5 { color: var(--ink-soft); }
 .nd-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .nd-links li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 14px; }
 .nd-jump { padding: 2px 10px; font-size: 13.5px; }
@@ -896,7 +905,7 @@ section.block:first-of-type { border-top: none; }
   margin-top: 18px;
 }
 @media (max-width: 720px) { .rc-body { grid-template-columns: 1fr; gap: 18px; } }
-.rc-sec h6 {
+.rc-sec h5 {
   font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
   letter-spacing: 0.12em;
@@ -1044,7 +1053,7 @@ section.block:first-of-type { border-top: none; }
 .schema-head .sh-t {
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--ink-soft);
   letter-spacing: 0.08em;
 }
 .schema-body {
@@ -1059,7 +1068,7 @@ section.block:first-of-type { border-top: none; }
 }
 .schema-body .k { color: var(--rust); }
 .schema-body .s { color: var(--trail); }
-.schema-body .n { color: var(--ochre); }
+.schema-body .n { color: color-mix(in oklab, var(--ochre) 72%, var(--ink)); }
 .schema-body .c { color: var(--muted); font-style: italic; }
 
 .field-defs { display: grid; gap: 14px; }
@@ -1201,6 +1210,7 @@ footer .foot-brand {
 </style>
 
 <div class="site">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
   <header class="nav">
     <div class="wrap nav-in">
       <a class="brand" href="#" data-nav="landing">
@@ -1219,7 +1229,8 @@ footer .foot-brand {
     </div>
   </header>
 
-  <main>
+  <main id="conteudo" tabindex="-1">
+    <h1 class="sr-only" id="siteH1" hidden>Adler — treino de leitura de casos de abuso</h1>
     <!-- ============ LANDING ============ -->
     <section class="view on" id="view-landing">
       <div class="wrap">
@@ -1330,23 +1341,23 @@ footer .foot-brand {
           </div>
           <div class="steps">
             <div class="step">
-              <h4>Contexto</h4>
+              <h3>Contexto</h3>
               <p>Um negócio real com atores, dados e fluxos. Nada de "corp fictícia com um endpoint".</p>
             </div>
             <div class="step">
-              <h4>Fluxo</h4>
+              <h3>Fluxo</h3>
               <p>Um diagrama do fluxo transacional. Onde os dados nascem, atravessam, descansam.</p>
             </div>
             <div class="step">
-              <h4>Leitura</h4>
+              <h3>Leitura</h3>
               <p>Você marca tudo que suspeita — técnico, lógica, operativo, regulatório. Sem gabarito à mostra.</p>
             </div>
             <div class="step">
-              <h4>Revelação</h4>
+              <h3>Revelação</h3>
               <p>O que era, a categoria de risco, o caso de abuso concreto, o impacto, a mitigação.</p>
             </div>
             <div class="step">
-              <h4>Placar</h4>
+              <h3>Placar</h3>
               <p>O que você pegou, o que passou batido e os padrões para levar ao próximo caso.</p>
             </div>
           </div>
@@ -1414,15 +1425,15 @@ footer .foot-brand {
             <div class="ctx-body" id="ctxBody"></div>
             <div>
               <div class="ctx-side" id="ctxActors">
-                <h5>Atores</h5>
+                <h4>Atores</h4>
                 <dl id="ctxActorsList"></dl>
               </div>
               <div class="ctx-side" id="ctxData">
-                <h5>Dados sensíveis em jogo</h5>
+                <h4>Dados sensíveis em jogo</h4>
                 <dl id="ctxDataList"></dl>
               </div>
               <div class="ctx-side" id="ctxScale">
-                <h5>Escala e ritmo</h5>
+                <h4>Escala e ritmo</h4>
                 <dl id="ctxScaleList"></dl>
               </div>
             </div>
@@ -1453,6 +1464,10 @@ footer .foot-brand {
           </div>
           <div class="flow-types" id="flowTypes" hidden></div>
           <p class="flow-hint">Clique num sistema (ou use Tab e Enter) para ver o que ele faz e com quem troca dados.</p>
+          <details class="flow-text">
+            <summary>Ver o fluxo em texto</summary>
+            <ol id="flowTextList"></ol>
+          </details>
           <div class="nav-actions">
             <button data-prev>← Voltar</button>
             <button class="primary" data-next>Ir para a leitura →</button>
@@ -1566,7 +1581,7 @@ footer .foot-brand {
               <span class="sh-t">case.template.json</span>
               <button class="ghost" id="copyTemplate" style="font-size: 12px; padding: 4px 10px;">Copiar</button>
             </div>
-            <pre class="schema-body" id="schemaPre"></pre>
+            <pre class="schema-body" id="schemaPre" tabindex="0" aria-label="Exemplo de caso em JSON"></pre>
           </div>
 
           <div>
@@ -1837,6 +1852,7 @@ footer .foot-brand {
       updateUrl(null);
     }
     if (name === "landing" || name === "cases") renderCases();
+    document.getElementById("siteH1").hidden = name === "landing";
     savePersist();
   }
 
@@ -1970,6 +1986,7 @@ footer .foot-brand {
 
     // Flow
     renderFlow(document.getElementById("flowWrap"), c.flow, { animate: true, typeLegend: "flowTypes" });
+    renderFlowText(c.flow);
 
     // Analysis (checklist)
     renderCheckList(c);
@@ -1981,6 +1998,23 @@ footer .foot-brand {
     renderScore(c);
 
     setStage(state.stage);
+  }
+  // Every connection of the flow as a sentence: same content as the arrows.
+  function renderFlowText(flow) {
+    const list = document.getElementById("flowTextList");
+    list.innerHTML = "";
+    if (!flow) return;
+    const name = id => { const n = flow.nodes.find(x => x.id === id); return n ? n.label : id; };
+    flow.edges.forEach(e => {
+      const li = document.createElement("li");
+      const from = document.createElement("strong"); from.textContent = name(e.from);
+      const to = document.createElement("strong"); to.textContent = name(e.to);
+      li.append(from, " → ", to);
+      if (e.label) li.append(`: ${e.label}`);
+      const notes = [e.boundary && "cruza fronteira de confiança", e.dashed && "assíncrono"].filter(Boolean);
+      if (notes.length) { const s = document.createElement("span"); s.className = "ft-note"; s.textContent = ` (${notes.join(", ")})`; li.append(s); }
+      list.appendChild(li);
+    });
   }
   function fillDL(id, pairs) {
     const dl = document.getElementById(id);
@@ -2770,19 +2804,19 @@ footer .foot-brand {
         </div>
         <div class="rc-body">
           <div class="rc-sec">
-            <h6>Pistas no contexto</h6>
+            <h5>Pistas no contexto</h5>
             <p>${r.signal}</p>
           </div>
           <div class="rc-sec">
-            <h6>Impacto</h6>
+            <h5>Impacto</h5>
             <p>${r.impact}</p>
           </div>
           <div class="rc-sec">
-            <h6>Casos de abuso</h6>
+            <h5>Casos de abuso</h5>
             <ul>${(r.abuse || []).map(a => `<li>${a}</li>`).join("")}</ul>
           </div>
           <div class="rc-sec">
-            <h6>Mitigação</h6>
+            <h5>Mitigação</h5>
             <ul>${(r.mitigation || []).map(m => `<li>${m}</li>`).join("")}</ul>
           </div>
         </div>
