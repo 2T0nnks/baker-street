@@ -29,6 +29,8 @@
 | **[Saque Antecipado](https://2t0nnks.github.io/baker-street/caso/saque-antecipado/)** | fintech | antecipação do FGTS por correspondentes |
 | **[Cofre de Chaves](https://2t0nnks.github.io/baker-street/caso/cofre-de-chaves/)** | fintech | HSM do PIX e transição pós-quântica |
 | **[Consulta Expressa](https://2t0nnks.github.io/baker-street/caso/consulta-expressa/)** | saúde | telemedicina com receita e atestado |
+| **[Fila de Especialidades](https://2t0nnks.github.io/baker-street/caso/consulta-fila/)** | setor público | fila do SUS municipal com painel de transparência |
+| **[Tutor com IA na sala de aula](https://2t0nnks.github.io/baker-street/caso/escola-ai/)** | educação | tutor de IA para alunos de 8 a 14 anos |
 
 ## Como é
 

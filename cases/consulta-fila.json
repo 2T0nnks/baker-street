@@ -1,10 +1,226 @@
 {
   "$schema": "../schema/case.schema.json",
   "slug": "consulta-fila",
-  "status": "soon",
-  "domain": "healthtech",
+  "status": "open",
+  "domain": "govtech",
   "title": "Fila de Especialidades",
   "subtitle": "Plataforma pública de agendamento de consultas de especialidades em um município",
+  "duration": "~45 min",
   "difficulty": "Intermediário",
-  "tags": ["Saúde", "Setor público", "LGPD"]
+  "tags": ["Setor público", "Saúde", "LGPD", "Antifraude"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Vale Serrano, 900 mil habitantes, organiza pela plataforma Agenda Saúde a fila de consultas com especialistas do SUS municipal. O médico da unidade básica de saúde (UBS) faz o encaminhamento no sistema — cardiologia, ortopedia, psiquiatria, oncologia — e a regulação municipal, com 12 médicos reguladores, classifica a prioridade em vermelho, amarelo ou verde. São 64 mil pessoas na fila; em ortopedia, a espera média passa de 11 meses.",
+      "As vagas vêm de 14 prestadores conveniados — clínicas e hospitais privados — que publicam suas agendas na plataforma por uma integração e recebem da prefeitura por consulta realizada. Para simplificar a integração, todos usam a mesma chave de API, com acesso à fila inteira, para enxergar quem está agendado. Depois do atendimento, o próprio prestador marca a consulta como realizada, e isso gera o faturamento mensal.",
+      "Quando surge uma vaga, a plataforma oferece ao próximo da fila por WhatsApp, no telefone do cadastro da UBS, com um link para confirmar em até 48 horas; sem resposta, a pessoa volta para o fim da fila. Vagas canceladas com menos de 24 horas vão para a <em>repescagem</em>: aparecem no app para qualquer paciente da mesma especialidade, e quem tocar primeiro leva. Quem não usa o app pode confirmar ou cancelar pela Central 156, informando CPF e data de nascimento.",
+      "Por lei municipal de transparência, a fila é pública: um painel na internet mostra, por especialidade, a posição de cada pessoa com as iniciais do nome, a data de nascimento e o bairro. Gabinetes de vereadores costumam mandar ofícios pedindo prioridade para casos \"urgentes\"; o médico regulador pode reclassificar a prioridade com uma justificativa em texto livre."
+    ],
+    "actors": [
+      ["Cidadão", "espera na fila, confirma pelo app ou pelo 156"],
+      ["Médico da UBS", "faz o encaminhamento"],
+      ["Médico regulador", "12, classificam e reclassificam"],
+      ["Prestador conveniado", "terceiro: 14 clínicas e hospitais"],
+      ["Central 156", "confirma e cancela por telefone"],
+      ["Gabinete de vereador", "envia ofícios de prioridade"]
+    ],
+    "data": [
+      ["Especialidade e prioridade", "dado de saúde"],
+      ["Iniciais, nascimento e bairro", "publicados no painel"],
+      ["CPF e data de nascimento", "bastam para a Central 156"],
+      ["Telefone do cadastro", "recebe a oferta por WhatsApp"],
+      ["Consultas realizadas", "marcadas pelo prestador, geram pagamento"]
+    ],
+    "scale": [
+      ["64 mil", "pessoas na fila"],
+      ["11+ meses", "espera em ortopedia"],
+      ["14 prestadores", "uma chave de API para todos"],
+      ["30%", "de faltas nas consultas"],
+      ["48 horas", "para confirmar uma vaga"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "painel", "label": "Painel público da fila", "kind": "boundary", "icon": "web", "x": 440, "y": 20, "description": "Página pública, exigida pela lei municipal de transparência, com a posição de cada pessoa na fila por especialidade: iniciais, data de nascimento e bairro." },
+      { "id": "ubs", "label": "Encaminhamento na UBS", "kind": "internal", "icon": "web", "x": 60, "y": 140, "description": "Tela em que o médico da unidade básica de saúde registra o encaminhamento para a especialidade, com o motivo clínico." },
+      { "id": "regulacao", "label": "Regulação municipal", "kind": "internal", "icon": "team", "x": 240, "y": 140, "description": "Equipe de 12 médicos reguladores que classifica a prioridade de cada encaminhamento e pode reclassificá-la depois, com justificativa.", "tech": "Regulação do acesso: função do SUS que organiza quem é atendido primeiro quando a oferta de consultas e exames é menor que a procura, com base em critérios clínicos e protocolos de prioridade." },
+      { "id": "fila", "label": "Motor da fila", "kind": "internal", "icon": "queue", "x": 440, "y": 140, "description": "Sistema que ordena a fila de cada especialidade pela prioridade e pela data do encaminhamento e distribui as vagas publicadas pelos prestadores." },
+      { "id": "prestadores", "label": "Prestadores conveniados", "kind": "external", "icon": "partner", "x": 640, "y": 140, "description": "Clínicas e hospitais privados conveniados que publicam agendas por integração e recebem por consulta realizada." },
+      { "id": "faturamento", "label": "Faturamento", "kind": "internal", "icon": "payment", "x": 840, "y": 140, "description": "Rotina mensal da secretaria de saúde que paga cada prestador pelas consultas marcadas como realizadas." },
+      { "id": "gabinete", "label": "Ofícios de gabinete", "kind": "boundary", "icon": "email", "x": 60, "y": 260, "description": "Pedidos de prioridade enviados por gabinetes de vereadores à regulação, por ofício ou e-mail." },
+      { "id": "whatsapp", "label": "Oferta por WhatsApp", "kind": "boundary", "icon": "email", "x": 440, "y": 260, "description": "Mensagem enviada ao telefone do cadastro da UBS quando surge uma vaga, com especialidade, local, data e um link para confirmar em até 48 horas." },
+      { "id": "app", "label": "App do cidadão", "kind": "internal", "icon": "app", "x": 640, "y": 260, "description": "App da prefeitura em que o cidadão acompanha a fila, confirma ou cancela a vaga e disputa as vagas da repescagem." },
+      { "id": "confirmacao", "label": "Confirmação de vagas", "kind": "internal", "icon": "service", "x": 840, "y": 260, "description": "Serviço que registra confirmações e cancelamentos vindos do app e da Central 156 e avisa o prestador de quem vem." },
+      { "id": "central", "label": "Central 156", "kind": "internal", "icon": "team", "x": 840, "y": 380, "description": "Atendimento telefônico da prefeitura. Confirma ou cancela vagas em nome do cidadão depois de conferir CPF e data de nascimento." }
+    ],
+    "edges": [
+      { "from": "ubs", "to": "regulacao", "label": "encaminhamento" },
+      { "from": "regulacao", "to": "fila", "label": "prioridade" },
+      { "from": "fila", "to": "prestadores", "label": "paciente agendado", "boundary": true },
+      { "from": "prestadores", "to": "fila", "label": "vagas abertas", "boundary": true },
+      { "from": "prestadores", "to": "faturamento", "label": "consultas realizadas", "boundary": true },
+      { "from": "gabinete", "to": "regulacao", "label": "ofício de prioridade", "boundary": true },
+      { "from": "fila", "to": "painel", "label": "posição de cada pessoa", "dashed": true, "boundary": true },
+      { "from": "fila", "to": "whatsapp", "label": "oferta de vaga" },
+      { "from": "whatsapp", "to": "app", "label": "link para confirmar", "boundary": true },
+      { "from": "app", "to": "confirmacao", "label": "confirma ou cancela" },
+      { "from": "central", "to": "confirmacao", "label": "confirma por telefone" },
+      { "from": "confirmacao", "to": "prestadores", "label": "presença confirmada" }
+    ]
+  },
+  "candidates": [
+    { "id": "painel-exposto", "truth": true, "category": "privacidade", "title": "Painel público permite reconhecer quem espera por qual especialidade", "sub": "Iniciais, data de nascimento e bairro, por especialidade, abertos na internet." },
+    { "id": "prioridade-gabinete", "truth": true, "category": "fraude", "title": "Prioridade pode ser reclassificada por pedido de gabinete", "sub": "Ofícios de vereadores pedem prioridade; o regulador reclassifica com justificativa em texto livre." },
+    { "id": "central-cpf", "truth": true, "category": "processo", "title": "CPF e data de nascimento bastam para cancelar a vaga de alguém", "sub": "A Central 156 confirma e cancela por telefone conferindo só esses dois dados." },
+    { "id": "repescagem", "truth": true, "category": "lógica", "title": "Vagas da repescagem ficam com quem toca primeiro", "sub": "Cancelamentos de última hora aparecem no app para qualquer paciente da especialidade." },
+    { "id": "faturamento", "truth": true, "category": "fraude", "title": "O prestador marca a própria consulta como realizada", "sub": "A marcação gera o pagamento; nada no fluxo confirma que o paciente foi atendido." },
+    { "id": "chave-unica", "truth": true, "category": "técnico", "title": "Uma chave de API para os 14 prestadores, com acesso à fila inteira", "sub": "Integração simplificada: todos veem todos os pacientes agendados." },
+    { "id": "numero-antigo", "truth": true, "category": "operativo", "title": "Oferta de vaga vai para o telefone antigo do cadastro", "sub": "O WhatsApp usa o número registrado na UBS, às vezes anos antes, e o link confirma sem pedir nada." },
+    { "id": "fila-longa", "truth": false, "category": "processo", "title": "A fila de ortopedia passa de 11 meses", "sub": "É falta de oferta, um problema de gestão da rede. Nenhum controle de segurança encurta a fila." },
+    { "id": "painel-ilegal", "truth": false, "category": "regulatório", "title": "Publicar a fila na internet já é, por si só, ilegal", "sub": "A transparência é exigida por lei municipal e tem interesse público. O problema é o que o painel expõe, não a existência dele." },
+    { "id": "app-offline", "truth": false, "category": "técnico", "title": "O app não funciona sem internet", "sub": "Limitação de usabilidade; a Central 156 existe para quem não usa o app." },
+    { "id": "erro-regulador", "truth": false, "category": "operativo", "title": "O médico regulador pode classificar errado", "sub": "Erro clínico se trata com protocolo e revisão. O caso de abuso é a reclassificação por pressão, não o erro honesto." }
+  ],
+  "risks": [
+    {
+      "id": "painel-exposto",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["painel"], "edges": [{ "from": "fila", "to": "painel" }] },
+      "title": "Transparência que identifica pacientes",
+      "signal": "O painel mostra, <em>por especialidade</em>, as <em>iniciais, a data de nascimento e o bairro</em>. Em bairro pequeno, essas três informações apontam uma pessoa — e a especialidade diz do que ela está sendo tratada.",
+      "abuse": [
+        "Um vizinho encontra \"M.S.O., 14/03/1971, Jardim Aurora\" na fila de psiquiatria ou infectologia e descobre o diagnóstico de alguém.",
+        "Um empregador confere se um candidato está na fila de oncologia antes de contratar.",
+        "Iniciais e data de nascimento do painel, somadas a um CPF vazado, bastam para passar pela Central 156 (veja o risco da central)."
+      ],
+      "impact": "Exposição de dado de saúde de dezenas de milhares de pessoas, com risco de discriminação e de incidente comunicável à ANPD. E, cruzado com a Central 156, o painel vira insumo de fraude.",
+      "mitigation": [
+        "Publicar a posição com um número de protocolo que só o paciente conhece, no lugar de iniciais, nascimento e bairro.",
+        "Agregar especialidades sensíveis (psiquiatria, infectologia, oncologia) ou publicar só números da fila, sem registro individual.",
+        "Revisar o painel com a procuradoria: a lei pede transparência da fila, não identificação dos pacientes."
+      ]
+    },
+    {
+      "id": "prioridade-gabinete",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["gabinete", "regulacao"], "edges": [{ "from": "gabinete", "to": "regulacao" }] },
+      "title": "Furar a fila por influência",
+      "signal": "Gabinetes <em>mandam ofícios pedindo prioridade</em> e o regulador <em>reclassifica com justificativa em texto livre</em>. O contexto não fala em segunda revisão, critério clínico obrigatório nem relatório de reclassificações.",
+      "abuse": [
+        "Um gabinete passa a oferecer \"agilizar a consulta\" em troca de apoio político, e os ofícios viram rotina.",
+        "Um intermediário cobra para conseguir o ofício; a reclassificação sai com justificativa genérica, como \"piora do quadro\".",
+        "Um regulador sob pressão reclassifica dezenas de pedidos por mês e ninguém percebe o padrão."
+      ],
+      "impact": "Quem tem prioridade clínica espera mais, com risco à vida em especialidades como cardiologia e oncologia. Para a prefeitura, é improbidade e perda de confiança na fila — que é pública.",
+      "mitigation": [
+        "Reclassificar só com critério clínico estruturado (protocolo, CID, exame), com um segundo regulador revisando as que sobem para vermelho.",
+        "Pedido externo registrado como tal, com origem, sem influência na decisão e aparecendo em relatório.",
+        "Relatório periódico de reclassificações por regulador e por origem do pedido, auditado pelo controle interno."
+      ]
+    },
+    {
+      "id": "central-cpf",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["central", "confirmacao"], "edges": [{ "from": "central", "to": "confirmacao" }] },
+      "title": "Cancelamento em nome de outra pessoa pelo telefone",
+      "signal": "A Central 156 confirma ou cancela vagas <em>informando CPF e data de nascimento</em>. A data de nascimento está <em>no painel público</em>; CPF é um dado que circula em vazamentos e cadastros.",
+      "abuse": [
+        "Alguém cancela as vagas de quem está à frente na fila de ortopedia para pegar a vaga na repescagem.",
+        "Um ex-companheiro confirma ou cancela consultas da vítima, sabendo dia, hora e local em que ela vai estar.",
+        "Um atravessador cancela vagas em massa por telefone e revende as da repescagem."
+      ],
+      "impact": "Pessoas perdem consultas esperadas por meses sem saber por quê, e a vaga vai para quem manipula o sistema. A central também revela onde e quando alguém vai estar, com risco à segurança pessoal.",
+      "mitigation": [
+        "Verificar com algo que só o paciente tem: código enviado ao telefone cadastrado ou protocolo do encaminhamento.",
+        "Avisar o paciente, por outro canal, de todo cancelamento, com prazo para desfazer.",
+        "Não informar data e local da consulta pelo telefone antes da verificação; limitar cancelamentos por atendente e alertar volumes fora do padrão."
+      ]
+    },
+    {
+      "id": "repescagem",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["app", "confirmacao"], "edges": [{ "from": "app", "to": "confirmacao" }] },
+      "title": "Repescagem premia quem é mais rápido, não quem precisa mais",
+      "signal": "Vagas canceladas em cima da hora ficam <em>para qualquer paciente da mesma especialidade</em>, e <em>quem tocar primeiro leva</em>. A regra ignora a prioridade clínica e cria incentivo para provocar cancelamentos.",
+      "abuse": [
+        "Um robô acompanha o app 24 horas e pega toda vaga da repescagem para uma lista de \"clientes\" que pagam por isso.",
+        "Combinado com o cancelamento pela Central 156, alguém libera vagas de outras pessoas e as pega logo em seguida.",
+        "Pacientes verdes pegam vagas enquanto pacientes vermelhos, sem app ou sem tempo de ficar olhando, esperam."
+      ],
+      "impact": "A ordem clínica da fila é contornada justamente nas vagas mais disputadas, e surge um mercado de vagas públicas. O município paga a consulta, e quem precisava continua esperando.",
+      "mitigation": [
+        "Oferecer vagas da repescagem pela ordem da fila, com prazo curto, em vez de liberar para quem tocar primeiro.",
+        "Limitar a repescagem a pacientes da mesma prioridade ou superior e detectar automação (frequência, aparelho, padrão de toques).",
+        "Monitorar cancelamentos seguidos de captura pela mesma rede de contas."
+      ]
+    },
+    {
+      "id": "faturamento",
+      "category": "fraude",
+      "severity": "alto",
+      "where": { "nodes": ["prestadores", "faturamento"], "edges": [{ "from": "prestadores", "to": "faturamento" }] },
+      "title": "Consulta que não aconteceu vira pagamento",
+      "signal": "<em>O próprio prestador marca a consulta como realizada</em>, e isso gera o pagamento. Com <em>30% de faltas</em>, há muitas consultas marcadas que não aconteceram — e nada no fluxo confirma a presença do paciente.",
+      "abuse": [
+        "Um prestador marca como realizadas as consultas dos faltosos e recebe por elas.",
+        "Um retorno de cinco minutos é lançado como consulta completa de especialista.",
+        "O prestador marca a consulta, não atende e diz ao paciente que foi \"remarcada\"; o paciente volta para a fila."
+      ],
+      "impact": "Pagamento indevido com dinheiro público e fila artificialmente parada: no sistema, o paciente foi atendido. Dá trabalho para o controle interno e para o tribunal de contas, e sobra para a gestão.",
+      "mitigation": [
+        "Confirmar a presença do lado do paciente: código mostrado no app ou enviado por SMS, informado na recepção.",
+        "Pesquisa de satisfação amostral que pergunta se a consulta aconteceu, e auditoria de prestadores fora do padrão de faltas.",
+        "Separar quem marca a consulta como realizada de quem aprova o faturamento, com cruzamento de faltas registradas."
+      ]
+    },
+    {
+      "id": "chave-unica",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["prestadores", "fila"], "edges": [{ "from": "fila", "to": "prestadores" }, { "from": "prestadores", "to": "fila" }] },
+      "title": "Todos os prestadores com a mesma chave e acesso à fila inteira",
+      "signal": "Para simplificar, <em>todos usam a mesma chave de API, com acesso à fila inteira</em>. Não há como saber qual prestador fez cada chamada nem limitar o que cada um vê.",
+      "abuse": [
+        "Um prestador lê a fila inteira e oferta consultas particulares a quem está esperando por especialidade na rede pública.",
+        "A chave vaza do sistema de um prestador pequeno e dá acesso a nome, especialidade e contato de 64 mil pessoas.",
+        "Um prestador publica ou cancela vagas na agenda de um concorrente, e ninguém consegue provar quem foi."
+      ],
+      "impact": "Vazamento de dado de saúde em escala, uso comercial da fila pública e nenhuma rastreabilidade. Revogar a chave derruba os 14 prestadores ao mesmo tempo.",
+      "mitigation": [
+        "Uma credencial por prestador, com escopo só nas próprias agendas e nos próprios pacientes agendados.",
+        "Registro de cada chamada por prestador, com alerta para leituras fora do padrão.",
+        "Rotação de credenciais e revogação individual, sem derrubar os demais."
+      ]
+    },
+    {
+      "id": "numero-antigo",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["whatsapp"], "edges": [{ "from": "fila", "to": "whatsapp" }, { "from": "whatsapp", "to": "app" }] },
+      "title": "Oferta de vaga entregue a outra pessoa",
+      "signal": "A oferta vai para o <em>telefone do cadastro da UBS</em>, feito às vezes anos antes, e traz especialidade, local, data e um <em>link para confirmar</em>. Sem resposta em 48 horas, a pessoa <em>volta para o fim da fila</em>.",
+      "abuse": [
+        "O número foi reciclado pela operadora; um desconhecido recebe o nome, a especialidade e o local da consulta de outra pessoa.",
+        "Quem recebe por engano toca no link e cancela, ou confirma e a vaga fica sem uso.",
+        "O paciente nunca vê a mensagem, perde a vaga depois de 11 meses de espera e volta para o fim da fila."
+      ],
+      "impact": "Dado de saúde entregue a terceiros e perda de acesso para quem mais depende do SUS — idosos e pessoas sem celular próprio. A regra das 48 horas transforma um cadastro desatualizado em punição.",
+      "mitigation": [
+        "Confirmar o telefone quando a pessoa entra na fila e a cada oferta sem resposta; mensagem sem especialidade, só com o aviso de que há uma vaga.",
+        "Link que pede verificação (protocolo ou data de nascimento mais código) antes de confirmar ou cancelar.",
+        "Sem resposta, tentar outro canal (ligação, UBS) antes de mandar a pessoa para o fim da fila."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Transparência também precisa de threat model", "body": "Dado publicado por obrigação legal continua sendo dado pessoal. Pergunte o que dá para descobrir cruzando o que é público com o que está vazado." },
+    { "title": "Toda exceção manual é uma porta", "body": "Reclassificação por texto livre, confirmação por telefone, repescagem: onde o fluxo abre uma exceção, alguém vai aprender a provocá-la." },
+    { "title": "Quem gera a cobrança não pode ser quem prova o serviço", "body": "Se o prestador marca a consulta e recebe por ela, a prova tem que vir de outro lado — do paciente, da amostra, da auditoria." },
+    { "title": "Credencial compartilhada é responsabilidade de ninguém", "body": "Uma chave para vários parceiros simplifica a integração e apaga a rastreabilidade. Escopo e identidade por parceiro custam pouco perto de um vazamento." }
+  ]
 }
