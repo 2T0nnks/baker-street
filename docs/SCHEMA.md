@@ -14,7 +14,7 @@ Este documento é a leitura humana do schema.
 | `subtitle` | string (4-160) | sim | Uma frase descritiva do negócio. |
 | `domain` | string | não | Setor (fintech, healthtech, edtech...). |
 | `duration` | string | não | Tempo estimado (ex.: `~45 min`). |
-| `difficulty` | enum | não | `Iniciante` | `Intermediário` | `Avançado`. Define a posição do caso na trilha sugerida da home (do mais fácil ao mais difícil). Iniciante: poucos sistemas e abusos que aparecem lendo o fluxo com calma. Avançado: exige conhecer o domínio (regulação, criptografia, liquidação). |\| `Intermediário` \| `Avançado`. |
+| `difficulty` | enum | não | `Iniciante` \| `Intermediário` \| `Avançado`. Define a posição do caso na trilha sugerida da home (do mais fácil ao mais difícil). Iniciante: poucos sistemas e abusos que aparecem lendo o fluxo com calma. Avançado: exige conhecer o domínio (regulação, criptografia, liquidação). |
 | `tags` | string[] | não | Até 8 tags de 1-24 chars. |
 | `license` | string | não | Padrão: `CC-BY-SA-4.0`. |
 | `author` | string | não | Handle GitHub. |
