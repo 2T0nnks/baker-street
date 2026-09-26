@@ -391,6 +391,21 @@ section.block:first-of-type { border-top: none; }
   font-size: 13px;
   color: var(--muted);
 }
+.case-card .cc-step { display: block; margin-bottom: 6px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.cc-level { display: inline-flex; align-items: center; gap: 8px; }
+.meter { display: inline-flex; gap: 2px; }
+.meter i { width: 5px; height: 12px; border-radius: 1px; background: var(--line); }
+.meter[data-level="0"] i:nth-child(-n+1),
+.meter[data-level="1"] i:nth-child(-n+2),
+.meter[data-level="2"] i:nth-child(-n+3) { background: var(--trail); }
+.chip.done { background: var(--trail); color: var(--paper); }
+.case-card.read { border-color: color-mix(in oklab, var(--trail) 45%, var(--line)); }
+.trail-note { margin: 10px 0 0; color: var(--ink-soft); max-width: 62ch; }
+.trail-progress { color: var(--trail); font-weight: 500; }
+.case-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.case-filters[hidden] { display: none; }
+.filter-chip { padding: 6px 12px; font-size: 13px; border-radius: 999px; background: transparent; border: 1px solid var(--line); color: var(--ink-soft); }
+.filter-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .case-card.soon { opacity: 0.7; }
 .case-card.soon .chip { color: var(--muted); background: transparent; border-color: var(--line); }
 
@@ -1340,11 +1355,13 @@ footer .foot-brand {
         <section class="block">
           <div class="block-head">
             <div class="block-head-l">
-              <span class="eyebrow">Casos disponíveis</span>
-              <h2 class="display">Comece por onde faz sentido.</h2>
+              <span class="eyebrow">Trilha sugerida</span>
+              <h2 class="display">Do iniciante ao avançado.</h2>
+              <p class="trail-note">Os casos são independentes; a ordem só ajuda quem está começando. <span class="trail-progress" aria-live="polite"></span></p>
             </div>
             <button data-nav="contribute" class="ghost">Contribuir com um caso →</button>
           </div>
+          <div class="case-filters" data-for="casesGrid" role="group" aria-label="Filtrar casos por setor"></div>
           <div class="cases" id="casesGrid"></div>
         </section>
       </div>
@@ -1362,6 +1379,7 @@ footer .foot-brand {
           <h2 class="display" style="margin-top: 10px;">Casos disponíveis</h2>
           <p style="color: var(--ink-soft); max-width: 60ch; margin: 14px 0 0;">Escolha um caso. Os estágios são independentes: você pode voltar, mudar de lente e refazer a análise a qualquer momento.</p>
         </div>
+        <div class="case-filters" data-for="casesGrid2" role="group" aria-label="Filtrar casos por setor"></div>
         <div class="cases" id="casesGrid2"></div>
       </div>
     </section>
@@ -1633,8 +1651,14 @@ footer .foot-brand {
   // ============ DATA ============
   // ============ DATA ============
   // Cases are injected at build time as <script type="application/json" data-case="slug">
-  // blocks in the <head>. The loader reads them all and sorts: open first, then soon,
-  // then by title. Adding a new case = adding a new JSON file in cases/; no code changes.
+  // blocks in the <head>. The loader reads them all and sorts: open first, then soon;
+  // within each, easiest first (that order is the suggested trail), then by title.
+  // Adding a new case = adding a new JSON file in cases/; no code changes.
+  const LEVELS = ["Iniciante", "Intermediário", "Avançado"];
+  const levelOf = c => { const i = LEVELS.indexOf(c.difficulty); return i < 0 ? 1 : i; };
+  const SECTOR_LABEL = { fintech: "Fintech", healthtech: "Saúde", edtech: "Educação", govtech: "Serviço público" };
+  const sectorOf = c => SECTOR_LABEL[c.domain] || (c.domain ? c.domain[0].toUpperCase() + c.domain.slice(1) : "Outros");
+
   function loadCases() {
     const scripts = document.querySelectorAll('script[type="application/json"][data-case]');
     const cases = [];
@@ -1653,6 +1677,8 @@ footer .foot-brand {
       const sa = statusRank[a.status] ?? 3;
       const sb = statusRank[b.status] ?? 3;
       if (sa !== sb) return sa - sb;
+      const la = levelOf(a), lb = levelOf(b);
+      if (la !== lb) return la - lb;
       return (a.title || "").localeCompare(b.title || "");
     });
   }
@@ -1723,7 +1749,8 @@ footer .foot-brand {
     caseSlug: null,
     stage: 0,
     checks: {},   // { slug: Set<id> }
-    revealed: {}  // { slug: true } — reveal/score unlock only after "Revelar leitura"
+    revealed: {}, // { slug: true } — reveal/score unlock only after "Revelar leitura"
+    sector: null  // case list filter (not persisted)
   };
 
   function isRevealed(slug) {
@@ -1809,13 +1836,15 @@ footer .foot-brand {
     if (name !== "case") {
       updateUrl(null);
     }
+    if (name === "landing" || name === "cases") renderCases();
     savePersist();
   }
 
   // ============ RENDER: LANDING / CASES ============
-  function renderCaseCard(c) {
+  function renderCaseCard(c, step) {
     const el = document.createElement("div");
-    el.className = "case-card" + (c.status === "soon" ? " soon" : "");
+    const read = c.status !== "soon" && isRevealed(c.slug);
+    el.className = "case-card" + (c.status === "soon" ? " soon" : "") + (read ? " read" : "");
     if (c.status !== "soon") {
       // Clicks go through the global [data-goto-case] handler; this makes the card keyboard-reachable.
       el.setAttribute("data-goto-case", c.slug);
@@ -1829,26 +1858,63 @@ footer .foot-brand {
     }
 
     const tags = (c.tags || []).map(t => `<span class="chip line">${t}</span>`).join("");
+    const status = c.status === "soon" ? '<span class="chip">Em breve</span>'
+      : read ? '<span class="chip done">Lido ✓</span>' : '<span class="chip">Disponível</span>';
+    const level = levelOf(c);
     el.innerHTML = `
       <span class="corner-clip"></span>
       <div class="cc-tags">
-        ${c.status === "soon" ? '<span class="chip">Em breve</span>' : '<span class="chip">Disponível</span>'}
+        ${status}
         ${tags}
       </div>
-      <h3>${c.title}</h3>
+      <div>
+        ${step ? `<span class="cc-step">Caso ${String(step).padStart(2, "0")}</span>` : ""}
+        <h3>${c.title}</h3>
+      </div>
       <p>${c.subtitle}</p>
       <div class="cc-foot">
-        <span>${c.difficulty || ""}</span>
+        <span class="cc-level">${c.difficulty ? `<span class="meter" data-level="${level}" aria-hidden="true"><i></i><i></i><i></i></span>${c.difficulty}` : ""}</span>
         <span>${c.status === "soon" ? "" : (c.duration || "")}</span>
       </div>
     `;
     return el;
   }
+  // Both case lists (landing and catalogue): trail order, read marks and a sector filter.
   function renderCases() {
-    const g1 = document.getElementById("casesGrid");
-    const g2 = document.getElementById("casesGrid2");
-    if (g1) { g1.innerHTML = ""; CASES.forEach(c => g1.appendChild(renderCaseCard(c))); }
-    if (g2) { g2.innerHTML = ""; CASES.forEach(c => g2.appendChild(renderCaseCard(c))); }
+    const open = CASES.filter(c => c.status !== "soon");
+    const sectors = [...new Set(CASES.map(sectorOf))];
+    if (state.sector && !sectors.includes(state.sector)) state.sector = null;
+    const shown = CASES.filter(c => !state.sector || sectorOf(c) === state.sector);
+
+    document.querySelectorAll(".case-filters").forEach(bar => {
+      bar.innerHTML = "";
+      bar.hidden = sectors.length < 2;
+      [null, ...sectors].forEach(s => {
+        const b = document.createElement("button");
+        b.className = "filter-chip";
+        b.textContent = s || "Todos";
+        b.setAttribute("aria-pressed", String(state.sector === s));
+        b.addEventListener("click", () => {
+          state.sector = s;
+          renderCases();
+          const again = document.querySelector(`.case-filters[data-for="${bar.dataset.for}"] [aria-pressed="true"]`);
+          if (again) again.focus();
+        });
+        bar.appendChild(b);
+      });
+    });
+
+    ["casesGrid", "casesGrid2"].forEach(id => {
+      const grid = document.getElementById(id);
+      if (!grid) return;
+      grid.innerHTML = "";
+      shown.forEach(c => grid.appendChild(renderCaseCard(c, c.status === "soon" ? 0 : open.indexOf(c) + 1)));
+    });
+
+    const done = open.filter(c => isRevealed(c.slug)).length;
+    document.querySelectorAll(".trail-progress").forEach(p => {
+      p.textContent = done ? `Você já leu ${done} de ${open.length}.` : "";
+    });
   }
 
   // ============ CASE PLAYER ============
