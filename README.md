@@ -23,12 +23,12 @@
 
 | Caso | | Cenário |
 |---|---|---|
-| **[Frete Adiantado](https://2t0nnks.github.io/baker-street/?caso=frete-adiantado)** | fintech | antecipação de recebíveis para caminhoneiros |
-| **[Indique e Ganhe](https://2t0nnks.github.io/baker-street/?caso=indique-e-ganhe)** | fintech | campanha de indicação com bônus via PIX |
-| **[Link de Pagamento](https://2t0nnks.github.io/baker-street/?caso=link-de-pagamento)** | fintech | subcredenciadora com repasse em D+2 |
-| **[Saque Antecipado](https://2t0nnks.github.io/baker-street/?caso=saque-antecipado)** | fintech | antecipação do FGTS por correspondentes |
-| **[Cofre de Chaves](https://2t0nnks.github.io/baker-street/?caso=cofre-de-chaves)** | fintech | HSM do PIX e transição pós-quântica |
-| **[Consulta Expressa](https://2t0nnks.github.io/baker-street/?caso=consulta-expressa)** | saúde | telemedicina com receita e atestado |
+| **[Frete Adiantado](https://2t0nnks.github.io/baker-street/caso/frete-adiantado/)** | fintech | antecipação de recebíveis para caminhoneiros |
+| **[Indique e Ganhe](https://2t0nnks.github.io/baker-street/caso/indique-e-ganhe/)** | fintech | campanha de indicação com bônus via PIX |
+| **[Link de Pagamento](https://2t0nnks.github.io/baker-street/caso/link-de-pagamento/)** | fintech | subcredenciadora com repasse em D+2 |
+| **[Saque Antecipado](https://2t0nnks.github.io/baker-street/caso/saque-antecipado/)** | fintech | antecipação do FGTS por correspondentes |
+| **[Cofre de Chaves](https://2t0nnks.github.io/baker-street/caso/cofre-de-chaves/)** | fintech | HSM do PIX e transição pós-quântica |
+| **[Consulta Expressa](https://2t0nnks.github.io/baker-street/caso/consulta-expressa/)** | saúde | telemedicina com receita e atestado |
 
 ## Como é
 

@@ -70,7 +70,7 @@ Rodou? Ótimo. Vamos escrever.
 
 - **CI valida automaticamente** em cada push do PR (`.github/workflows/validate.yml`): schema, build e o layout dos diagramas de todos os casos. Se falhar, o PR fica marcado com ✗ e você vê o log do erro.
 - **Revisão editorial** — o mantenedor (@2T0nnks por enquanto) revisa o *conteúdo*: realismo, qualidade dos abuse cases, plausibilidade dos distratores, se as mitigações realmente resolvem.
-- **Merge** — quando aprovado, o merge no main dispara o deploy automático. Em ~1 minuto seu caso está no site.
+- **Merge** — quando aprovado, o merge no main dispara o deploy automático. Em ~1 minuto seu caso está no site, com página própria em `/caso/<slug>/`: é o link para compartilhar, com prévia (título, subtítulo e o fluxo do caso) gerada no deploy por `npm run og`.
 - **Autor entra como Irregular** — você fica creditado no README como contribuidor.
 
 ## Ajustes em casos existentes
