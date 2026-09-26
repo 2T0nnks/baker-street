@@ -14,6 +14,8 @@ body:
         - Saque Antecipado
         - Cofre de Chaves
         - Consulta Expressa
+        - Fila de Especialidades
+        - Tutor com IA na sala de aula
         - Outro
     validations:
       required: true
