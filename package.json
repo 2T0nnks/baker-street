@@ -9,7 +9,8 @@
     "validate": "node scripts/validate.mjs",
     "new": "node scripts/new-case.mjs",
     "dev": "npm run build && node scripts/serve.mjs",
-    "check:layout": "node scripts/check-layout.mjs"
+    "check:layout": "node scripts/check-layout.mjs",
+    "og": "node scripts/og-images.mjs"
   },
   "repository": {
     "type": "git",

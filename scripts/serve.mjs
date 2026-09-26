@@ -13,10 +13,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "dist");
 const PORT = Number(process.env.PORT) || 8000;
-const TYPES = { ".html": "text/html; charset=utf-8", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8", ".png": "image/png" };
 
 http.createServer((req, res) => {
-  const rel = decodeURIComponent(new URL(req.url, "http://localhost").pathname).replace(/^\/+/, "") || "index.html";
+  let rel = decodeURIComponent(new URL(req.url, "http://localhost").pathname).replace(/^\/+/, "");
+  if (rel === "" || rel.endsWith("/")) rel += "index.html"; // e.g. caso/<slug>/
   const file = path.resolve(ROOT, rel);
   if (!file.startsWith(ROOT + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
     res.writeHead(404);

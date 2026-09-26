@@ -22,6 +22,8 @@ const DIST_DIR = path.join(ROOT, "dist");
 const OUT = path.join(DIST_DIR, "index.html");
 const MARKER = "<!-- CASES:INJECT -->";
 const FONTS_DIR = path.join(DIST_DIR, "fonts");
+// Public address of the site, for canonical links and share previews.
+const SITE_URL = (process.env.SITE_URL || "https://2t0nnks.github.io/baker-street/").replace(/\/?$/, "/");
 
 // Self-hosted fonts (no third-party requests from visitors). Each package ships
 // under the SIL OFL, which travels with the files.
@@ -55,6 +57,43 @@ async function scriptHashes(html) {
   }
   if (hashes.length === 0) throw new Error("No inline <script> found to hash for the CSP");
   return hashes.join(" ");
+}
+
+const escapeAttr = s => String(s).replace(/<[^>]+>/g, "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+// One small page per open case at caso/<slug>/, so a shared link shows that
+// case's title, subtitle and image (dist/og/<slug>.png, made by
+// og-images.mjs). Visitors are sent straight on to the case in the app.
+function casePage(c) {
+  const url = `${SITE_URL}caso/${c.slug}/`;
+  const app = `../../?caso=${encodeURIComponent(c.slug)}`;
+  const title = `${escapeAttr(c.title)} · Adler`;
+  const desc = escapeAttr(c.subtitle);
+  return `<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>${title}</title>
+<meta name="description" content="${desc}">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Adler">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="${url}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${SITE_URL}og/${c.slug}.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Fluxo do caso ${escapeAttr(c.title)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0; url=${app}">
+<style>body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #EFEBE1; color: #1A1613; font: 16px/1.5 system-ui, sans-serif; } a { color: #4C5C34; } @media (prefers-color-scheme: dark) { body { background: #141310; color: #E7E1D3; } a { color: #B7C495; } }</style>
+<p>Abrindo <a href="${app}">${escapeAttr(c.title)}</a>…</p>
+</html>
+`;
 }
 
 function escapeForScript(json) {
@@ -120,10 +159,20 @@ async function main() {
     throw new Error("Template is missing the __CSP_SCRIPT_HASHES__ placeholder");
   }
   output = output.replace("__CSP_SCRIPT_HASHES__", await scriptHashes(output));
+  output = output.replaceAll("__SITE_URL__", SITE_URL);
 
   await fs.mkdir(DIST_DIR, { recursive: true });
   await fs.writeFile(OUT, output, "utf-8");
   await copyFonts();
+
+  const open = cases.filter(({ data }) => data.status === "open");
+  await fs.rm(path.join(DIST_DIR, "caso"), { recursive: true, force: true });
+  for (const { data } of open) {
+    const dir = path.join(DIST_DIR, "caso", data.slug);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, "index.html"), casePage(data), "utf-8");
+  }
+  console.log(`build: wrote ${open.length} case page(s) in dist/caso/ for ${SITE_URL}`);
 
   const bytes = (await fs.stat(OUT)).size;
   console.log(`build: wrote ${OUT} (${(bytes / 1024).toFixed(1)} KB)`);

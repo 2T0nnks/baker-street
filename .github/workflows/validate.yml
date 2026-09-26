@@ -39,3 +39,7 @@ jobs:
       # pins or arrows (the same report as ?debug=layout) or any page error.
       - name: Check diagram layout
         run: npm run check:layout
+
+      # Same step as the deploy, so a case that breaks it fails here, not on main.
+      - name: Render share images
+        run: npm run og
