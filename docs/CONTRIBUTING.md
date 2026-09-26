@@ -48,7 +48,7 @@ Rodou? Ótimo. Vamos escrever.
    ```
    Abre `http://localhost:8000/?caso=<slug>&debug=layout`. Roda seu caso do início ao fim. Com `debug=layout`, embaixo do fluxo e do mapa de riscos aparece um painel verde (tudo certo) ou vermelho, listando o que ajustar: rótulo ou pino em cima de um nó, de outro rótulo ou de outro pino, rótulo sobre a linha de outra seta e seta que atravessa um nó. Se aparecer vermelho, encurte rótulos ou reposicione nós (`x`/`y`) — setas que atravessam nós quase sempre se resolvem mudando um nó de linha ou de coluna.
 
-   Para conferir todos os casos de uma vez, em três larguras de tela (é o que o CI roda):
+   Para conferir todos os casos de uma vez, em três larguras de tela e em todos os idiomas (é o que o CI roda):
    ```bash
    npm run build && npm run check:layout
    ```
@@ -76,6 +76,14 @@ Rodou? Ótimo. Vamos escrever.
 ## Ajustes em casos existentes
 
 Mesma dinâmica: fork, branch (`fix/<slug>-<coisa>`), edit, validate, PR. Casos podem ser melhorados a qualquer momento — descrições mais claras, mitigações mais precisas, distratores mais afiados.
+
+## Traduções
+
+O site tem uma versão em inglês em `/en/`. O português é a fonte; o inglês é opcional por caso.
+
+- **Caso:** crie `cases/en/<slug>.json` com o mesmo caso traduzido. Só as palavras mudam: ids, posições do fluxo, categorias, respostas, `where` e a quantidade de itens têm que ser iguais ao original — `npm run validate` compara e aponta o que difere. Os valores fixos do schema (`category`, `severity`, `difficulty`, `kind`, `icon`) continuam em português; o motor mostra a tradução. Um caso sem tradução simplesmente não aparece em `/en/`.
+- **Mudou o caso original?** Se mudou a estrutura (ids, fluxo, respostas, `where`), a tradução acompanha no mesmo PR — o validate falha até lá. Se mudou só texto, nada quebra; avise no PR e a tradução do texto novo pode vir depois.
+- **Motor:** os textos da interface em inglês ficam em `engine/i18n/en.json`, como pares "texto em português → texto em inglês". Se você mudar um texto no `engine/template.html`, o build falha até o par correspondente ser atualizado — de propósito, para nenhum texto ficar sem tradução.
 
 ## Ajustes no motor
 

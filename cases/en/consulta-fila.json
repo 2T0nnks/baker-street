@@ -1,0 +1,226 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "consulta-fila",
+  "status": "open",
+  "domain": "govtech",
+  "title": "Specialist Waiting List",
+  "subtitle": "A public platform for booking specialist appointments in a city",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Public sector", "Health", "LGPD", "Fraud prevention"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Vale Serrano, a city of 900,000 people, runs the waiting list for specialist appointments in its public health system (SUS) through the Agenda Saúde platform. The doctor at the primary care unit (UBS) makes the referral in the system — cardiology, orthopaedics, psychiatry, oncology — and the city's regulation team, with 12 regulating doctors, sets the priority as red, yellow or green. There are 64,000 people on the list; in orthopaedics, the average wait is over 11 months.",
+      "Slots come from 14 contracted providers — private clinics and hospitals — that publish their schedules on the platform through an integration and are paid by the city per appointment carried out. To keep the integration simple, they all use the same API key, with access to the whole list, to see who is booked. After the appointment, the provider itself marks it as carried out, and that generates the monthly billing.",
+      "When a slot opens, the platform offers it to the next person on the list by WhatsApp, on the phone number registered at the UBS, with a link to confirm within 48 hours; with no answer, the person goes back to the end of the list. Slots cancelled less than 24 hours ahead go to <em>last-minute pick-up</em>: they appear in the app for any patient in the same specialty, and whoever taps first gets it. People who don't use the app can confirm or cancel through the city's 156 call centre by giving their CPF (Brazil's tax ID) and date of birth.",
+      "Under a municipal transparency law, the list is public: a web page shows, by specialty, each person's position with their initials, date of birth and neighbourhood. City councillors' offices often send letters asking for priority for \"urgent\" cases; the regulating doctor can change the priority with a free-text justification."
+    ],
+    "actors": [
+      ["Citizen", "waits on the list, confirms by app or 156"],
+      ["UBS doctor", "makes the referral"],
+      ["Regulating doctor", "12 of them, set and change priority"],
+      ["Contracted provider", "third party: 14 clinics and hospitals"],
+      ["156 call centre", "confirms and cancels by phone"],
+      ["Councillor's office", "sends priority letters"]
+    ],
+    "data": [
+      ["Specialty and priority", "health data"],
+      ["Initials, birth date and neighbourhood", "published on the page"],
+      ["CPF and date of birth", "enough for the 156 call centre"],
+      ["Registered phone", "receives the WhatsApp offer"],
+      ["Appointments carried out", "marked by the provider, trigger payment"]
+    ],
+    "scale": [
+      ["64 k", "people on the list"],
+      ["11+ months", "wait in orthopaedics"],
+      ["14 providers", "one API key for all"],
+      ["30%", "no-show rate"],
+      ["48 hours", "to confirm a slot"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "painel", "label": "Public waiting list page", "kind": "boundary", "icon": "web", "x": 440, "y": 20, "description": "Public page, required by the municipal transparency law, with each person's position on the list per specialty: initials, date of birth and neighbourhood." },
+      { "id": "ubs", "label": "UBS referral", "kind": "internal", "icon": "web", "x": 60, "y": 140, "description": "Screen where the primary care doctor records the referral to the specialty, with the clinical reason." },
+      { "id": "regulacao", "label": "City regulation team", "kind": "internal", "icon": "team", "x": 240, "y": 140, "description": "Team of 12 regulating doctors who set the priority of each referral and can change it later, with a justification.", "tech": "Access regulation: a function of Brazil's public health system (SUS) that decides who is seen first when the supply of appointments and tests is lower than demand, based on clinical criteria and priority protocols." },
+      { "id": "fila", "label": "Waiting list engine", "kind": "internal", "icon": "queue", "x": 440, "y": 140, "description": "System that orders each specialty's list by priority and referral date and allocates the slots published by providers." },
+      { "id": "prestadores", "label": "Contracted providers", "kind": "external", "icon": "partner", "x": 640, "y": 140, "description": "Contracted private clinics and hospitals that publish schedules through an integration and are paid per appointment carried out." },
+      { "id": "faturamento", "label": "Billing", "kind": "internal", "icon": "payment", "x": 840, "y": 140, "description": "The health department's monthly routine that pays each provider for the appointments marked as carried out." },
+      { "id": "gabinete", "label": "Councillors' letters", "kind": "boundary", "icon": "email", "x": 60, "y": 260, "description": "Priority requests sent by city councillors' offices to the regulation team, by official letter or email." },
+      { "id": "whatsapp", "label": "WhatsApp offer", "kind": "boundary", "icon": "email", "x": 440, "y": 260, "description": "Message sent to the phone registered at the UBS when a slot opens, with specialty, place, date and a link to confirm within 48 hours." },
+      { "id": "app", "label": "Citizen app", "kind": "internal", "icon": "app", "x": 640, "y": 260, "description": "The city's app, where citizens follow the list, confirm or cancel a slot and compete for last-minute slots." },
+      { "id": "confirmacao", "label": "Slot confirmation", "kind": "internal", "icon": "service", "x": 840, "y": 260, "description": "Service that records confirmations and cancellations coming from the app and from the 156 call centre, and tells the provider who is coming." },
+      { "id": "central", "label": "156 call centre", "kind": "internal", "icon": "team", "x": 840, "y": 380, "description": "The city's phone service. It confirms or cancels slots on the citizen's behalf after checking CPF and date of birth." }
+    ],
+    "edges": [
+      { "from": "ubs", "to": "regulacao", "label": "referral" },
+      { "from": "regulacao", "to": "fila", "label": "priority" },
+      { "from": "fila", "to": "prestadores", "label": "patient booked", "boundary": true },
+      { "from": "prestadores", "to": "fila", "label": "open slots", "boundary": true },
+      { "from": "prestadores", "to": "faturamento", "label": "appointments done", "boundary": true },
+      { "from": "gabinete", "to": "regulacao", "label": "priority letter", "boundary": true },
+      { "from": "fila", "to": "painel", "label": "each person's position", "dashed": true, "boundary": true },
+      { "from": "fila", "to": "whatsapp", "label": "slot offer" },
+      { "from": "whatsapp", "to": "app", "label": "link to confirm", "boundary": true },
+      { "from": "app", "to": "confirmacao", "label": "confirms or cancels" },
+      { "from": "central", "to": "confirmacao", "label": "confirms by phone" },
+      { "from": "confirmacao", "to": "prestadores", "label": "attendance confirmed" }
+    ]
+  },
+  "candidates": [
+    { "id": "painel-exposto", "truth": true, "category": "privacidade", "title": "The public page lets people recognize who waits for which specialty", "sub": "Initials, date of birth and neighbourhood, per specialty, open on the internet." },
+    { "id": "prioridade-gabinete", "truth": true, "category": "fraude", "title": "Priority can be changed at a councillor's request", "sub": "Councillors' letters ask for priority; the regulating doctor changes it with a free-text justification." },
+    { "id": "central-cpf", "truth": true, "category": "processo", "title": "CPF and date of birth are enough to cancel someone's slot", "sub": "The 156 call centre confirms and cancels by phone checking only those two facts." },
+    { "id": "repescagem", "truth": true, "category": "lógica", "title": "Last-minute slots go to whoever taps first", "sub": "Late cancellations appear in the app for any patient in the specialty." },
+    { "id": "faturamento", "truth": true, "category": "fraude", "title": "The provider marks its own appointment as carried out", "sub": "The mark triggers payment; nothing in the flow confirms the patient was seen." },
+    { "id": "chave-unica", "truth": true, "category": "técnico", "title": "One API key for all 14 providers, with access to the whole list", "sub": "A simplified integration: everyone sees every booked patient." },
+    { "id": "numero-antigo", "truth": true, "category": "operativo", "title": "Slot offers go to the old phone number on file", "sub": "WhatsApp uses the number registered at the UBS, sometimes years ago, and the link confirms without asking anything." },
+    { "id": "fila-longa", "truth": false, "category": "processo", "title": "The orthopaedics list is over 11 months long", "sub": "It's a lack of supply, a network management problem. No security control shortens the list." },
+    { "id": "painel-ilegal", "truth": false, "category": "regulatório", "title": "Publishing the list online is illegal in itself", "sub": "Transparency is required by municipal law and serves the public interest. The problem is what the page exposes, not that it exists." },
+    { "id": "app-offline", "truth": false, "category": "técnico", "title": "The app doesn't work without internet", "sub": "A usability limitation; the 156 call centre exists for people who don't use the app." },
+    { "id": "erro-regulador", "truth": false, "category": "operativo", "title": "The regulating doctor can get the priority wrong", "sub": "Clinical error is handled with protocols and review. The abuse case is re-prioritizing under pressure, not an honest mistake." }
+  ],
+  "risks": [
+    {
+      "id": "painel-exposto",
+      "category": "privacidade",
+      "severity": "alto",
+      "where": { "nodes": ["painel"], "edges": [{ "from": "fila", "to": "painel" }] },
+      "title": "Transparency that identifies patients",
+      "signal": "The page shows, <em>per specialty</em>, <em>initials, date of birth and neighbourhood</em>. In a small neighbourhood, those three facts point to one person — and the specialty says what they're being treated for.",
+      "abuse": [
+        "A neighbour finds \"M.S.O., 14/03/1971, Jardim Aurora\" on the psychiatry or infectious diseases list and learns someone's diagnosis.",
+        "An employer checks whether a candidate is on the oncology list before hiring.",
+        "Initials and date of birth from the page, plus a leaked CPF, are enough to get through the 156 call centre (see the call centre risk)."
+      ],
+      "impact": "Exposure of the health data of tens of thousands of people, with a risk of discrimination and of an incident reportable to the ANPD, Brazil's data protection authority. And, combined with the 156 call centre, the page becomes fuel for fraud.",
+      "mitigation": [
+        "Publish the position with a protocol number only the patient knows, instead of initials, birth date and neighbourhood.",
+        "Aggregate sensitive specialties (psychiatry, infectious diseases, oncology) or publish only list totals, with no individual entries.",
+        "Review the page with the city's legal team: the law asks for a transparent list, not for identifiable patients."
+      ]
+    },
+    {
+      "id": "prioridade-gabinete",
+      "category": "fraude",
+      "severity": "crítico",
+      "where": { "nodes": ["gabinete", "regulacao"], "edges": [{ "from": "gabinete", "to": "regulacao" }] },
+      "title": "Jumping the queue through influence",
+      "signal": "Councillors' offices <em>send letters asking for priority</em> and the regulating doctor <em>changes it with a free-text justification</em>. The context mentions no second review, mandatory clinical criteria or report of priority changes.",
+      "abuse": [
+        "An office starts offering to \"speed up the appointment\" in exchange for political support, and the letters become routine.",
+        "A middleman charges to get the letter; the change goes through with a generic justification, like \"condition worsened\".",
+        "A regulating doctor under pressure re-prioritizes dozens of requests a month and nobody sees the pattern."
+      ],
+      "impact": "People with clinical priority wait longer, with a risk to life in specialties like cardiology and oncology. For the city, it's administrative misconduct and a loss of trust in a list that is public.",
+      "mitigation": [
+        "Change priority only with structured clinical criteria (protocol, ICD code, test results), with a second regulating doctor reviewing any that go up to red.",
+        "External requests recorded as such, with their origin, with no weight in the decision and showing up in reports.",
+        "A periodic report of priority changes per regulating doctor and per request origin, audited by internal control."
+      ]
+    },
+    {
+      "id": "central-cpf",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["central", "confirmacao"], "edges": [{ "from": "central", "to": "confirmacao" }] },
+      "title": "Cancelling on someone else's behalf by phone",
+      "signal": "The 156 call centre confirms or cancels slots <em>given a CPF and date of birth</em>. The date of birth is <em>on the public page</em>; the CPF is data that circulates in leaks and in registries.",
+      "abuse": [
+        "Someone cancels the slots of the people ahead of them on the orthopaedics list to grab the slot in the last-minute pick-up.",
+        "An ex-partner confirms or cancels the victim's appointments, learning the day, time and place where she'll be.",
+        "A middleman cancels slots in bulk by phone and resells the last-minute ones."
+      ],
+      "impact": "People lose appointments they waited months for without knowing why, and the slot goes to whoever games the system. The call centre also reveals where and when someone will be, putting personal safety at risk.",
+      "mitigation": [
+        "Verify with something only the patient has: a code sent to the registered phone or the referral's protocol number.",
+        "Notify the patient, through another channel, of every cancellation, with time to undo it.",
+        "Don't give out the appointment's date and place by phone before verification; limit cancellations per agent and alert on unusual volumes."
+      ]
+    },
+    {
+      "id": "repescagem",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["app", "confirmacao"], "edges": [{ "from": "app", "to": "confirmacao" }] },
+      "title": "Last-minute pick-up rewards whoever is fastest, not whoever needs it most",
+      "signal": "Slots cancelled at the last minute go <em>to any patient in the same specialty</em>, and <em>whoever taps first gets it</em>. The rule ignores clinical priority and creates an incentive to provoke cancellations.",
+      "abuse": [
+        "A bot watches the app 24 hours a day and grabs every last-minute slot for a list of \"clients\" who pay for it.",
+        "Combined with cancellations through the 156 call centre, someone frees up other people's slots and grabs them right after.",
+        "Green patients take slots while red patients, with no app or no time to keep checking, wait."
+      ],
+      "impact": "The list's clinical order is bypassed precisely for the most contested slots, and a market for public slots appears. The city pays for the appointment, and the person who needed it keeps waiting.",
+      "mitigation": [
+        "Offer last-minute slots in list order, with a short deadline, instead of releasing them to whoever taps first.",
+        "Restrict pick-up to patients of the same priority or higher and detect automation (frequency, device, tap patterns).",
+        "Monitor cancellations followed by a capture by the same network of accounts."
+      ]
+    },
+    {
+      "id": "faturamento",
+      "category": "fraude",
+      "severity": "alto",
+      "where": { "nodes": ["prestadores", "faturamento"], "edges": [{ "from": "prestadores", "to": "faturamento" }] },
+      "title": "An appointment that never happened becomes a payment",
+      "signal": "<em>The provider itself marks the appointment as carried out</em>, and that triggers payment. With a <em>30% no-show rate</em>, there are many booked appointments that didn't happen — and nothing in the flow confirms the patient showed up.",
+      "abuse": [
+        "A provider marks no-shows' appointments as carried out and gets paid for them.",
+        "A five-minute follow-up is billed as a full specialist appointment.",
+        "The provider books the appointment, doesn't see the patient and says it was \"rescheduled\"; the patient goes back to the list."
+      ],
+      "impact": "Improper payment with public money and a list that is artificially stuck: in the system, the patient was seen. It means work for internal control and the audit court, and the fallout lands on the administration.",
+      "mitigation": [
+        "Confirm attendance from the patient's side: a code shown in the app or sent by SMS, given at reception.",
+        "A sample satisfaction survey that asks whether the appointment happened, and audits of providers outside the normal no-show pattern.",
+        "Separate who marks the appointment as carried out from who approves billing, cross-checking recorded no-shows."
+      ]
+    },
+    {
+      "id": "chave-unica",
+      "category": "técnico",
+      "severity": "alto",
+      "where": { "nodes": ["prestadores", "fila"], "edges": [{ "from": "fila", "to": "prestadores" }, { "from": "prestadores", "to": "fila" }] },
+      "title": "Every provider with the same key and access to the whole list",
+      "signal": "To keep things simple, <em>they all use the same API key, with access to the whole list</em>. There's no way to know which provider made each call or to limit what each one sees.",
+      "abuse": [
+        "A provider reads the whole list and offers private appointments to people waiting for a specialty in the public network.",
+        "The key leaks from a small provider's system and gives access to the names, specialties and contacts of 64,000 people.",
+        "A provider publishes or cancels slots in a competitor's schedule, and nobody can prove who did it."
+      ],
+      "impact": "A large-scale leak of health data, commercial use of the public list and no traceability. Revoking the key takes all 14 providers down at once.",
+      "mitigation": [
+        "One credential per provider, scoped to its own schedules and its own booked patients.",
+        "A log of every call per provider, with alerts for unusual reads.",
+        "Credential rotation and individual revocation, without taking the others down."
+      ]
+    },
+    {
+      "id": "numero-antigo",
+      "category": "operativo",
+      "severity": "médio",
+      "where": { "nodes": ["whatsapp"], "edges": [{ "from": "fila", "to": "whatsapp" }, { "from": "whatsapp", "to": "app" }] },
+      "title": "A slot offer delivered to someone else",
+      "signal": "The offer goes to the <em>phone registered at the UBS</em>, sometimes years ago, and carries the specialty, place, date and a <em>link to confirm</em>. With no answer in 48 hours, the person <em>goes back to the end of the list</em>.",
+      "abuse": [
+        "The number was recycled by the carrier; a stranger receives someone else's name, specialty and appointment location.",
+        "Whoever gets it by mistake taps the link and cancels, or confirms and the slot goes unused.",
+        "The patient never sees the message, loses the slot after 11 months of waiting and goes back to the end of the list."
+      ],
+      "impact": "Health data handed to third parties and lost access for those who depend most on the public system — the elderly and people without a phone of their own. The 48-hour rule turns an outdated record into a punishment.",
+      "mitigation": [
+        "Confirm the phone number when the person joins the list and after every unanswered offer; a message with no specialty, just a notice that a slot is available.",
+        "A link that asks for verification (protocol number, or date of birth plus a code) before confirming or cancelling.",
+        "With no answer, try another channel (a call, the UBS) before sending the person to the end of the list."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Transparency needs a threat model too", "body": "Data published by legal obligation is still personal data. Ask what can be discovered by crossing what's public with what has leaked." },
+    { "title": "Every manual exception is a door", "body": "Free-text re-prioritization, confirmation by phone, last-minute pick-up: wherever the flow opens an exception, someone will learn to trigger it." },
+    { "title": "Whoever bills can't be whoever proves the service", "body": "If the provider marks the appointment and gets paid for it, the proof has to come from elsewhere — from the patient, the sample, the audit." },
+    { "title": "A shared credential is nobody's responsibility", "body": "One key for several partners simplifies the integration and erases traceability. Per-partner scope and identity cost little next to a leak." }
+  ]
+}

@@ -5,12 +5,13 @@
  *
  * It is the same report as ?debug=layout (the engine prints each problem as
  * a "[Adler layout]" console warning), run for the flow and for the risk map,
- * plus any JavaScript error on the page. Run `npm run build` first.
+ * plus any JavaScript error on the page — in every language the build made,
+ * since translated labels have other lengths. Run `npm run build` first.
  *
  * Uses the installed Chrome or Edge; set CHROME_PATH if it isn't found.
  */
 
-import { openCases, serveDist, openBrowser, waitFor, sleep } from "./lib/browser.mjs";
+import { sites, serveDist, openBrowser, waitFor, sleep } from "./lib/browser.mjs";
 
 const WIDTHS = [
   { name: "desktop", width: 1280, height: 900, mobile: false },
@@ -19,7 +20,7 @@ const WIDTHS = [
 ];
 
 async function run() {
-  const cases = openCases().map(c => c.slug);
+  const all = sites();
   const { server, base } = await serveDist();
   const page = await openBrowser();
 
@@ -38,13 +39,14 @@ async function run() {
     }
   });
 
-  let failed = 0;
-  for (const view of WIDTHS) {
+  let failed = 0, total = 0;
+  for (const site of all) for (const view of WIDTHS) {
     await page.send("Emulation.setDeviceMetricsOverride", { width: view.width, height: view.height, deviceScaleFactor: 1, mobile: view.mobile });
-    for (const slug of cases) {
+    for (const { slug } of site.cases) {
       current = new Set();
+      total++;
       try {
-        await page.goto(`${base}?caso=${slug}&debug=layout`);
+        await page.goto(`${base}${site.path}?caso=${slug}&debug=layout`);
         // Flow stage: wait for the intro animation to finish.
         await page.js(`localStorage.clear(); window.confirm = () => true; document.querySelectorAll(".progress-cell")[1].click(); true`);
         if (!await page.js(waitFor(`document.getElementById("flowWrap")._played`, 20000))) current.add("flowWrap: a animação do fluxo não terminou");
@@ -62,7 +64,7 @@ async function run() {
       } catch (e) {
         current.add(`falhou ao abrir o caso: ${e.message}`);
       }
-      const label = `${slug} @ ${view.name} (${view.width}px)`;
+      const label = `${site.path ? `[${site.lang}] ` : ""}${slug} @ ${view.name} (${view.width}px)`;
       if (current.size) {
         failed++;
         console.log(`✗ ${label}`);
@@ -77,12 +79,11 @@ async function run() {
   await page.close();
   server.close();
 
-  const total = cases.length * WIDTHS.length;
   if (failed) {
     console.log(`\n${failed} de ${total} verificações com problema. Abra o caso com ?debug=layout para ver onde.`);
     process.exit(1);
   }
-  console.log(`\nLayout ok: ${cases.length} casos × ${WIDTHS.length} larguras, sem sobreposições nem erros.`);
+  console.log(`\nLayout ok: ${total} verificações (${all.map(s => `${s.lang}: ${s.cases.length} casos`).join(", ")}; ${WIDTHS.length} larguras), sem sobreposições nem erros.`);
 }
 
 run().catch(e => { console.error(e.message); process.exit(1); });

@@ -1,0 +1,243 @@
+{
+  "$schema": "../../schema/case.schema.json",
+  "slug": "frete-adiantado",
+  "status": "open",
+  "domain": "fintech",
+  "title": "Freight Advance",
+  "subtitle": "Receivables advance for truck drivers on a freight marketplace",
+  "duration": "~45 min",
+  "difficulty": "Intermediário",
+  "tags": ["Fintech", "LGPD", "IAM", "Fraud prevention"],
+  "license": "CC-BY-SA-4.0",
+  "author": "2T0nnks",
+  "context": {
+    "narrative": [
+      "Ponto de Carga is a marketplace where shippers post loads and independent truck drivers accept the freight. Payment happens 14 days after the delivery is confirmed.",
+      "The \"Freight Advance\" product offers an advance: the driver accepts the freight, makes the delivery, uploads the signed delivery receipt and the invoice — and instead of waiting 14 days, gets paid the next day at a 2.3% discount. The operation is small but grows 40% a month; today there are about 18,000 active drivers and somewhere between 2,000 and 3,000 advances a day.",
+      "The team is lean: four developers, one SRE, one PM and a part-time BISO. Treasury sits in another building — three people run the daily operation of approving advances and reconciling the bank statement through the web back office.",
+      "KYC (identity and background checks) is outsourced to a specialist provider. Payouts to drivers go through a partner sub-acquirer, which sends the PIX (Brazil's instant payment) when the advance is approved."
+    ],
+    "actors": [
+      ["Driver", "end user, mobile app"],
+      ["Shipper", "posts loads, approves delivery"],
+      ["Treasury", "approves advances in the back office"],
+      ["Fraud prevention", "reviews flags from the KYC provider"],
+      ["KYC provider", "third party: checks licence, photo, background"],
+      ["Sub-acquirer", "third party: sends the PIX to the driver"]
+    ],
+    "data": [
+      ["CPF (tax ID)", "sign-up, KYC, fraud prevention"],
+      ["Driver's licence", "check and yearly re-check"],
+      ["Selfie + ID", "liveness at sign-up"],
+      ["PIX key", "destination account of the advance"],
+      ["Proof of delivery", "receipt + invoice per delivery"],
+      ["Location", "driver app, continuous"]
+    ],
+    "scale": [
+      ["18k drivers", "active today"],
+      ["2–3k / day", "advances"],
+      ["40% / month", "compound growth"],
+      ["4 devs + 1 SRE", "all of engineering"],
+      ["3 people", "treasury"]
+    ]
+  },
+  "flow": {
+    "nodes": [
+      { "id": "app", "label": "Driver app", "kind": "internal", "icon": "app", "x": 60, "y": 40, "description": "App drivers use to accept freight, upload the delivery receipt and invoice, and request the advance. It also shares location during trips." },
+      { "id": "api", "label": "Public API", "kind": "internal", "icon": "api", "x": 240, "y": 40, "description": "Public API serving the app: sign-up, freight acceptance, document upload and advance requests. Maintained by Ponto de Carga's four developers." },
+      { "id": "kyc", "label": "KYC Provider", "kind": "external", "icon": "partner", "x": 240, "y": 160, "description": "Outsourced provider that verifies the driver's identity at sign-up and re-checks the driver's licence once a year, with a selfie and ID.", "tech": "KYC (<em>Know Your Customer</em>): the process of verifying someone's identity, usually by comparing a selfie with the photo on an ID and checking background databases. Institutions that move money are required to do it." },
+      { "id": "db", "label": "Postgres database", "kind": "internal", "icon": "database", "x": 440, "y": 40, "description": "Main Postgres database: drivers, freight, advances and payment status. It's the source the back office reads to approve advances." },
+      { "id": "docs", "label": "Document bucket", "kind": "boundary", "icon": "storage", "x": 60, "y": 160, "description": "Bucket holding driver's licences, selfies, delivery receipts and invoices uploaded through the app. The API fetches files from here when someone opens a document." },
+      { "id": "bo", "label": "Treasury back office", "kind": "internal", "icon": "team", "x": 640, "y": 40, "description": "Web application the three treasury people use to approve advances, register PIX keys and do the daily bank reconciliation." },
+      { "id": "sub", "label": "PIX sub-acquirer", "kind": "external", "icon": "payment", "x": 640, "y": 160, "description": "Partner sub-acquirer that sends the PIX to drivers when an advance is approved and notifies Ponto de Carga when the payment is made.", "tech": "Sub-acquirer: a company that sits between the business and the acquirer, pooling many clients under one account and passing the money on. Many also offer payouts to third parties, such as the PIX to drivers." },
+      { "id": "hook", "label": "Webhook /pix/callback", "kind": "boundary", "icon": "webhook", "x": 440, "y": 260, "description": "Public endpoint <code>/pix/callback</code> that receives the sub-acquirer's confirmation of each payment and updates the advance's status in the database.", "tech": "Webhook: an address that an external system calls — usually with an HTTP POST — to report that something happened. Here, it's the sub-acquirer reporting that an advance's PIX was paid; the caller takes the initiative, not the receiver." }
+    ],
+    "edges": [
+      { "from": "app", "to": "api", "label": "sign-up / upload / accept" },
+      { "from": "api", "to": "kyc", "label": "sends KYC data", "boundary": true },
+      { "from": "api", "to": "db", "label": "" },
+      { "from": "api", "to": "docs", "label": "document upload" },
+      { "from": "db", "to": "bo", "label": "read + approval" },
+      { "from": "bo", "to": "sub", "label": "requests PIX", "boundary": true },
+      { "from": "sub", "to": "hook", "label": "confirms payment", "dashed": true, "boundary": true },
+      { "from": "hook", "to": "db", "label": "marks as paid", "dashed": true }
+    ]
+  },
+  "candidates": [
+    { "id": "idor", "truth": true, "category": "técnico", "title": "GET /documentos/{id} without an owner check", "sub": "The document read endpoint doesn't filter by the logged-in driver — it only validates the token." },
+    { "id": "hmac", "truth": true, "category": "técnico", "title": "Webhook /pix/callback accepts unsigned callbacks", "sub": "The sub-acquirer's endpoint confirms payments with a plain POST, without verifying where it came from." },
+    { "id": "role", "truth": true, "category": "processo", "title": "The treasury role can approve advances AND change PIX keys", "sub": "The three treasury people share the same role, with both permissions combined." },
+    { "id": "consent", "truth": true, "category": "regulatório", "title": "Bundled consent in a single checkbox", "sub": "\"I accept the terms, the privacy policy and communications\" — the LGPD requires free, specific consent per purpose." },
+    { "id": "kyc-min", "truth": true, "category": "privacidade", "title": "Data sent to the KYC provider includes more than it needs", "sub": "The provider receives the full address, PIX key and freight history, on top of what identity verification requires." },
+    { "id": "duplo-canhoto", "truth": true, "category": "lógica", "title": "The same delivery receipt accepted for two different loads", "sub": "Receipt uploads aren't deduplicated by hash — a driver uploads the same signed receipt for two separate advances." },
+    { "id": "reconc-planilha", "truth": true, "category": "operativo", "title": "Daily bank reconciliation done in a shared spreadsheet", "sub": "Treasury runs the next-day close in a Drive spreadsheet edited by several people; no immutable trail or structured versioning." },
+    { "id": "cancel-sem-reversao", "truth": true, "category": "lógica", "title": "Cancellation after the advance with no automatic reversal", "sub": "Nothing ensures that cancelling the freight after the advance was paid triggers a reversal — it may linger as an operational leftover." },
+    { "id": "md5", "truth": false, "category": "técnico", "title": "Driver passwords stored with MD5", "sub": "It's not in the context; don't assume it. The practice is reading what is described, not assuming the worst." },
+    { "id": "sql-inj", "truth": false, "category": "técnico", "title": "SQL injection in the freight search filters", "sub": "A real class of vulnerability, but nothing in the context suggests a specific injection here. That's caught by another layer of review." },
+    { "id": "session-long", "truth": false, "category": "técnico", "title": "Driver session is too long", "sub": "It's a UX trade-off of a financial mobile app, not the central hole in the transactional flow the operation describes." },
+    { "id": "retro-limit", "truth": false, "category": "lógica", "title": "A retroactive limit change increases an already approved advance", "sub": "It looks like a logic gap, but the described flow only reprocesses in the next window — it's an intended feature with a batch control." }
+  ],
+  "risks": [
+    {
+      "id": "idor",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["docs", "api"], "edges": [{ "from": "api", "to": "docs" }] },
+      "title": "IDOR in the document download",
+      "signal": "The <code>GET /documentos/{id}</code> endpoint is described as validating only the token — no owner filter. The context also mentions sensitive uploads: driver's licence, selfie, receipts.",
+      "abuse": [
+        "Driver A logs in normally, increments the document <code>id</code> by <code>+1</code> and downloads driver B's licence.",
+        "A script running with one valid token sweeps the range <code>id ∈ [1, N]</code> and collects every licence registered over the weekend.",
+        "A treasury insider with read access opens selfies outside the approval flow in which they would have a reason to."
+      ],
+      "impact": "Mass exposure of identity and financial documents. Beyond the direct harm, LGPD art. 46 (security) and art. 48 (an incident reportable to the ANPD, Brazil's data protection authority, and to the data subjects); depending on the volume, press coverage.",
+      "mitigation": [
+        "A mandatory <code>ownerId</code> filter in the repository, not in the controller. Never depend on the developer remembering.",
+        "Short-lived signed (pre-signed) URLs for the bucket, generated by the backend only when the requester is the owner or has a recorded reason.",
+        "Automated authorization tests: a two-user fixture and an \"I read mine / I don't read theirs\" matrix for every route."
+      ]
+    },
+    {
+      "id": "hmac",
+      "category": "técnico",
+      "severity": "crítico",
+      "where": { "nodes": ["hook"], "edges": [{ "from": "sub", "to": "hook" }, { "from": "hook", "to": "db" }] },
+      "title": "Payment webhook without signature verification",
+      "signal": "The sub-acquirer confirms the PIX by calling <code>POST /pix/callback</code>. The context mentions no shared secret, HMAC or allowlist — and the endpoint is external by definition (it's the partner calling).",
+      "abuse": [
+        "An attacker learns the callback format (network recon or a leaked doc) and forges <code>{status: paid}</code> for one of their advances.",
+        "The advance is marked as paid in the system; bank reconciliation only catches it <em>later</em> and, if manual, it can take days.",
+        "If the same callback also unlocks a new limit for the driver, the attacker chains several advances before the reconciliation catches up."
+      ],
+      "impact": "Direct cash loss from advances never actually drawn from the acquirer. Insider fraud too: a developer with access to the endpoint replays callbacks and releases payments.",
+      "mitigation": [
+        "HMAC-SHA256 of the body with a shared secret, in an <code>X-Signature</code> header. Reject without a 200.",
+        "Idempotency by <code>callback_id</code>: the same id only takes effect once.",
+        "Real-time (or at least hourly) reconciliation against the sub-acquirer's statement, with an alert when the difference exceeds R$ X."
+      ]
+    },
+    {
+      "id": "role",
+      "category": "processo",
+      "severity": "alto",
+      "where": { "nodes": ["bo"], "edges": [{ "from": "bo", "to": "sub" }] },
+      "title": "No segregation of duties in treasury",
+      "signal": "\"Three people run the daily approval operation\" — and the same role touches registration data (PIX key) and approval (release). Without SoD, a single compromised credential is a complete fraud.",
+      "abuse": [
+        "An insider swaps a real driver's PIX key for their own, approves the advance, puts the key back. The driver finds out the next day; the money is gone.",
+        "Phishing lands on one treasury person. The intruder logs into the back office after hours and does the same to N drivers.",
+        "In a PCI or Central Bank audit: a serious finding on <em>segregation of duties</em>, especially combined with the previous item."
+      ],
+      "impact": "Insider or outsider fraud through social engineering. Failure of controls expected by the Central Bank and by PCI-DSS audits where applicable.",
+      "mitigation": [
+        "Two distinct roles: <em>Registration</em> (changes driver data) and <em>Approval</em> (releases advances). Nobody holds both.",
+        "Maker-checker for PIX key changes: it only takes effect after a second operator confirms it (or the driver re-authenticates).",
+        "An immutable audit trail of every bank data change, with an immediate alert to the BISO."
+      ]
+    },
+    {
+      "id": "consent",
+      "category": "regulatório",
+      "severity": "médio",
+      "where": { "nodes": ["app"], "edges": [{ "from": "app", "to": "api" }] },
+      "title": "Bundled consent breaches the LGPD",
+      "signal": "A single checkbox covers \"terms, policy and communications\". Marketing communication is a separate purpose — the LGPD, Brazil's data protection law, requires free, informed consent for a specific purpose (art. 8 §4).",
+      "abuse": [
+        "A data subject complains to the ANPD or sues: they want out of marketing without losing access to the product — and can't.",
+        "A competitor or a consumer protection body reports the practice, opening an administrative proceeding.",
+        "Asked by a consumer protection agency for its marketing base, Ponto de Carga can't show valid consent for a single driver."
+      ],
+      "impact": "ANPD sanctions (warning, publicity, a fine of up to 2% of revenue per violation). The cost of redoing consent across the whole existing base.",
+      "mitigation": [
+        "Separate checkboxes: (1) I accept the terms, (2) I have read the policy, (3) I authorize marketing communications — optional.",
+        "The right legal basis per purpose: contract performance for the service, consent only for what the contract doesn't need.",
+        "A trivial way to withdraw: a toggle in the profile, with no need to talk to support."
+      ]
+    },
+    {
+      "id": "kyc-min",
+      "category": "privacidade",
+      "severity": "médio",
+      "where": { "nodes": ["kyc"], "edges": [{ "from": "api", "to": "kyc" }] },
+      "title": "An external provider receives excessive data",
+      "signal": "KYC verifies identity — it needs the CPF, a photo of the ID and a selfie. The context says we send <em>the full address, PIX key and freight history</em>. That's more than the purpose.",
+      "abuse": [
+        "A breach at the provider exposes data that never needed to be there — and Ponto de Carga shares responsibility for sending it.",
+        "The provider \"enriches\" its base for another product, an unforeseen use the data subject never agreed to.",
+        "In a third-party audit, the contract has to justify every shared field. Not justifying it is a finding."
+      ],
+      "impact": "A larger surface in third-party incidents. A data minimization failure (LGPD art. 6, III). Audits flag sharing contracts with no field-by-field rationale.",
+      "mitigation": [
+        "A data processor contract listing the allowed fields, reviewed whenever a field is added.",
+        "An intermediate layer that <em>projects</em> only the needed subset before calling the provider.",
+        "Periodic review: each field sent to a third party has a written purpose — if it doesn't, it goes."
+      ]
+    },
+    {
+      "id": "duplo-canhoto",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["api", "docs"], "edges": [{ "from": "app", "to": "api" }, { "from": "api", "to": "docs" }] },
+      "title": "Double receipt: the same proof for two loads",
+      "signal": "The context describes a receipt upload per delivery, but mentions no deduplication. Without a hash or a mandatory one-to-one link between freight and receipt, the same file can be accepted twice.",
+      "abuse": [
+        "A driver accepts two loads from the same shipper, makes one delivery, uploads the same signed receipt to both advances and gets paid for both.",
+        "A group colludes — drivers swap receipts from different shippers who are in on the scheme, and the systems treat them as independent loads.",
+        "A fraudster photographs a legitimate driver's receipt, attaches it to their own fake load and takes the advance."
+      ],
+      "impact": "A duplicate advance — double payment with no real return from the shipper. A direct hit to cash; in the books it shows as \"service rendered\", hard to reverse once the driver has withdrawn.",
+      "mitigation": [
+        "A perceptual hash (pHash) of the proof at upload, rejecting it outright if it already exists.",
+        "A mandatory one-to-one link between freight and receipt at acceptance; the same file can't pass for a second advance.",
+        "Daily cross-similarity detection among uploads in the same window — flagged to fraud prevention before approval."
+      ]
+    },
+    {
+      "id": "reconc-planilha",
+      "category": "operativo",
+      "severity": "alto",
+      "where": { "nodes": ["bo", "sub"], "edges": [{ "from": "db", "to": "bo" }] },
+      "title": "Daily bank reconciliation in a shared spreadsheet",
+      "signal": "Treasury does the daily reconciliation in a Drive spreadsheet, edited by three people in shifts. There's no immutable trail or structured versioning — it's an operating procedure that assumes good faith.",
+      "abuse": [
+        "An operator (or a compromised credential) deletes a row between shifts — the advance looks reconciled and nobody notices until the monthly close.",
+        "An honest mistake overwrites a value, creating a gap between the bank statement and the system, fixed \"by hand\" by the next shift with no trail.",
+        "The spreadsheet leaks outside the company through a sharing mistake — reconciliation data (drivers, amounts, PIX keys) exposed to third parties."
+      ],
+      "impact": "Operational holes invisible until audit. A serious finding in a Central Bank or PCI review, with no way to show who changed what. A wrong reconciliation compounds into future advances.",
+      "mitigation": [
+        "Replace the spreadsheet with a reconciliation system with an immutable log — every change versioned, with author and timestamp.",
+        "While the process lives in a spreadsheet, Drive versioning with individual access control and an automatic diff at the end of each shift.",
+        "The daily close requires two operators' approval (maker-checker) before rolling over; any discrepancy blocks the close."
+      ]
+    },
+    {
+      "id": "cancel-sem-reversao",
+      "category": "lógica",
+      "severity": "alto",
+      "where": { "nodes": ["api", "db", "sub"], "edges": [{ "from": "app", "to": "api" }, { "from": "api", "to": "db" }] },
+      "title": "Cancellation after the advance with no automatic reversal",
+      "signal": "The context describes the happy path: accept → deliver → advance. Nothing says a cancellation after the advance triggers any reversal. In practice, the system may just mark it cancelled — without claiming back money already withdrawn.",
+      "abuse": [
+        "A driver accepts a load, delivers it, takes the advance the next day (minus 2.3%), then cancels citing a problem with the shipper — and keeps the money.",
+        "A bad-faith driver does this in series within a short window, before manual review catches it, withdrawing through several mule accounts.",
+        "Collusion with a shipper: the shipper cancels a legitimate load, the driver keeps the advance and they split the difference on the side."
+      ],
+      "impact": "Direct cash loss from advances never reconciled with the shipper. The effect compounds as the window between delivery and reconciliation grows. The hole shows up in the P&L days later, hard to trace back to the original cancellation.",
+      "mitigation": [
+        "An automatic reversal triggered by the cancellation event — it freezes the advanced amount and notifies treasury and fraud prevention.",
+        "A minimum window between confirmed delivery and the ability to cancel (24–48h) shrinks the surface without hurting legitimate cases.",
+        "A real-time alert when a cancellation arrives after the advance was paid; a priority investigation queue for fraud prevention."
+      ]
+    }
+  ],
+  "takeaways": [
+    { "title": "Authorization is a line-of-code decision, not a policy", "body": "Every endpoint that returns a resource has to ask \"is this mine?\" — and the question should live in the repository, not in the controller. If it depends on the developer remembering, one day they'll forget." },
+    { "title": "External callbacks are adversarial input", "body": "Any endpoint that accepts third-party calls starts out hostile. Signature, idempotency and reconciliation are the three layers — any one of them alone is not enough." },
+    { "title": "Segregation of duties is free up front and expensive to retrofit", "body": "Separate roles cost little early in a product. Letting permissions pile up becomes debt that's only paid by taking permissions away from people who got used to having them." },
+    { "title": "Bundled consent is always invalid", "body": "\"One checkbox per purpose\" feels like friction, but it's the only path that holds up with the data protection authority. Better to pay the friction at sign-up than the sanction later." },
+    { "title": "Minimization is a contract clause, not a feeling", "body": "If you can't list, field by field, why the third party receives each thing, you're sending too much. Write the list before the integration; revisit it every quarter." },
+    { "title": "Business logic flaws don't show up in any scanner", "body": "Double receipt, cancellation without reversal, retroactive limits. No SAST or DAST catches these. Only a flow map read by someone who thinks like an adversary — always before the first commit." },
+    { "title": "An operational weakness is fraud waiting for a trigger", "body": "A shared spreadsheet, approval over chat, a runbook that assumes Slack is up. All of that becomes an easy, expensive abuse case. Treat operations like code: versioning, an immutable log, maker-checker." }
+  ]
+}

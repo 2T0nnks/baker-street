@@ -2,6 +2,10 @@
 /**
  * validate.mjs — runs each case JSON against schema/case.schema.json.
  *
+ * Translations in cases/<lang>/ get the same checks, plus one more: they
+ * must mirror the Portuguese original (same ids, flow, answers and map),
+ * so that only the words change.
+ *
  * Exits 0 if every case is valid, non-zero otherwise. Used by the
  * validate.yml workflow on every PR and by `npm run validate` locally.
  */
@@ -26,6 +30,13 @@ async function main() {
   const validate = ajv.compile(schema);
 
   const files = (await fs.readdir(CASES_DIR)).filter(f => f.endsWith(".json"));
+  // Translations: cases/<lang>/<slug>.json, checked against cases/<slug>.json.
+  for (const entry of await fs.readdir(CASES_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    for (const f of (await fs.readdir(path.join(CASES_DIR, entry.name))).filter(f => f.endsWith(".json"))) {
+      files.push(`${entry.name}/${f}`);
+    }
+  }
   if (files.length === 0) {
     console.error("validate: no cases found in cases/");
     process.exit(1);
@@ -65,8 +76,22 @@ async function main() {
       continue;
     }
 
+    // A translation must mirror its original
+    if (file.includes("/")) {
+      const original = path.join(CASES_DIR, path.basename(file));
+      let src = null;
+      try { src = JSON.parse(await fs.readFile(original, "utf-8")); } catch {}
+      const diffs = src ? mirror(src, data) : [`no original cases/${path.basename(file)} to translate from`];
+      if (diffs.length) {
+        console.error(`✗ cases/${file}: differs from the Portuguese original:`);
+        diffs.forEach(d => console.error(`    ${d}`));
+        failed++;
+        continue;
+      }
+    }
+
     // Filename must match slug
-    const expected = file.replace(/\.json$/, "");
+    const expected = path.basename(file).replace(/\.json$/, "");
     if (data.slug !== expected) {
       console.error(`✗ cases/${file}: slug "${data.slug}" does not match filename`);
       failed++;
@@ -81,6 +106,21 @@ async function main() {
     process.exit(1);
   }
   console.log(`\nvalidate: all ${files.length} case(s) passed.`);
+}
+
+// What a translation may not change: everything but the words.
+function mirror(src, tr) {
+  const shape = c => ({
+    slug: c.slug, status: c.status, domain: c.domain, difficulty: c.difficulty, duration: c.duration,
+    "context sizes": ["narrative", "actors", "data", "scale"].map(k => (c.context?.[k] || []).length),
+    "flow nodes": (c.flow?.nodes || []).map(n => [n.id, n.kind, n.icon, n.x, n.y, !!n.tech]),
+    "flow edges": (c.flow?.edges || []).map(e => [e.from, e.to, !!e.boundary, !!e.dashed, !!e.label]),
+    candidates: (c.candidates || []).map(x => [x.id, x.truth, x.category]),
+    risks: (c.risks || []).map(r => [r.id, r.category, r.severity, JSON.stringify(r.where || null), (r.abuse || []).length, (r.mitigation || []).length]),
+    takeaways: (c.takeaways || []).length,
+  });
+  const a = shape(src), b = shape(tr);
+  return Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k])).map(k => `${k} differs`);
 }
 
 // The engine renders case text with innerHTML, so any markup in a case runs

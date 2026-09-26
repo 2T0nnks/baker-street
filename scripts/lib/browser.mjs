@@ -26,12 +26,30 @@ const BROWSERS = [
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
 ].filter(Boolean);
 
+const readCases = dir => fs.existsSync(dir)
+  ? fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")))
+  : [];
+
 export function openCases() {
   if (!fs.existsSync(path.join(DIST, "index.html"))) throw new Error("dist/index.html not found — run `npm run build` first.");
-  return fs.readdirSync(path.join(ROOT, "cases"))
-    .filter(f => f.endsWith(".json"))
-    .map(f => JSON.parse(fs.readFileSync(path.join(ROOT, "cases", f), "utf8")))
-    .filter(c => c.status === "open");
+  return readCases(path.join(ROOT, "cases")).filter(c => c.status === "open");
+}
+
+// Every language the build produced: { lang, path, i18n, cases } — the same
+// rule as build.mjs (a translation ships only while its original is open).
+export function sites() {
+  const source = openCases();
+  const out = [{ lang: "pt-BR", path: "", i18n: null, cases: source }];
+  const dir = path.join(ROOT, "engine", "i18n");
+  if (!fs.existsSync(dir)) return out;
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith(".json")).sort()) {
+    const i18n = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+    if (!fs.existsSync(path.join(DIST, i18n.path, "index.html"))) continue;
+    const live = new Set(source.map(c => c.slug));
+    const cases = readCases(path.join(ROOT, "cases", file.replace(/\.json$/, ""))).filter(c => live.has(c.slug) && c.status === "open");
+    out.push({ lang: i18n.lang, path: i18n.path, i18n, cases });
+  }
+  return out;
 }
 
 // Serves dist/ on a free local port. Returns { server, base }.

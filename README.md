@@ -9,6 +9,8 @@
 
 ### [▶&nbsp; Jogar agora](https://2t0nnks.github.io/baker-street/)
 
+<sub>[English version](https://2t0nnks.github.io/baker-street/en/)</sub>
+
 </div>
 
 > O motorista sobe **o mesmo canhoto** em duas antecipações.
