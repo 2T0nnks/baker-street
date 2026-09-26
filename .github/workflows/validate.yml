@@ -34,3 +34,8 @@ jobs:
 
       - name: Dry-run build
         run: npm run build
+
+      # Opens every case in the runner's Chrome and fails on overlapping labels,
+      # pins or arrows (the same report as ?debug=layout) or any page error.
+      - name: Check diagram layout
+        run: npm run check:layout

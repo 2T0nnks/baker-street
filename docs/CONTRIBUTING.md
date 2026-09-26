@@ -48,6 +48,12 @@ Rodou? Ótimo. Vamos escrever.
    ```
    Abre `http://localhost:8000/?caso=<slug>&debug=layout`. Roda seu caso do início ao fim. Com `debug=layout`, embaixo do fluxo e do mapa de riscos aparece um painel verde (tudo certo) ou vermelho, listando o que ajustar: rótulo ou pino em cima de um nó, de outro rótulo ou de outro pino, rótulo sobre a linha de outra seta e seta que atravessa um nó. Se aparecer vermelho, encurte rótulos ou reposicione nós (`x`/`y`) — setas que atravessam nós quase sempre se resolvem mudando um nó de linha ou de coluna.
 
+   Para conferir todos os casos de uma vez, em três larguras de tela (é o que o CI roda):
+   ```bash
+   npm run build && npm run check:layout
+   ```
+   Usa o Chrome ou o Edge instalado; se ele não for encontrado, aponte o caminho em `CHROME_PATH`.
+
 5. **Promove pra `"open"`:**
    Muda o campo `"status": "draft"` pra `"status": "open"` quando estiver pronto.
 
@@ -62,7 +68,7 @@ Rodou? Ótimo. Vamos escrever.
 
 ## O que acontece depois
 
-- **CI valida automaticamente** em cada push do PR (`.github/workflows/validate.yml`). Se falhar, o PR fica marcado com ✗ e você vê o log do erro.
+- **CI valida automaticamente** em cada push do PR (`.github/workflows/validate.yml`): schema, build e o layout dos diagramas de todos os casos. Se falhar, o PR fica marcado com ✗ e você vê o log do erro.
 - **Revisão editorial** — o mantenedor (@2T0nnks por enquanto) revisa o *conteúdo*: realismo, qualidade dos abuse cases, plausibilidade dos distratores, se as mitigações realmente resolvem.
 - **Merge** — quando aprovado, o merge no main dispara o deploy automático. Em ~1 minuto seu caso está no site.
 - **Autor entra como Irregular** — você fica creditado no README como contribuidor.

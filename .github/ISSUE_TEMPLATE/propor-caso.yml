@@ -1,0 +1,70 @@
+name: Propor um caso
+description: Sugira um fluxo para virar caso. Não precisa estar pronto — a ideia já ajuda.
+title: "Caso: "
+labels: ["caso novo"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Um caso é um fluxo de negócio real (ou plausível) com casos de abuso que só aparecem para quem lê o fluxo inteiro.
+        Antes de escrever, vale ler [O que faz um caso bom](https://github.com/2T0nnks/baker-street/blob/main/docs/CASE_GUIDELINES.md).
+
+        **Não descreva vulnerabilidades reais de uma empresa identificável.** Anonimize nomes, números e detalhes.
+
+  - type: input
+    id: titulo
+    attributes:
+      label: Nome provisório
+      placeholder: "Ex.: Cashback no Cartão"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: setor
+    attributes:
+      label: Setor
+      options:
+        - Fintech / meios de pagamento
+        - Banco / crédito
+        - Saúde
+        - Educação
+        - Governo / serviço público
+        - Varejo / marketplace
+        - Logística
+        - Outro
+    validations:
+      required: true
+
+  - type: textarea
+    id: fluxo
+    attributes:
+      label: O fluxo
+      description: Quem são os atores, quais sistemas participam e por onde passam dados e dinheiro. Tópicos bastam.
+      placeholder: |
+        - Cliente pede X pelo app
+        - API chama o parceiro Y
+        - Backoffice aprova e paga via PIX
+    validations:
+      required: true
+
+  - type: textarea
+    id: abusos
+    attributes:
+      label: Casos de abuso que o caso ensinaria
+      description: Pelo menos três, de categorias diferentes (técnico, negócio, processo, privacidade, terceiros…).
+    validations:
+      required: true
+
+  - type: textarea
+    id: armadilhas
+    attributes:
+      label: Armadilhas (opcional)
+      description: Coisas que parecem risco mas não são, neste fluxo — elas viram os distratores.
+
+  - type: checkboxes
+    id: autoria
+    attributes:
+      label: Autoria
+      options:
+        - label: Quero escrever o JSON do caso e abrir o PR
+        - label: Prefiro que outra pessoa escreva a partir desta ideia
